@@ -1,0 +1,23 @@
+# Compilação e caches (todas as fases)
+build/
+out/
+.gradle/
+*.class
+.kotlin/
+
+# Configurações locais das IDEs e do Android
+.idea/
+*.iml
+.vscode/
+local.properties
+
+# Dados locais do jogo e do servidor
+ranking*.json
+*.mv.db
+*.trace.db
+*.lock.db
+*.h2.db
+*.temp.db
+
+# macOS
+.DS_Store
