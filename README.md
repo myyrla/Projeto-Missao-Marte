@@ -8,7 +8,9 @@ O projeto evolui um jogo Java de console para um jogo libGDX desktop e Android, 
 
 ## Situação atual
 
-A Etapa 0 organiza o repositório. O código da equipe permanece em `MissaoMarte/src/missao/`, com entidades e persistência parcialmente implementadas. O `Main`, o motor e a interface de console ainda estão vazios: não há partida jogável nem testes automatizados. A Etapa 1 depende de aprovação própria.
+A Etapa 0 foi registrada no commit `6330869`. A Etapa 1 implementa o console da equipe em `fases/fase-01-refatoracao/` e preserva a Fase 0 em `fases/fase-00-original/`. Veja o [diagnóstico](docs/diagnostico.md), as [decisões](docs/adr/ADR-001-trilha-de-evolucao.md) e o [tutorial](fases/fase-01-refatoracao/docs/fase-01-tutorial.md).
+
+A implementação da Etapa 1 está validada localmente; branch e commits estão pendentes pela restrição de escrita da sessão em `.git`. A Etapa 2 não foi iniciada.
 
 ## Comportamento de referência para a Fase 1
 
@@ -22,16 +24,16 @@ A referência é a Fase 0 do professor (`fase-0-oopuro`). Os três fundadores re
 
 Controles: `w`, `a`, `s`, `d` para mover; `c` para embarcar; `q` para abortar. Ranking Top 5; nave com 3 vidas; vitória ao resgatar todos e retornar à plataforma `L` em `(0,0)`. Professor, Engenheiro e Astronauta valem, respectivamente, 10, 15 e 20 pontos.
 
-Esses valores são o contrato aprovado para a futura Etapa 1. A correção dos valores locais do difícil será feita nessa etapa, sem alterar os fontes durante a organização do repositório.
+Esses valores foram aplicados à Fase 1. Mapas pequenos demais para a dificuldade são recusados antes do sorteio, conforme correção aprovada.
 
 ## Índice das fases
 
-As pastas abaixo são destinos planejados. Nenhuma fase foi importada ou movida nesta etapa.
+Fases 0 e 1 estão disponíveis. Fases 2 a 8 são destinos planejados.
 
 | Fase | Pasta prevista | Situação | Origem |
 |---|---|---|---|
-| 00: original | `fases/fase-00-original/` | Importação prevista na Etapa 1 | Professor: `fase-0-oopuro` |
-| 01: refatoração | `fases/fase-01-refatoracao/` | Código parcial em `MissaoMarte/`; aguardando Etapa 1 | Equipe |
+| 00: original | `fases/fase-00-original/` | Importada; fontes preservados | Professor: `fase-0-oopuro` |
+| 01: refatoração | `fases/fase-01-refatoracao/` | Console implementado; seis grupos de testes | Equipe |
 | 02: Gradle | `fases/fase-02-gradle/` | Prevista na Etapa 2 | Base do professor |
 | 03: libGDX | `fases/fase-03-libgdx/` | Prevista na Etapa 2 | Base do professor |
 | 04: interface gráfica | `fases/fase-04-interface-grafica/` | Prevista na Etapa 2 | Base do professor |
@@ -61,42 +63,30 @@ Confirme que ambos mostram 17 antes de compilar. No IntelliJ, selecione o mesmo 
 
 ## Compilação e execução
 
-### Código atual da equipe
-
-Na raiz, com JDK 17 selecionado:
-
-```bash
-mkdir -p out
-find MissaoMarte/src/missao -name '*.java' -print0 |
-  xargs -0 javac --release 17 -encoding UTF-8 -d out
-java -cp out missao.app.Main
-```
-
-Atualmente o `Main` não executa ações. Compilar com sucesso não comprova uma partida funcional. Ainda não existe comando de testes automatizados.
-
-### Fases 0 e 1, após a Etapa 1
-
-Os comandos abaixo são previstos e ainda não foram validados nas pastas de destino, que não existem.
+### Fase 0
 
 Na pasta `fases/fase-00-original/`:
 
 ```bash
 mkdir -p out
-find src -name '*.java' -print0 |
-  xargs -0 javac --release 17 -encoding UTF-8 -d out
+find src -name '*.java' -print0 | xargs -0 javac --release 17 -encoding UTF-8 -d out
 java -cp out Main
 ```
+
+A Fase 0 não possui suíte automatizada. Use mapa de tamanho 5; a limitação de mapas pequenos foi preservada nessa fase.
+
+### Fase 1 da equipe
 
 Na pasta `fases/fase-01-refatoracao/`:
 
 ```bash
 mkdir -p out
-find src -name '*.java' -print0 |
-  xargs -0 javac --release 17 -encoding UTF-8 -d out
+find src tests -name '*.java' -print0 | xargs -0 javac --release 17 -encoding UTF-8 -d out
+java -ea -cp out missao.TodosOsTestes
 java -cp out missao.app.Main
 ```
 
-O comando de testes da Fase 1 será documentado quando a suíte for implementada e validada.
+Os testes usam Java puro e incluem domínio, fábrica, motor, ranking, persistência e console. Execute o jogo dentro da pasta de cada fase para manter seus rankings separados.
 
 ### Fases 2 a 8, após importação ou implementação
 
@@ -118,8 +108,8 @@ O servidor usa as variáveis de ambiente `MISSAOMARTE_JWT_SEGREDO` e `MISSAOMART
 
 ## Origem do código
 
-- **Equipe:** código atual em `MissaoMarte/src/missao/` e futura refatoração da Fase 1; documentação específica da equipe e melhoria da Fase 8.
-- **Professor:** referência de estudo e futuras importações da Fase 0 e das Fases 2 a 7 do [repositório do Prof. Marcelo Bezerra](https://github.com/marcelobezerra-dotcom/T200-ProjArqSist/tree/main/missaoMarteUnifor/projetoExtensaoFinal), com uso autorizado em sala conforme registrado nas instruções do projeto.
+- **Equipe:** código em `fases/fase-01-refatoracao/src/missao/` e sua refatoração; documentação específica da equipe e melhoria da Fase 8.
+- **Professor:** Fase 0 importada, referência de estudo e futuras importações das Fases 2 a 7 do [repositório do Prof. Marcelo Bezerra](https://github.com/marcelobezerra-dotcom/T200-ProjArqSist/tree/main/missaoMarteUnifor/projetoExtensaoFinal), com uso autorizado em sala conforme registrado nas instruções do projeto.
 - Cada importação terá commit próprio e aviso de origem no README da fase. Alterações da equipe serão identificadas separadamente.
 
 A base deve ficar fora deste repositório, em `../base-professor/missaoMarteUnifor/projetoExtensaoFinal/`, somente para leitura, sem submódulo. Para preparar a consulta, se o clone ainda não existir:
@@ -131,16 +121,15 @@ git -C ../base-professor rev-parse HEAD
 
 ## Organização e próximos passos
 
-As instruções de trabalho estão em [CLAUDE.md](CLAUDE.md) e [AGENTS.md](AGENTS.md), na raiz. Ambos registram os três tipos de passageiro e o comportamento da Fase 0 aprovado para a Fase 1 da equipe. Cada etapa exige aprovação própria. A próxima é a Etapa 1: diagnóstico documentado, importação da Fase 0 e conclusão da Fase 1 da equipe. Não há autorização para executá-la junto com a Etapa 0.
+As instruções de trabalho estão em [CLAUDE.md](CLAUDE.md) e [AGENTS.md](AGENTS.md), na raiz. Ambos registram os três tipos de passageiro e o comportamento da Fase 0 aprovado para a Fase 1 da equipe. Cada etapa exige aprovação própria. A Etapa 1 foi aprovada e implementada. A próxima é a Etapa 2, que exige autorização própria.
 
 Commits seguem `tipo(escopo): descrição`, em português, com referência à issue quando identificada. A issue de organização ainda não foi informada. Não fazer push sem solicitação da equipe.
 
-### Conferência da Etapa 0 nesta sessão (12/11/2026)
+### Validação local da Etapa 1 (12/11/2026)
 
-- Repositório Git novo em `main`, ainda sem commits. Não foi necessário reinicializá-lo.
-- `.gitignore` conferido com `git check-ignore` para saídas de compilação, caches, dados locais, Android e IntelliJ.
-- JDK Temurin 17.0.21 instalado e selecionado com `JAVA_HOME` e `PATH` nos comandos desta validação; `java -version` e `javac -version` confirmaram 17.0.21. O shell inicia com Java 26.0.1, portanto a seleção explícita continua necessária.
-- Base externa conferida em `../base-professor/missaoMarteUnifor/projetoExtensaoFinal/`, revisão `4b43e59eacfa57798d55b68c5d018015c804193e`, sem alterações locais. Nenhum arquivo da base foi importado ou editado.
-- Os 22 fontes Java compilaram com `javac --release 17 -encoding UTF-8 -d out`. `java -cp out missao.app.Main` terminou com código 0, sem saída, pois o `Main` ainda está vazio. Isso não comprova uma partida funcional.
-- Não há suíte de testes automatizados nesta versão. Nenhum fonte Java foi alterado e a Etapa 1 não foi iniciada.
-- O registro dos commits continua impedido pela restrição de escrita da sessão em `.git/index.lock`. A organização está preparada, mas o aceite de commits e `git status` limpo permanece pendente.
+- JDK Temurin 17.0.21 selecionado explicitamente por JAVA_HOME e PATH.
+- Compilação das duas fases e execução de seis grupos de testes da Fase 1.
+- Comparação com a Fase 0: 150 cenários e 3000 turnos de inimigos idênticos.
+- Fontes importados da Fase 0 comparados com a base, sem alterações.
+- Base externa na revisão `4b43e59eacfa57798d55b68c5d018015c804193e`, mantida somente para leitura.
+- Git ainda não permite criar branch, index ou commits nesta sessão. `6330869` permanece como base da Etapa 0; as alterações da Etapa 1 aguardam registro. Nenhum push foi feito.
