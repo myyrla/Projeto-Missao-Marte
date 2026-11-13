@@ -10,7 +10,7 @@ O projeto evolui um jogo Java de console para um jogo libGDX desktop e Android, 
 
 A Etapa 0 foi registrada no commit `6330869`. A Etapa 1 implementa o console da equipe em `fases/fase-01-refatoracao/` e preserva a Fase 0 em `fases/fase-00-original/`. Veja o [diagnóstico](docs/diagnostico.md), as [decisões](docs/adr/ADR-001-trilha-de-evolucao.md) e o [tutorial](fases/fase-01-refatoracao/docs/fase-01-tutorial.md).
 
-A implementação da Etapa 1 está validada localmente; branch e commits estão pendentes pela restrição de escrita da sessão em `.git`. A Etapa 2 não foi iniciada.
+A Etapa 1 está registrada nos commits `36af8b6` e `8842ac4`, presentes em `main` e na referência local `origin/main`. A Etapa 2 foi aprovada: as Fases 2 a 7 foram importadas, com documentação de origem e comandos para macOS. Os nove builds tentados pararam no download do Gradle por falha de DNS (`services.gradle.org`), antes da compilação e dos testes. Os commits da Etapa 2 estão pendentes pela restrição de escrita em `.git` nesta sessão. Consulte a [validação da Etapa 2](docs/validacao-etapa-02.md).
 
 ## Comportamento de referência para a Fase 1
 
@@ -28,25 +28,25 @@ Esses valores foram aplicados à Fase 1. Mapas pequenos demais para a dificuldad
 
 ## Índice das fases
 
-Fases 0 e 1 estão disponíveis. Fases 2 a 8 são destinos planejados.
+Fases 0 a 7 estão disponíveis. A Fase 8 permanece planejada e não foi iniciada. Nas Fases 2 a 7, compilação e testes ainda dependem da resolução do bloqueio de download.
 
-| Fase | Pasta prevista | Situação | Origem |
+| Fase | Pasta | Situação | Origem |
 |---|---|---|---|
 | 00: original | `fases/fase-00-original/` | Importada; fontes preservados | Professor: `fase-0-oopuro` |
 | 01: refatoração | `fases/fase-01-refatoracao/` | Console implementado; seis grupos de testes | Equipe |
-| 02: Gradle | `fases/fase-02-gradle/` | Prevista na Etapa 2 | Base do professor |
-| 03: libGDX | `fases/fase-03-libgdx/` | Prevista na Etapa 2 | Base do professor |
-| 04: interface gráfica | `fases/fase-04-interface-grafica/` | Prevista na Etapa 2 | Base do professor |
-| 05: servidor e ranking | `fases/fase-05-servidor-ranking/` | Prevista na Etapa 2 | Base do professor |
-| 06: Android | `fases/fase-06-android/` | Prevista na Etapa 2 | Base do professor |
-| 07: evolução livre | `fases/fase-07-evolucao-livre/` | Prevista na Etapa 2 | Base do professor |
+| 02: Gradle | `fases/fase-02-gradle/` | Importada; build bloqueado no download | Base do professor |
+| 03: libGDX | `fases/fase-03-libgdx/` | Importada; build bloqueado no download | Base do professor |
+| 04: interface gráfica | `fases/fase-04-interface-grafica/` | Importada; build bloqueado no download | Base do professor |
+| 05: servidor e ranking | `fases/fase-05-servidor-ranking/` | Importada; build bloqueado no download | Base do professor |
+| 06: Android | `fases/fase-06-android/` | Importada; build bloqueado no download | Base do professor |
+| 07: evolução livre | `fases/fase-07-evolucao-livre/` | Importada; build bloqueado no download | Base do professor |
 | 08: Campanha dos Fundadores | `fases/fase-08-campanha-fundadores/` | Prevista na Etapa 3 | Equipe, a partir da Fase 7 |
 
 ## Ambiente
 
 - JDK **17** para compilar e executar.
 - macOS e IntelliJ IDEA usados pela equipe.
-- Gradle: usar o Wrapper de cada fase quando importada, sem trocar versões.
+- Gradle: usar o Wrapper de cada fase, sem trocar versões.
 - Android SDK: opcional; sua ausência deve ser registrada ao validar o módulo Android.
 
 Confira e selecione o JDK no terminal:
@@ -88,11 +88,11 @@ java -cp out missao.app.Main
 
 Os testes usam Java puro e incluem domínio, fábrica, motor, ranking, persistência e console. Execute o jogo dentro da pasta de cada fase para manter seus rankings separados.
 
-### Fases 2 a 8, após importação ou implementação
+### Fases 2 a 7 importadas
 
-Os comandos abaixo são referências para validação futura. Antes de executá-los, conferir módulos e tarefas no Wrapper da fase importada. Nenhum build dessas fases foi executado neste repositório.
+Os nove projetos Gradle receberam a tentativa de `./gradlew clean build --console=plain --no-daemon` com JDK 17. Todos retornaram código 1 ao baixar o Wrapper, sem executar tarefas ou testes. Os comandos abaixo permitem retomar a validação em um ambiente com acesso às distribuições e dependências. Execute cada um no diretório indicado. Cliente e servidor são builds independentes.
 
-| Fase | Diretório de execução | Build e testes previstos | Execução prevista |
+| Fase | Diretório de execução | Build e testes | Execução |
 |---|---|---|---|
 | 02 | `fases/fase-02-gradle` | `./gradlew build` e `./gradlew test` | `./gradlew run` |
 | 03 | `fases/fase-03-libgdx` | `./gradlew build` e `./gradlew test` | `./gradlew :lwjgl3:run` |
@@ -100,17 +100,19 @@ Os comandos abaixo são referências para validação futura. Antes de executá-
 | 05 | `fases/fase-05-servidor-ranking/cliente` e `servidor` | `./gradlew build` e `./gradlew test`, em cada subprojeto | Cliente: `./gradlew :lwjgl3:run`; servidor: `./gradlew bootRun` |
 | 06 | `fases/fase-06-android/cliente` e `servidor` | `./gradlew build` e `./gradlew test`, em cada subprojeto | Cliente: `./gradlew :lwjgl3:run`; servidor: `./gradlew bootRun` |
 | 07 | `fases/fase-07-evolucao-livre/cliente` e `servidor` | `./gradlew build` e `./gradlew test`, em cada subprojeto | Cliente: `./gradlew :lwjgl3:run`; servidor: `./gradlew bootRun` |
-| 08 | `fases/fase-08-campanha-fundadores/cliente` e `servidor` | `./gradlew build` e `./gradlew test`, em cada subprojeto | Cliente: `./gradlew :lwjgl3:run`; servidor: `./gradlew bootRun` |
 
-Se necessário, torne o Wrapper executável com `chmod +x gradlew`. Nas fases Android, o APK de debug será gerado por `./gradlew :android:assembleDebug`, no cliente, com o SDK configurado. No macOS, verificar o tratamento de `-XstartOnFirstThread` pelo launcher LWJGL3.
+Os nove scripts `gradlew` importados estão executáveis. Os cinco módulos `lwjgl3` já configuram `-XstartOnFirstThread` no macOS; nenhuma alteração de build foi necessária. Nas Fases 6 e 7, use `./gradlew :android:assembleDebug` no cliente somente com Android SDK configurado. Não foi encontrado SDK configurado nesta sessão e nenhum APK foi gerado. A janela desktop e a API também não foram executadas, pois dependem do build.
+
+As fases importadas preservam as regras do professor: embarque com `e` no console ou `E` no modo clássico e ranking Top 10. A Fase 7 também tem modo dinâmico com embarque automático. Esses comportamentos diferem do `c` e Top 5 da Fase 1 da equipe; a importação não altera nenhuma das duas trilhas.
 
 O servidor usa as variáveis de ambiente `MISSAOMARTE_JWT_SEGREDO` e `MISSAOMARTE_DADOS`. A configuração detalhada deve seguir o README da fase importada; nunca versionar segredos ou dados locais.
 
 ## Origem do código
 
-- **Equipe:** código em `fases/fase-01-refatoracao/src/missao/` e sua refatoração; documentação específica da equipe e melhoria da Fase 8.
-- **Professor:** Fase 0 importada, referência de estudo e futuras importações das Fases 2 a 7 do [repositório do Prof. Marcelo Bezerra](https://github.com/marcelobezerra-dotcom/T200-ProjArqSist/tree/main/missaoMarteUnifor/projetoExtensaoFinal), com uso autorizado em sala conforme registrado nas instruções do projeto.
-- Cada importação terá commit próprio e aviso de origem no README da fase. Alterações da equipe serão identificadas separadamente.
+- **Equipe:** código em `fases/fase-01-refatoracao/src/missao/` e sua refatoração; documentação específica da equipe. A melhoria da Fase 8 está planejada.
+- **Professor:** Fase 0 e Fases 2 a 7 importadas do [repositório do Prof. Marcelo Bezerra](https://github.com/marcelobezerra-dotcom/T200-ProjArqSist/tree/main/missaoMarteUnifor/projetoExtensaoFinal), com uso autorizado em sala conforme registrado nas instruções do projeto.
+- Fases 2 a 7 copiadas da revisão `4b43e59eacfa57798d55b68c5d018015c804193e`, de `exercicio10/fases/`. Cada README contém o aviso de origem e a lista de adaptações da equipe. Fontes, assets, testes e configurações de build foram preservados.
+- Os commits de importação por fase e os commits separados de adaptação estão previstos no [registro da Etapa 2](docs/validacao-etapa-02.md#commits-pendentes). Eles não puderam ser criados nesta sessão.
 
 A base deve ficar fora deste repositório, em `../base-professor/missaoMarteUnifor/projetoExtensaoFinal/`, somente para leitura, sem submódulo. Para preparar a consulta, se o clone ainda não existir:
 
@@ -121,7 +123,7 @@ git -C ../base-professor rev-parse HEAD
 
 ## Organização e próximos passos
 
-As instruções de trabalho estão em [CLAUDE.md](CLAUDE.md) e [AGENTS.md](AGENTS.md), na raiz. Ambos registram os três tipos de passageiro e o comportamento da Fase 0 aprovado para a Fase 1 da equipe. Cada etapa exige aprovação própria. A Etapa 1 foi aprovada e implementada. A próxima é a Etapa 2, que exige autorização própria.
+As instruções de trabalho estão em [CLAUDE.md](CLAUDE.md) e [AGENTS.md](AGENTS.md), na raiz. Ambos registram os três tipos de passageiro e o comportamento da Fase 0 aprovado para a Fase 1 da equipe. Cada etapa exige aprovação própria. As Etapas 1 e 2 foram aprovadas; a Etapa 1 foi registrada no Git e a Etapa 2 está importada, com os bloqueios de validação e de commits documentados. A Etapa 3 exige autorização própria.
 
 Commits seguem `tipo(escopo): descrição`, em português, com referência à issue quando identificada. A issue de organização ainda não foi informada. Não fazer push sem solicitação da equipe.
 
@@ -132,4 +134,4 @@ Commits seguem `tipo(escopo): descrição`, em português, com referência à is
 - Comparação com a Fase 0: 150 cenários e 3000 turnos de inimigos idênticos.
 - Fontes importados da Fase 0 comparados com a base, sem alterações.
 - Base externa na revisão `4b43e59eacfa57798d55b68c5d018015c804193e`, mantida somente para leitura.
-- Git ainda não permite criar branch, index ou commits nesta sessão. `6330869` permanece como base da Etapa 0; as alterações da Etapa 1 aguardam registro. Nenhum push foi feito.
+- Registro posterior da equipe: `36af8b6` (código) e `8842ac4` (documentação), confirmados no histórico local e na referência local `origin/main` antes da Etapa 2.
