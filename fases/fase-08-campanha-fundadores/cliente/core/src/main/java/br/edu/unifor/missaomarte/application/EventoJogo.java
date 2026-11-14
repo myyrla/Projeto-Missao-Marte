@@ -12,5 +12,7 @@ public enum EventoJogo {
     VITORIA,
     DERROTA,
     TIRO,
-    PERIGO_DESTRUIDO
+    PERIGO_DESTRUIDO,
+    NAMI_ATIVADA,
+    ROVER_UTILIZADO
 }

@@ -16,6 +16,8 @@ public class Missao {
     private final List<Passageiro> passageiros;
     private final List<Asteroide> asteroides;
     private final List<Inimigo> inimigos;
+    private final List<EstacaoNami> estacoesNami;
+    private final List<ParadaDoRover> paradasDoRover;
 
     public Missao(Nave nave) {
         this.base = new Base(0, 0);
@@ -23,6 +25,8 @@ public class Missao {
         this.passageiros = new ArrayList<>();
         this.asteroides = new ArrayList<>();
         this.inimigos = new ArrayList<>();
+        this.estacoesNami = new ArrayList<>();
+        this.paradasDoRover = new ArrayList<>();
     }
 
     public Base getBase() {
@@ -45,6 +49,14 @@ public class Missao {
         return Collections.unmodifiableList(inimigos);
     }
 
+    public List<EstacaoNami> getEstacoesNami() {
+        return Collections.unmodifiableList(estacoesNami);
+    }
+
+    public List<ParadaDoRover> getParadasDoRover() {
+        return Collections.unmodifiableList(paradasDoRover);
+    }
+
     public void adicionarPassageiro(Passageiro passageiro) {
         passageiros.add(passageiro);
     }
@@ -55,6 +67,14 @@ public class Missao {
 
     public void adicionarInimigo(Inimigo inimigo) {
         inimigos.add(inimigo);
+    }
+
+    public void adicionarEstacaoNami(EstacaoNami estacao) {
+        estacoesNami.add(estacao);
+    }
+
+    public void adicionarParadaDoRover(ParadaDoRover parada) {
+        paradasDoRover.add(parada);
     }
 
     public Passageiro passageiroNaPosicaoDaNave() {
@@ -68,6 +88,14 @@ public class Missao {
 
     public boolean removerPassageiro(Passageiro passageiro) {
         return passageiros.remove(passageiro);
+    }
+
+    public void substituirPassageiro(Passageiro atual, Passageiro substituto) {
+        int indice = passageiros.indexOf(atual);
+        if (indice < 0) {
+            throw new IllegalArgumentException("O passageiro atual não pertence à missão.");
+        }
+        passageiros.set(indice, substituto);
     }
 
     public boolean houveColisaoComPerigo() {

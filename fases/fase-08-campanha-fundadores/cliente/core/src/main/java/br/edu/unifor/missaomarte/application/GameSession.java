@@ -6,6 +6,7 @@ import br.edu.unifor.missaomarte.domain.Nave;
 import br.edu.unifor.missaomarte.domain.Passageiro;
 import br.edu.unifor.missaomarte.domain.Posicao;
 import br.edu.unifor.missaomarte.domain.ResultadoDoTiro;
+import br.edu.unifor.missaomarte.application.campanha.MecanicasDaPartida;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -29,6 +30,7 @@ public class GameSession {
     private final int max;
     private final Random random;
     private final long inicioMillis;
+    private final MecanicasDaPartida mecanicasDaPartida;
     private long fimMillis = -1;
 
     private final ModoDeJogo modo;
@@ -58,6 +60,11 @@ public class GameSession {
 
     public GameSession(String piloto, Dificuldade dificuldade, Missao missao, int pontuacaoInicial, int min, int max, Random random,
             ModoDeJogo modo) {
+        this(piloto, dificuldade, missao, pontuacaoInicial, min, max, random, modo, MecanicasDaPartida.nenhuma(missao));
+    }
+
+    public GameSession(String piloto, Dificuldade dificuldade, Missao missao, int pontuacaoInicial, int min, int max, Random random,
+            ModoDeJogo modo, MecanicasDaPartida mecanicasDaPartida) {
         this.piloto = piloto;
         this.dificuldade = dificuldade;
         this.missao = missao;
@@ -66,6 +73,7 @@ public class GameSession {
         this.max = max;
         this.random = random;
         this.inicioMillis = System.currentTimeMillis();
+        this.mecanicasDaPartida = mecanicasDaPartida;
         this.totalPassageiros = missao.getPassageiros().size();
         this.resgatados = 0;
         this.estado = EstadoPartida.EM_ANDAMENTO;
@@ -117,6 +125,7 @@ public class GameSession {
             pontuacao -= 1;
             movimentos += 1;
             eventos.add(EventoJogo.MOVIMENTO);
+            eventos.addAll(mecanicasDaPartida.aposMovimentoDaNave());
             processarBase(mensagens, eventos);
         }
 
@@ -365,6 +374,7 @@ public class GameSession {
         }
 
         tempoDeJogo += passo;
+        mecanicasDaPartida.avancar(passo);
         esperaDoTiro = Math.max(0f, esperaDoTiro - passo);
         esperaDaNave = Math.max(0f, esperaDaNave - passo);
 
@@ -402,6 +412,7 @@ public class GameSession {
         if (!missao.getNave().getPosicao().equals(antes)) {
             movimentos += 1;
             eventos.add(EventoJogo.MOVIMENTO);
+            eventos.addAll(mecanicasDaPartida.aposMovimentoDaNave());
         }
         if (missao.passageiroNaPosicaoDaNave() != null && !missao.getNave().estaCheia()) {
             embarcarPassageiro(mensagens, eventos);
@@ -454,5 +465,9 @@ public class GameSession {
         verificarPontuacao(mensagens);
         concluirPasso(eventos);
         return new ResultadoTurno(estado, mensagens, eventos);
+    }
+
+    public boolean estaVisivel(Posicao alvo) {
+        return mecanicasDaPartida.estaVisivel(alvo);
     }
 }

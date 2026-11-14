@@ -12,6 +12,7 @@ import java.util.List;
 public class Nave implements ObjetoRenderizavel {
     private Posicao posicao;
     private int vidas;
+    private final int vidasMaximas;
     private final int capacidade;
     private final List<Passageiro> passageiros;
     private int municao;
@@ -19,6 +20,7 @@ public class Nave implements ObjetoRenderizavel {
     public Nave(int x, int y, int vidas, int capacidade) {
         this.posicao = new Posicao(x, y);
         this.vidas = vidas;
+        this.vidasMaximas = vidas;
         this.capacidade = capacidade;
         this.passageiros = new ArrayList<>();
     }
@@ -72,6 +74,21 @@ public class Nave implements ObjetoRenderizavel {
 
     public void perderVida() {
         vidas -= 1;
+    }
+
+    public boolean recuperarVida() {
+        if (vidas >= vidasMaximas) {
+            return false;
+        }
+        vidas += 1;
+        return true;
+    }
+
+    public void moverPara(Posicao destino) {
+        if (destino == null) {
+            throw new IllegalArgumentException("A posição de destino é obrigatória.");
+        }
+        posicao = destino;
     }
 
     public int getMunicao() {

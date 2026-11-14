@@ -10,6 +10,15 @@ import br.edu.unifor.missaomarte.domain.MovimentoPerseguidor;
 import br.edu.unifor.missaomarte.domain.Nave;
 import br.edu.unifor.missaomarte.domain.Passageiro;
 import br.edu.unifor.missaomarte.domain.Professor;
+import br.edu.unifor.missaomarte.domain.EstacaoNami;
+import br.edu.unifor.missaomarte.domain.ParadaDoRover;
+import br.edu.unifor.missaomarte.domain.Posicao;
+import br.edu.unifor.missaomarte.application.campanha.EtapaDaCampanha;
+import br.edu.unifor.missaomarte.application.campanha.Fundador;
+import br.edu.unifor.missaomarte.application.campanha.MecanicasDaPartida;
+import br.edu.unifor.missaomarte.application.campanha.PreparacaoDaEtapa;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
@@ -30,6 +39,13 @@ public class MissaoFactory {
     }
 
     public Missao criarMissao(Dificuldade dificuldade, int min, int max, Random random, ModoDeJogo modo) {
+        int quantidadeDePerseguidores = modo == ModoDeJogo.DINAMICO
+                ? RegrasDeTempoReal.obter(dificuldade).getQuantidadeDePerseguidores() : 0;
+        return criarMissao(dificuldade, min, max, random, modo, quantidadeDePerseguidores);
+    }
+
+    private Missao criarMissao(Dificuldade dificuldade, int min, int max, Random random,
+                               ModoDeJogo modo, int quantidadeDePerseguidores) {
         ConfiguracaoDificuldade cfg = RegrasDificuldade.obter(dificuldade);
         Nave nave = new Nave(0, 0, 3, cfg.getQuantidadePassageiros());
         Missao missao = new Missao(nave);
@@ -59,7 +75,7 @@ public class MissaoFactory {
             ConfiguracaoDeTempoReal tempoReal = RegrasDeTempoReal.obter(dificuldade);
             nave.carregar(tempoReal.getMunicaoInicial());
             reservarAreaDaNave(ocupadas);
-            for (int i = 0; i < tempoReal.getQuantidadeDePerseguidores(); i++) {
+            for (int i = 0; i < quantidadeDePerseguidores; i++) {
                 int[] pos = novaPosicaoLivre(min, max, random, ocupadas);
                 missao.adicionarInimigo(new Inimigo(pos[0], pos[1], MovimentoPerseguidor.INSTANCIA));
                 ocupadas.add(chave(pos[0], pos[1]));
@@ -80,6 +96,94 @@ public class MissaoFactory {
 
     public int pontuacaoInicial(Dificuldade dificuldade) {
         return RegrasDificuldade.obter(dificuldade).getPontuacaoInicial();
+    }
+
+    public PreparacaoDaEtapa criarEtapaDaCampanha(EtapaDaCampanha etapa, int min, int max, Random random) {
+        Missao missao = criarMissao(etapa.dificuldade(), min, max, random, etapa.modo(),
+                etapa.mecanicas().perseguidores());
+        garantirFundador(missao, etapa.fundador());
+
+        Set<String> ocupadas = posicoesOcupadas(missao);
+        if (etapa.mecanicas().temEstacaoNami()) {
+            Posicao posicao = novaPosicaoEspecial(min, max, random, ocupadas, missao);
+            missao.adicionarEstacaoNami(new EstacaoNami(posicao.getX(), posicao.getY()));
+            ocupadas.add(chave(posicao.getX(), posicao.getY()));
+        }
+        for (int par = 0; par < etapa.mecanicas().paresDoRover(); par++) {
+            Posicao primeira = novaPosicaoEspecial(min, max, random, ocupadas, missao);
+            ocupadas.add(chave(primeira.getX(), primeira.getY()));
+            Posicao segunda = novaPosicaoEspecial(min, max, random, ocupadas, missao);
+            ocupadas.add(chave(segunda.getX(), segunda.getY()));
+            String identificador = String.valueOf((char) ('A' + par));
+            missao.adicionarParadaDoRover(new ParadaDoRover(identificador, primeira, segunda));
+            missao.adicionarParadaDoRover(new ParadaDoRover(identificador, segunda, primeira));
+        }
+        MecanicasDaPartida mecanicas = MecanicasDaPartida.para(missao, etapa.mecanicas().temTempestade());
+        return new PreparacaoDaEtapa(missao, mecanicas);
+    }
+
+    private void garantirFundador(Missao missao, Fundador fundador) {
+        Passageiro atual = missao.getPassageiros().get(0);
+        Posicao posicao = atual.getPosicao();
+        Passageiro substituto;
+        switch (fundador) {
+            case ASTRONAUTA:
+                substituto = new Astronauta("Fundador Astronauta", posicao.getX(), posicao.getY());
+                break;
+            case PROFESSOR:
+                substituto = new Professor("Fundador Professor", posicao.getX(), posicao.getY());
+                break;
+            default:
+                substituto = new Engenheiro("Fundador Engenheiro", posicao.getX(), posicao.getY());
+                break;
+        }
+        missao.substituirPassageiro(atual, substituto);
+    }
+
+    private Set<String> posicoesOcupadas(Missao missao) {
+        Set<String> ocupadas = new HashSet<>();
+        ocupadas.add(chave(0, 0));
+        missao.getPassageiros().forEach(p -> ocupadas.add(chave(p.getX(), p.getY())));
+        missao.getAsteroides().forEach(a -> ocupadas.add(chave(a.getPosicao().getX(), a.getPosicao().getY())));
+        missao.getInimigos().forEach(i -> ocupadas.add(chave(i.getPosicao().getX(), i.getPosicao().getY())));
+        return ocupadas;
+    }
+
+    private Posicao novaPosicaoEspecial(int min, int max, Random random, Set<String> ocupadas, Missao missao) {
+        int tentativasMaximas = (max - min + 1) * (max - min + 1) * 4;
+        for (int tentativa = 0; tentativa < tentativasMaximas; tentativa++) {
+            Posicao candidata = new Posicao(random.nextInt(max - min + 1) + min, random.nextInt(max - min + 1) + min);
+            if (!ocupadas.contains(chave(candidata.getX(), candidata.getY()))
+                    && estaAlcancavel(candidata, missao, min, max)) {
+                return candidata;
+            }
+        }
+        throw new IllegalStateException("Não foi possível posicionar uma mecânica alcançável.");
+    }
+
+    private boolean estaAlcancavel(Posicao destino, Missao missao, int min, int max) {
+        Set<Posicao> bloqueadas = new HashSet<>();
+        missao.getAsteroides().forEach(a -> bloqueadas.add(a.getPosicao()));
+        missao.getInimigos().forEach(i -> bloqueadas.add(i.getPosicao()));
+        Deque<Posicao> fila = new ArrayDeque<>();
+        Set<Posicao> visitadas = new HashSet<>();
+        Posicao base = new Posicao(0, 0);
+        fila.add(base);
+        visitadas.add(base);
+        int[][] direcoes = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        while (!fila.isEmpty()) {
+            Posicao atual = fila.removeFirst();
+            if (atual.equals(destino)) {
+                return true;
+            }
+            for (int[] direcao : direcoes) {
+                Posicao proxima = atual.mover(direcao[0], direcao[1], min, max);
+                if (!bloqueadas.contains(proxima) && visitadas.add(proxima)) {
+                    fila.addLast(proxima);
+                }
+            }
+        }
+        return false;
     }
 
     private Passageiro criarPassageiroAleatorio(int indice, int x, int y, Random random) {
