@@ -2,6 +2,9 @@ package br.edu.unifor.missaomarte.lwjgl3;
 
 import br.edu.unifor.missaomarte.application.MissaoFactory;
 import br.edu.unifor.missaomarte.application.RankingService;
+import br.edu.unifor.missaomarte.application.campanha.InicializadorDaCampanha;
+import br.edu.unifor.missaomarte.application.campanha.PreparacaoInicialDaCampanha;
+import br.edu.unifor.missaomarte.application.campanha.RepositorioDeProgressoEmTexto;
 import br.edu.unifor.missaomarte.application.servidor.ConfiguracaoDoServidor;
 import br.edu.unifor.missaomarte.application.servidor.ConfiguracaoInvalidaException;
 import br.edu.unifor.missaomarte.application.servidor.EnderecoDoServidor;
@@ -20,7 +23,8 @@ import java.util.Random;
  * Composition root do desktop: monta as dependencias, configura a janela e inicia o jogo.
  * <p>Padrao: Injecao de Dependencia manual (como o antigo Main). Nao contem regra de jogo.
  * <p>Propriedades: missaomarte.semente (cenario repetivel), missaomarte.servidor (endereco padrao do servidor; o que o jogador
- * salvar na tela Servidor vale mais), missaomarte.semaudio e missaomarte.toque (mouse no lugar do dedo, com botoes virtuais).
+ * salvar na tela Servidor vale mais), missaomarte.semaudio, missaomarte.toque (mouse no lugar do dedo, com botoes virtuais)
+ * e missaomarte.campanha.etapa (abre o campus diretamente numa etapa de demonstracao, de 1 a 3).
  */
 public class Lwjgl3Launcher {
     public static void main(String[] args) {
@@ -37,8 +41,11 @@ public class Lwjgl3Launcher {
             System.exit(1);
             return;
         }
+        PreferenciasComoArmazem armazem = new PreferenciasComoArmazem("missaomarte");
         EnderecoDoServidor endereco = new EnderecoDoServidor(
-                new RepositorioDeConfiguracaoDoServidor(new PreferenciasComoArmazem("missaomarte")), padrao);
+                new RepositorioDeConfiguracaoDoServidor(armazem), padrao);
+        PreparacaoInicialDaCampanha inicioDaCampanha = InicializadorDaCampanha.preparar(
+                System.getProperty("missaomarte.campanha.etapa"), new RepositorioDeProgressoEmTexto(armazem));
 
         // -Dmissaomarte.toque=true liga o modo toque no desktop: o mouse faz o papel do dedo.
         boolean toque = Boolean.getBoolean("missaomarte.toque");
@@ -49,7 +56,8 @@ public class Lwjgl3Launcher {
                 new ServidorHttp(endereco),
                 endereco,
                 new Plataforma(toque, false),
-                random);
+                random,
+                inicioDaCampanha);
 
         Lwjgl3ApplicationConfiguration configuracao = new Lwjgl3ApplicationConfiguration();
         configuracao.setTitle("Missao Marte");

@@ -12,14 +12,13 @@ import com.badlogic.gdx.graphics.g2d.Animation.PlayMode;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 /**
- * Menu principal. Convidado: 1 Jogar, 2 Ver ranking local, 3 Limpar ranking local, 4 Entrar, 5 Sair, 6 Servidor.
- * Logado: 1 Jogar, 2 Ver ranking global, 3 Meu histórico, 4 Sair da conta, 5 Sair, 6 Servidor.
+ * Menu principal. Partida rapida e Campanha sao fluxos independentes; as demais opcoes variam conforme a sessao.
  * <p>No modo toque cada opção vira um botão (o toque chama a mesma ação da tecla). A tecla Voltar do Android sai do jogo.
  * <p>GRASP: Controller de interface (traduz tecla e toque em navegacao). SOLID: SRP (so o menu).
  */
 public class MenuScreen extends TelaBase {
     private static final Color DESTAQUE = new Color(1f, 0.85f, 0.3f, 1f);
-    private static final int OPCOES = 6;
+    private static final int OPCOES = 7;
     private static final float ESPACO_PADRAO = 40f;
 
     private final Animation<TextureRegion> propulsor;
@@ -95,7 +94,7 @@ public class MenuScreen extends TelaBase {
         return false;
     }
 
-    /** Executa a opcao do menu (1 a 6); devolve false para numeros sem opcao. */
+    /** Executa a opcao do menu (1 a 7); devolve false para numeros sem opcao. */
     private boolean executar(int opcao) {
         switch (opcao) {
             case 1:
@@ -104,9 +103,13 @@ public class MenuScreen extends TelaBase {
                 return true;
             case 2:
                 jogo.sons().tocar(Som.SELECIONAR);
-                jogo.setScreen(new RankingScreen(jogo, null, false));
+                jogo.setScreen(new CampusScreen(jogo));
                 return true;
             case 3:
+                jogo.sons().tocar(Som.SELECIONAR);
+                jogo.setScreen(new RankingScreen(jogo, null, false));
+                return true;
+            case 4:
                 jogo.sons().tocar(Som.SELECIONAR);
                 if (logado()) {
                     jogo.setScreen(new HistoricoScreen(jogo));
@@ -115,7 +118,7 @@ public class MenuScreen extends TelaBase {
                     mensagem = "Ranking local limpo.";
                 }
                 return true;
-            case 4:
+            case 5:
                 jogo.sons().tocar(Som.SELECIONAR);
                 if (logado()) {
                     jogo.sair();
@@ -124,10 +127,10 @@ public class MenuScreen extends TelaBase {
                     jogo.setScreen(new LoginScreen(jogo));
                 }
                 return true;
-            case 5:
+            case 6:
                 Gdx.app.exit();
                 return true;
-            case 6:
+            case 7:
                 jogo.sons().tocar(Som.SELECIONAR);
                 jogo.setScreen(new ConfigServidorScreen(jogo, () -> new MenuScreen(jogo)));
                 return true;
@@ -155,12 +158,13 @@ public class MenuScreen extends TelaBase {
         escala(1.5f);
         cor(Color.WHITE);
         boolean logado = logado();
-        texto("1) Jogar", 280f, textoY(1));
-        texto(logado ? "2) Ver ranking global" : "2) Ver ranking local", 280f, textoY(2));
-        texto(logado ? "3) Meu histórico" : "3) Limpar ranking local", 280f, textoY(3));
-        texto(logado ? "4) Sair da conta" : "4) Entrar ou criar conta", 280f, textoY(4));
-        texto("5) Sair", 280f, textoY(5));
-        texto("6) Servidor", 280f, textoY(6));
+        texto("1) Partida rápida", 280f, textoY(1));
+        texto("2) Campanha", 280f, textoY(2));
+        texto(logado ? "3) Ver ranking global" : "3) Ver ranking local", 280f, textoY(3));
+        texto(logado ? "4) Meu histórico" : "4) Limpar ranking local", 280f, textoY(4));
+        texto(logado ? "5) Sair da conta" : "5) Entrar ou criar conta", 280f, textoY(5));
+        texto("6) Sair", 280f, textoY(6));
+        texto("7) Servidor", 280f, textoY(7));
 
         escala(1f);
         cor(Color.LIGHT_GRAY);

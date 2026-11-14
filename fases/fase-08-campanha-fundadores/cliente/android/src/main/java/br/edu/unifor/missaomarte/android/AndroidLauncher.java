@@ -3,6 +3,9 @@ package br.edu.unifor.missaomarte.android;
 import android.os.Bundle;
 import br.edu.unifor.missaomarte.application.MissaoFactory;
 import br.edu.unifor.missaomarte.application.RankingService;
+import br.edu.unifor.missaomarte.application.campanha.InicializadorDaCampanha;
+import br.edu.unifor.missaomarte.application.campanha.PreparacaoInicialDaCampanha;
+import br.edu.unifor.missaomarte.application.campanha.RepositorioDeProgressoEmTexto;
 import br.edu.unifor.missaomarte.application.servidor.ConfiguracaoDoServidor;
 import br.edu.unifor.missaomarte.application.servidor.ConfiguracaoInvalidaException;
 import br.edu.unifor.missaomarte.application.servidor.EnderecoDoServidor;
@@ -33,8 +36,11 @@ public class AndroidLauncher extends AndroidApplication {
         } catch (ConfiguracaoInvalidaException e) {
             padrao = ConfiguracaoDoServidor.PADRAO;
         }
+        PreferenciasComoArmazem armazem = new PreferenciasComoArmazem("missaomarte");
         EnderecoDoServidor endereco = new EnderecoDoServidor(
-                new RepositorioDeConfiguracaoDoServidor(new PreferenciasComoArmazem("missaomarte")), padrao);
+                new RepositorioDeConfiguracaoDoServidor(armazem), padrao);
+        PreparacaoInicialDaCampanha inicioDaCampanha = InicializadorDaCampanha.preparar(
+                null, new RepositorioDeProgressoEmTexto(armazem));
 
         MissaoMarteGame jogo = new MissaoMarteGame(
                 new MissaoFactory(),
@@ -42,7 +48,8 @@ public class AndroidLauncher extends AndroidApplication {
                 new ServidorHttp(endereco),
                 endereco,
                 new Plataforma(true, true),
-                new Random());
+                new Random(),
+                inicioDaCampanha);
 
         AndroidApplicationConfiguration configuracao = new AndroidApplicationConfiguration();
         configuracao.useAccelerometer = false;

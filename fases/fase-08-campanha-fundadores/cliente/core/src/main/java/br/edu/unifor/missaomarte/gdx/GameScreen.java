@@ -6,6 +6,8 @@ import br.edu.unifor.missaomarte.application.EventoJogo;
 import br.edu.unifor.missaomarte.application.GameSession;
 import br.edu.unifor.missaomarte.application.ModoDeJogo;
 import br.edu.unifor.missaomarte.application.ResultadoTurno;
+import br.edu.unifor.missaomarte.application.campanha.Campanha;
+import br.edu.unifor.missaomarte.application.campanha.EtapaDaCampanha;
 import br.edu.unifor.missaomarte.application.servidor.PartidaConcluida;
 import br.edu.unifor.missaomarte.application.servidor.Resposta;
 import br.edu.unifor.missaomarte.domain.Missao;
@@ -62,6 +64,8 @@ public class GameScreen extends TelaBase {
 
     private final GameSession session;
     private final boolean dinamico;
+    private final Campanha campanha;
+    private final EtapaDaCampanha etapaDaCampanha;
     private final PosicoesVisuais posicoes = new PosicoesVisuais(VELOCIDADE_VISUAL);
     private final EfeitosVisuais efeitos = new EfeitosVisuais();
     private final MensagensFlutuantes flutuantes = new MensagensFlutuantes();
@@ -91,11 +95,18 @@ public class GameScreen extends TelaBase {
     private int teclaSegurada = -1;
     private int ponteiroSegurado = -1;
     private int contagemMostrada = -1;
+    private boolean resultadoDaCampanhaRegistrado;
 
     public GameScreen(MissaoMarteGame jogo, GameSession session) {
+        this(jogo, session, null, null);
+    }
+
+    public GameScreen(MissaoMarteGame jogo, GameSession session, Campanha campanha, EtapaDaCampanha etapaDaCampanha) {
         super(jogo);
         this.session = session;
         this.dinamico = session.getModo() == ModoDeJogo.DINAMICO;
+        this.campanha = campanha;
+        this.etapaDaCampanha = etapaDaCampanha;
         Viewport viewport = jogo.viewport();
         this.layout = layoutAtual(viewport);
         this.mapa = geometriaDe(layout);
@@ -346,7 +357,8 @@ public class GameScreen extends TelaBase {
             return;
         }
         boolean vitoria = session.getEstado() == EstadoPartida.VITORIA;
-        botoes.add(new BotaoVirtual("continuar", vitoria ? "Ver ranking" : "Voltar ao menu", x, yBase, largura, altura));
+        String rotulo = emCampanha() ? "Voltar ao campus" : vitoria ? "Ver ranking" : "Voltar ao menu";
+        botoes.add(new BotaoVirtual("continuar", rotulo, x, yBase, largura, altura));
         if (envio == Envio.FALHOU && jogo.sessao() != null) {
             botoes.add(new BotaoVirtual("reenviar", "Tentar de novo", x, yBase - 10f - altura, largura, altura));
         }
@@ -458,10 +470,11 @@ public class GameScreen extends TelaBase {
     }
 
     private void aplicarEstado(EstadoPartida estado) {
+        registrarResultadoDaCampanha(estado);
         if (estado == EstadoPartida.ABORTADA) {
             pararRepeticao();
             session.soltarTudo();
-            jogo.setScreen(new MenuScreen(jogo));
+            jogo.setScreen(emCampanha() ? new CampusScreen(jogo) : new MenuScreen(jogo));
         } else if (estado == EstadoPartida.VITORIA) {
             pararRepeticao();
             session.soltarTudo();
@@ -500,11 +513,25 @@ public class GameScreen extends TelaBase {
     }
 
     private void encerrar() {
-        if (session.getEstado() == EstadoPartida.VITORIA) {
+        if (emCampanha()) {
+            jogo.setScreen(new CampusScreen(jogo));
+        } else if (session.getEstado() == EstadoPartida.VITORIA) {
             jogo.setScreen(new RankingScreen(jogo, session, novoRegistro));
         } else {
             jogo.setScreen(new MenuScreen(jogo));
         }
+    }
+
+    private boolean emCampanha() {
+        return campanha != null && etapaDaCampanha != null;
+    }
+
+    private void registrarResultadoDaCampanha(EstadoPartida estado) {
+        if (!emCampanha() || resultadoDaCampanhaRegistrado || estado == EstadoPartida.EM_ANDAMENTO) {
+            return;
+        }
+        campanha.registrarResultado(etapaDaCampanha.numero(), estado, session.getPontuacao());
+        resultadoDaCampanhaRegistrado = true;
     }
 
     // ---------------------------------------------------------------- desenho
@@ -697,7 +724,9 @@ public class GameScreen extends TelaBase {
         desenharSituacaoDoEnvio(cx, cy);
         cor(Color.WHITE);
         if (!jogo.modoToque()) {
-            textoCentralizado(vitoria ? "Enter para ver o ranking" : "Enter para voltar ao menu", cx, cy - 52f);
+            String instrucao = emCampanha() ? "Enter para voltar ao campus"
+                    : vitoria ? "Enter para ver o ranking" : "Enter para voltar ao menu";
+            textoCentralizado(instrucao, cx, cy - 52f);
         }
         jogo.batch().end();
     }

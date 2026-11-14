@@ -2,6 +2,9 @@ package br.edu.unifor.missaomarte.gdx;
 
 import br.edu.unifor.missaomarte.application.MissaoFactory;
 import br.edu.unifor.missaomarte.application.RankingService;
+import br.edu.unifor.missaomarte.application.campanha.Campanha;
+import br.edu.unifor.missaomarte.application.campanha.InicioDaCampanha;
+import br.edu.unifor.missaomarte.application.campanha.PreparacaoInicialDaCampanha;
 import br.edu.unifor.missaomarte.application.servidor.EnderecoDoServidor;
 import br.edu.unifor.missaomarte.application.servidor.ServidorDoJogo;
 import br.edu.unifor.missaomarte.application.servidor.Sessao;
@@ -47,6 +50,9 @@ public class MissaoMarteGame extends Game {
     private final EnderecoDoServidor endereco;
     private final Plataforma plataforma;
     private final Random random;
+    private final PreparacaoInicialDaCampanha preparacaoInicialDaCampanha;
+    private Campanha campanha;
+    private boolean demonstracaoDaCampanha;
     private Sessao sessao;
 
     private OrthographicCamera camera;
@@ -58,13 +64,15 @@ public class MissaoMarteGame extends Game {
     private GerenciadorDeSom sons;
 
     public MissaoMarteGame(MissaoFactory missaoFactory, RankingService rankingService, ServidorDoJogo servidor,
-            EnderecoDoServidor endereco, Plataforma plataforma, Random random) {
+            EnderecoDoServidor endereco, Plataforma plataforma, Random random,
+            PreparacaoInicialDaCampanha preparacaoInicialDaCampanha) {
         this.missaoFactory = missaoFactory;
         this.rankingService = rankingService;
         this.servidor = servidor;
         this.endereco = endereco;
         this.plataforma = plataforma;
         this.random = random;
+        this.preparacaoInicialDaCampanha = preparacaoInicialDaCampanha;
     }
 
     @Override
@@ -85,7 +93,10 @@ public class MissaoMarteGame extends Game {
         recursos.carregar();
         sons = new GerenciadorDeSom(recursos);
 
-        setScreen(new MenuScreen(this));
+        InicioDaCampanha inicioDaCampanha = preparacaoInicialDaCampanha.iniciar();
+        campanha = inicioDaCampanha.campanha();
+        demonstracaoDaCampanha = inicioDaCampanha.demonstracao();
+        setScreen(inicioDaCampanha.abrirCampusAoIniciar() ? new CampusScreen(this) : new MenuScreen(this));
     }
 
     @Override
@@ -168,6 +179,14 @@ public class MissaoMarteGame extends Game {
 
     Random random() {
         return random;
+    }
+
+    Campanha campanha() {
+        return campanha;
+    }
+
+    boolean demonstracaoDaCampanha() {
+        return demonstracaoDaCampanha;
     }
 
     OrthographicCamera camera() {
