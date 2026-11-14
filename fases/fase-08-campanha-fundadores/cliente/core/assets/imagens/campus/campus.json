@@ -1,0 +1,59 @@
+{
+  "tamanho": [
+    1056,
+    864
+  ],
+  "ordem_de_desenho": [
+    "base",
+    "zonas_de_pouso",
+    "torre_de_comunicacao",
+    "blocos_de_aula",
+    "biblioteca",
+    "prefeitura",
+    "nami",
+    "rede_do_rover",
+    "reitoria"
+  ],
+  "construcoes": {
+    "zonas_de_pouso": {
+      "fundador": "ASTRONAUTA",
+      "planta": "campus/zonas_de_pouso_planta.png",
+      "construido": "campus/zonas_de_pouso_construido.png"
+    },
+    "torre_de_comunicacao": {
+      "fundador": "ASTRONAUTA",
+      "planta": "campus/torre_de_comunicacao_planta.png",
+      "construido": "campus/torre_de_comunicacao_construido.png"
+    },
+    "blocos_de_aula": {
+      "fundador": "PROFESSOR",
+      "planta": "campus/blocos_de_aula_planta.png",
+      "construido": "campus/blocos_de_aula_construido.png"
+    },
+    "biblioteca": {
+      "fundador": "PROFESSOR",
+      "planta": "campus/biblioteca_planta.png",
+      "construido": "campus/biblioteca_construido.png"
+    },
+    "prefeitura": {
+      "fundador": "ENGENHEIRO",
+      "planta": "campus/prefeitura_planta.png",
+      "construido": "campus/prefeitura_construido.png"
+    },
+    "nami": {
+      "fundador": "ENGENHEIRO",
+      "planta": "campus/nami_planta.png",
+      "construido": "campus/nami_construido.png"
+    },
+    "rede_do_rover": {
+      "fundador": "ENGENHEIRO",
+      "planta": "campus/rede_do_rover_planta.png",
+      "construido": "campus/rede_do_rover_construido.png"
+    },
+    "reitoria": {
+      "fundador": "INAUGURACAO",
+      "planta": "campus/reitoria_planta.png",
+      "construido": "campus/reitoria_construido.png"
+    }
+  }
+}

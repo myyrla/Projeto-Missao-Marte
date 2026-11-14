@@ -4,16 +4,14 @@ import br.edu.unifor.missaomarte.application.GameSession;
 import br.edu.unifor.missaomarte.application.MissaoFactory;
 import br.edu.unifor.missaomarte.application.campanha.Campanha;
 import br.edu.unifor.missaomarte.application.campanha.Campus;
-import br.edu.unifor.missaomarte.application.campanha.Construcao;
-import br.edu.unifor.missaomarte.application.campanha.EstadoDaConstrucao;
 import br.edu.unifor.missaomarte.application.campanha.EtapaDaCampanha;
-import br.edu.unifor.missaomarte.application.campanha.Fundador;
 import br.edu.unifor.missaomarte.application.campanha.PreparacaoDaEtapa;
 import br.edu.unifor.missaomarte.gdx.campanha.CampusLayout;
 import br.edu.unifor.missaomarte.gdx.campanha.ControleDoCampus;
 import br.edu.unifor.missaomarte.gdx.campanha.ResumoVisualDaCampanha;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
+import br.edu.unifor.missaomarte.gdx.recursos.CamadaDoCampus;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
@@ -27,8 +25,6 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 public class CampusScreen extends TelaBase {
     private static final Color FUNDO = Color.valueOf("0A0612");
     private static final Color PAINEL = new Color(Color.valueOf("0C0814")).mul(1f, 1f, 1f, 0.82f);
-    private static final Color TERRENO = Color.valueOf("7A2F16");
-    private static final Color AVENIDA = Color.valueOf("3A2630");
     private static final Color CIANO = Color.valueOf("4CC9F0");
     private static final Color AMBAR = Color.valueOf("FFB000");
     private static final Color VERDE = Color.valueOf("9EF01A");
@@ -163,43 +159,23 @@ public class CampusScreen extends TelaBase {
         formas.rect(0f, 0f, MissaoMarteGame.LARGURA, MissaoMarteGame.ALTURA);
         formas.setColor(PAINEL);
         formas.rect(556f, 42f, 224f, 488f);
-        RetanguloDeTela mapa = layout.mapa();
-        formas.setColor(TERRENO);
-        formas.rect(mapa.x(), mapa.y(), mapa.largura(), mapa.altura());
-        formas.setColor(AVENIDA);
-        formas.rect(mapa.x() + 10f, mapa.y() + 10f, mapa.largura() - 20f, 14f);
-        formas.rect(mapa.x() + 10f, mapa.topo() - 24f, mapa.largura() - 20f, 14f);
-        formas.rect(mapa.x() + 10f, mapa.y() + 10f, 14f, mapa.altura() - 20f);
-        formas.rect(mapa.direita() - 24f, mapa.y() + 10f, 14f, mapa.altura() - 20f);
-        formas.rect(164f, 140f, 12f, 340f);
-        formas.rect(348f, 140f, 12f, 340f);
-
-        for (CampusLayout.Decoracao decoracao : layout.decoracoes()) {
-            formas.setColor("Gelo de água".equals(decoracao.rotulo()) ? CIANO.cpy().mul(0.55f)
-                    : SECUNDARIO.cpy().mul(0.35f));
-            retangulo(formas, decoracao.retangulo());
-        }
-        for (CampusLayout.Area area : layout.areas()) {
-            EstadoDaConstrucao estado = campus.estado(area.construcao());
-            if (estado != EstadoDaConstrucao.PLANTA) {
-                Color cor = corDaConstrucao(area.construcao());
-                formas.setColor(cor.r, cor.g, cor.b, estado == EstadoDaConstrucao.INAUGURADA ? 0.95f : 0.78f);
-                retangulo(formas, area.retangulo());
-            }
-        }
         formas.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        RetanguloDeTela mapa = layout.mapa();
+        jogo.batch().begin();
+        jogo.batch().draw(jogo.recursos().texturaDaBaseDoCampus(),
+                mapa.x(), mapa.y(), mapa.largura(), mapa.altura());
+        for (CamadaDoCampus camada : CamadaDoCampus.values()) {
+            jogo.batch().draw(jogo.recursos().textura(camada, campus.estado(camada.construcao())),
+                    mapa.x(), mapa.y(), mapa.largura(), mapa.altura());
+        }
+        jogo.batch().end();
 
         formas.begin(ShapeType.Line);
         formas.setColor(AMBAR);
         formas.rect(mapa.x(), mapa.y(), mapa.largura(), mapa.altura());
-        for (CampusLayout.Area area : layout.areas()) {
-            if (campus.estado(area.construcao()) == EstadoDaConstrucao.PLANTA) {
-                formas.setColor(corDaConstrucao(area.construcao()));
-                tracejar(formas, area.retangulo());
-            }
-        }
         formas.end();
-        Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
     private void desenharTextos(ResumoVisualDaCampanha resumo) {
@@ -210,16 +186,6 @@ public class CampusScreen extends TelaBase {
         escala(0.85f);
         cor(SECUNDARIO);
         texto("Mapa autoral inspirado na disposição do campus de Fortaleza", 34f, 548f);
-
-        escala(0.68f);
-        for (CampusLayout.Area area : layout.areas()) {
-            cor(TEXTO);
-            textoCentralizado(area.rotulo(), area.retangulo().centroX(), area.retangulo().centroY());
-        }
-        for (CampusLayout.Decoracao decoracao : layout.decoracoes()) {
-            cor(SECUNDARIO);
-            textoCentralizado(decoracao.rotulo(), decoracao.retangulo().centroX(), decoracao.retangulo().centroY());
-        }
 
         escala(1.25f);
         cor(TEXTO);
@@ -285,39 +251,7 @@ public class CampusScreen extends TelaBase {
         jogo.batch().end();
     }
 
-    private static Color corDaConstrucao(Construcao construcao) {
-        Fundador fundador = construcao.responsavel();
-        if (fundador == null) {
-            return LILAS;
-        }
-        switch (fundador) {
-            case ASTRONAUTA:
-                return CIANO;
-            case PROFESSOR:
-                return AMBAR;
-            default:
-                return VERDE;
-        }
-    }
-
     private static Color corDaEtapa(int etapa) {
         return etapa == 1 ? CIANO : etapa == 2 ? AMBAR : VERDE;
-    }
-
-    private static void retangulo(ShapeRenderer formas, RetanguloDeTela r) {
-        formas.rect(r.x(), r.y(), r.largura(), r.altura());
-    }
-
-    private static void tracejar(ShapeRenderer formas, RetanguloDeTela r) {
-        float passo = 12f;
-        float traco = 7f;
-        for (float x = r.x(); x < r.direita(); x += passo) {
-            formas.line(x, r.y(), Math.min(x + traco, r.direita()), r.y());
-            formas.line(x, r.topo(), Math.min(x + traco, r.direita()), r.topo());
-        }
-        for (float y = r.y(); y < r.topo(); y += passo) {
-            formas.line(r.x(), y, r.x(), Math.min(y + traco, r.topo()));
-            formas.line(r.direita(), y, r.direita(), Math.min(y + traco, r.topo()));
-        }
     }
 }

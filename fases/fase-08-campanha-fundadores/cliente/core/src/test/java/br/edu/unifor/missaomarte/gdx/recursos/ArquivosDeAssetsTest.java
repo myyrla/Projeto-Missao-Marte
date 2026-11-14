@@ -34,6 +34,15 @@ class ArquivosDeAssetsTest {
     }
 
     @Test
+    void cadaConstrucaoDoCampusPossuiPlantaEImagemConstruida() throws IOException {
+        validarImagemDoCampus(CamadaDoCampus.caminhoDaBase());
+        for (CamadaDoCampus camada : CamadaDoCampus.values()) {
+            validarImagemDoCampus(camada.caminhoPlanta());
+            validarImagemDoCampus(camada.caminhoConstruido());
+        }
+    }
+
+    @Test
     void cadaSomExisteEEUmWavValido() throws IOException, UnsupportedAudioFileException {
         for (Som som : Som.values()) {
             Path arquivo = ASSETS.resolve(som.caminho());
@@ -51,5 +60,15 @@ class ArquivosDeAssetsTest {
 
         assertEquals(1, musicas);
         assertTrue(Som.MUSICA.musica());
+    }
+
+    private static void validarImagemDoCampus(String caminho) throws IOException {
+        File arquivo = ASSETS.resolve(caminho).toFile();
+        assertTrue(arquivo.isFile(), "arquivo ausente: " + caminho);
+
+        BufferedImage pixels = ImageIO.read(arquivo);
+        assertNotNull(pixels, "imagem ilegivel: " + caminho);
+        assertEquals(1056, pixels.getWidth(), "largura de " + caminho);
+        assertEquals(864, pixels.getHeight(), "altura de " + caminho);
     }
 }

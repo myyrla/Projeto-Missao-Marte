@@ -1,5 +1,6 @@
 package br.edu.unifor.missaomarte.gdx.recursos;
 
+import br.edu.unifor.missaomarte.application.campanha.EstadoDaConstrucao;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
@@ -26,6 +27,11 @@ public class Recursos implements Disposable {
         for (Imagem imagem : Imagem.values()) {
             gerenciador.load(imagem.caminho(), Texture.class);
         }
+        gerenciador.load(CamadaDoCampus.caminhoDaBase(), Texture.class);
+        for (CamadaDoCampus camada : CamadaDoCampus.values()) {
+            gerenciador.load(camada.caminhoPlanta(), Texture.class);
+            gerenciador.load(camada.caminhoConstruido(), Texture.class);
+        }
         for (Som som : Som.values()) {
             if (som.musica()) {
                 gerenciador.load(som.caminho(), Music.class);
@@ -41,11 +47,25 @@ public class Recursos implements Disposable {
             TextureRegion[][] grade = TextureRegion.split(textura, imagem.larguraQuadro(), imagem.alturaQuadro());
             quadros.put(imagem, grade[0]);
         }
-        Gdx.app.log("Recursos", Imagem.values().length + " imagens e " + Som.values().length + " sons carregados");
+        configurarFiltroLinear(CamadaDoCampus.caminhoDaBase());
+        for (CamadaDoCampus camada : CamadaDoCampus.values()) {
+            configurarFiltroLinear(camada.caminhoPlanta());
+            configurarFiltroLinear(camada.caminhoConstruido());
+        }
+        int totalDeImagens = Imagem.values().length + 1 + CamadaDoCampus.values().length * 2;
+        Gdx.app.log("Recursos", totalDeImagens + " imagens e " + Som.values().length + " sons carregados");
     }
 
     public Texture textura(Imagem imagem) {
         return gerenciador.get(imagem.caminho(), Texture.class);
+    }
+
+    public Texture texturaDaBaseDoCampus() {
+        return gerenciador.get(CamadaDoCampus.caminhoDaBase(), Texture.class);
+    }
+
+    public Texture textura(CamadaDoCampus camada, EstadoDaConstrucao estado) {
+        return gerenciador.get(camada.caminho(estado), Texture.class);
     }
 
     /** Primeiro quadro da imagem (a imagem inteira quando ela tem um so quadro). */
@@ -69,6 +89,11 @@ public class Recursos implements Disposable {
 
     public Music musica() {
         return gerenciador.get(Som.MUSICA.caminho(), Music.class);
+    }
+
+    private void configurarFiltroLinear(String caminho) {
+        gerenciador.get(caminho, Texture.class)
+                .setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
     }
 
     @Override
