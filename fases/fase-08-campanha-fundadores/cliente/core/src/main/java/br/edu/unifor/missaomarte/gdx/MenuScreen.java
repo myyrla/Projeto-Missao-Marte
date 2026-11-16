@@ -1,6 +1,7 @@
 package br.edu.unifor.missaomarte.gdx;
 
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
+import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
 import com.badlogic.gdx.Gdx;
@@ -151,11 +152,11 @@ public class MenuScreen extends TelaBase {
         jogo.batch().draw(propulsor.getKeyFrame(tempo, true), 560f, 330f + flutuar, 128f, 128f);
         jogo.batch().draw(jogo.recursos().quadro(Imagem.NAVE), 560f, 330f + flutuar, 128f, 128f);
 
-        escala(2.5f);
+        fonte(FonteDoJogo.TITULO);
         cor(DESTAQUE);
         textoCentralizado("MISSÃO MARTE", MissaoMarteGame.LARGURA / 2f, 500f);
 
-        escala(1.5f);
+        fonte(FonteDoJogo.SUBTITULO);
         cor(Color.WHITE);
         boolean logado = logado();
         texto("1) Partida rápida", 280f, textoY(1));
@@ -166,7 +167,7 @@ public class MenuScreen extends TelaBase {
         texto("6) Sair", 280f, textoY(6));
         texto("7) Servidor", 280f, textoY(7));
 
-        escala(1f);
+        fonte(FonteDoJogo.TEXTO);
         cor(Color.LIGHT_GRAY);
         texto(logado ? "Piloto: " + jogo.sessao().getNome() + "   (ranking global)"
                 : "Modo convidado   (ranking local)", 280f, jogo.modoToque() ? 470f : 440f);
@@ -176,6 +177,7 @@ public class MenuScreen extends TelaBase {
         cor(DESTAQUE);
         texto(mensagem, 280f, yRodape - 28f);
 
+        fonte(FonteDoJogo.PEQUENO);
         cor(Color.LIGHT_GRAY);
         textoCentralizado(jogo.modoToque() ? "Toque na opção   |   M: ligar ou desligar o som"
                 : "Pressione o número da opção   |   M: ligar ou desligar o som", MissaoMarteGame.LARGURA / 2f,

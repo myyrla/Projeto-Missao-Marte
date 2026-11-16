@@ -4,6 +4,7 @@ import br.edu.unifor.missaomarte.application.servidor.ConfiguracaoDoServidor;
 import br.edu.unifor.missaomarte.application.servidor.ConfiguracaoInvalidaException;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
 import br.edu.unifor.missaomarte.gdx.plataforma.Plataforma.TipoDeTexto;
+import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
@@ -214,29 +215,33 @@ public class ConfigServidorScreen extends TelaBase {
 
         jogo.batch().begin();
 
-        escala(2f);
+        fonte(FonteDoJogo.TITULO);
         cor(DESTAQUE);
         textoCentralizado("SERVIDOR", MissaoMarteGame.LARGURA / 2f, 520f);
 
-        escala(1.5f);
+        fonte(FonteDoJogo.SUBTITULO);
         cor(Color.WHITE);
         texto((noEndereco ? "> " : "  ") + "Endereço: " + formulario.getEndereco() + (noEndereco ? cursor : ""), 180f, 430f);
         texto((noEndereco ? "  " : "> ") + "Porta:    " + formulario.getPorta() + (noEndereco ? "" : cursor), 180f, 380f);
         texto("   Conexão segura (HTTPS): " + (formulario.isHttps() ? "sim" : "não"), 180f, 330f);
 
-        escala(1f);
+        fonte(FonteDoJogo.TEXTO);
         if (exibirAviso) {
             cor(AVISO);
             textoQuebrado("Atenção: HTTP fora da rede local envia senha e token sem criptografia. Use só para teste e prefira HTTPS.",
                     180f, 286f, 520f);
         }
+        fonte(FonteDoJogo.PEQUENO);
         cor(Color.LIGHT_GRAY);
-        texto("Em uso: " + jogo.endereco().urlBase() + "     Padrão: " + jogo.endereco().padrao().urlBase(), 180f, 238f);
-        texto("Celular: no emulador use 10.0.2.2; com o PC na mesma rede Wi-Fi, o IP do PC.", 180f, 218f);
+        texto(textoLimitado("Em uso: " + jogo.endereco().urlBase()
+                + "   Padrão: " + jogo.endereco().padrao().urlBase(), 520f), 180f, 238f);
+        texto(textoLimitado("Celular: emulador 10.0.2.2; na mesma rede, use o IP do PC.", 520f), 180f, 218f);
 
+        fonte(FonteDoJogo.TEXTO);
         cor(mensagemDeErro ? ERRO : OK);
         texto(mensagem, 180f, 188f);
 
+        fonte(FonteDoJogo.PEQUENO);
         cor(Color.LIGHT_GRAY);
         textoCentralizado("Tab: campo  |  F2: HTTPS  |  F5: testar  |  Enter: salvar  |  F6: padrão  |  Esc: voltar",
                 MissaoMarteGame.LARGURA / 2f, 50f);

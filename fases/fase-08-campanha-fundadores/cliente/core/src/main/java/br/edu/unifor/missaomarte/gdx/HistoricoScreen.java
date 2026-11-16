@@ -3,6 +3,7 @@ package br.edu.unifor.missaomarte.gdx;
 import br.edu.unifor.missaomarte.application.servidor.PartidaRegistrada;
 import br.edu.unifor.missaomarte.application.servidor.Resposta;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
+import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
@@ -101,11 +102,11 @@ public class HistoricoScreen extends TelaBase {
         jogo.batch().begin();
         float y = 560f;
 
-        escala(1.5f);
+        fonte(FonteDoJogo.TITULO);
         cor(DESTAQUE);
-        texto("=== MEU HISTÓRICO ===", 60f, y);
-        y -= 28f;
-        escala(1f);
+        texto("MEU HISTÓRICO", 60f, y);
+        y -= 62f;
+        fonte(FonteDoJogo.TEXTO);
         cor(Color.LIGHT_GRAY);
         texto("Piloto: " + (jogo.sessao() != null ? jogo.sessao().getNome() : "-") + "   (últimas 10 partidas, horário UTC)", 60f, y);
         y -= 40f;
@@ -131,6 +132,7 @@ public class HistoricoScreen extends TelaBase {
             }
         }
 
+        fonte(FonteDoJogo.PEQUENO);
         cor(Color.LIGHT_GRAY);
         textoCentralizado("Enter ou Esc: voltar ao menu", MissaoMarteGame.LARGURA / 2f, 40f);
         jogo.batch().end();

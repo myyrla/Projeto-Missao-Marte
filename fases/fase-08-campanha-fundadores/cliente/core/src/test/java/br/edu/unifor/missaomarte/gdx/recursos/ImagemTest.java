@@ -1,0 +1,23 @@
+package br.edu.unifor.missaomarte.gdx.recursos;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
+
+class ImagemTest {
+    @Test
+    void catalogaOsSpritesNaResolucaoDobrada() {
+        assertEquals(1600, Imagem.FUNDO.larguraQuadro());
+        assertEquals(1200, Imagem.FUNDO.alturaQuadro());
+
+        assertEquals(96, Imagem.TERRENO.larguraQuadro());
+        assertEquals(96, Imagem.TERRENO.alturaQuadro());
+        assertEquals(96, Imagem.EXPLOSAO.larguraQuadro());
+        assertEquals(96, Imagem.EXPLOSAO.alturaQuadro());
+
+        assertEquals(48, Imagem.ICONE_VIDA.larguraQuadro());
+        assertEquals(48, Imagem.ICONE_VIDA.alturaQuadro());
+        assertEquals(48, Imagem.ICONE_VAGA.larguraQuadro());
+        assertEquals(48, Imagem.ICONE_VAGA.alturaQuadro());
+    }
+}

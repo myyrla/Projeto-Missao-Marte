@@ -4,6 +4,7 @@ import br.edu.unifor.missaomarte.application.GameSession;
 import br.edu.unifor.missaomarte.application.ranking.RankingEntry;
 import br.edu.unifor.missaomarte.application.servidor.Resposta;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
+import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
@@ -119,11 +120,11 @@ public class RankingScreen extends TelaBase {
         float y = 560f;
 
         if (resumo != null) {
-            escala(1.5f);
+            fonte(FonteDoJogo.SUBTITULO);
             cor(DESTAQUE);
             texto("PARABÉNS, " + resumo.getPiloto() + "!", 60f, y);
             y -= 34f;
-            escala(1f);
+            fonte(FonteDoJogo.TEXTO);
             cor(Color.WHITE);
             texto("Dificuldade: " + resumo.getDificuldade()
                     + "   Pontuação final: " + resumo.getPontuacao()
@@ -138,12 +139,12 @@ public class RankingScreen extends TelaBase {
             y -= 20f;
         }
 
-        escala(1.5f);
+        fonte(FonteDoJogo.TITULO);
         cor(DESTAQUE);
-        texto(global ? "=== RANKING GLOBAL - TOP 10 ===" : "=== RANKING LOCAL - TOP 10 ===", 60f, y);
-        y -= 40f;
+        texto(global ? "RANKING GLOBAL - TOP 10" : "RANKING LOCAL - TOP 10", 60f, y);
+        y -= 62f;
 
-        escala(1f);
+        fonte(FonteDoJogo.TEXTO);
         cor(Color.WHITE);
         if (estado == Estado.CARREGANDO) {
             cor(Color.LIGHT_GRAY);
@@ -167,6 +168,7 @@ public class RankingScreen extends TelaBase {
             }
         }
 
+        fonte(FonteDoJogo.PEQUENO);
         cor(Color.LIGHT_GRAY);
         textoCentralizado("Enter ou Esc: voltar ao menu", MissaoMarteGame.LARGURA / 2f, 40f);
         jogo.batch().end();

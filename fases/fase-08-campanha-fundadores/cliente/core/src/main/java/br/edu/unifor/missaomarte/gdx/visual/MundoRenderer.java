@@ -125,7 +125,6 @@ public class MundoRenderer {
     }
 
     private void desenharFlutuantes(MensagensFlutuantes flutuantes, float dx, float dy) {
-        fonte.getData().setScale(1.3f);
         for (MensagensFlutuantes.Mensagem mensagem : flutuantes.ativas()) {
             Color base = mensagem.positiva() ? VERDE : VERMELHO;
             fonte.setColor(base.r, base.g, base.b, mensagem.alfa());
@@ -134,6 +133,5 @@ public class MundoRenderer {
                     mapa.yCentro(mensagem.y()) + layout.height / 2f + dy);
         }
         fonte.setColor(Color.WHITE);
-        fonte.getData().setScale(1f);
     }
 }

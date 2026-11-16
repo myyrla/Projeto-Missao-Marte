@@ -12,6 +12,8 @@ import br.edu.unifor.missaomarte.gdx.audio.GerenciadorDeSom;
 import br.edu.unifor.missaomarte.gdx.layout.EscalaDeTela;
 import br.edu.unifor.missaomarte.gdx.layout.MargensSeguras;
 import br.edu.unifor.missaomarte.gdx.plataforma.Plataforma;
+import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
+import br.edu.unifor.missaomarte.gdx.recursos.FontesDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Recursos;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
@@ -59,7 +61,7 @@ public class MissaoMarteGame extends Game {
     private Viewport viewport;
     private SpriteBatch batch;
     private ShapeRenderer shapes;
-    private BitmapFont fonte;
+    private FontesDoJogo fontes;
     private Recursos recursos;
     private GerenciadorDeSom sons;
 
@@ -87,7 +89,8 @@ public class MissaoMarteGame extends Game {
 
         batch = new SpriteBatch();
         shapes = new ShapeRenderer();
-        fonte = new BitmapFont();
+        fontes = new FontesDoJogo();
+        fontes.carregar();
 
         recursos = new Recursos();
         recursos.carregar();
@@ -104,7 +107,7 @@ public class MissaoMarteGame extends Game {
         Gdx.app.log(TAG, "dispose()");
         super.dispose();
         recursos.dispose();
-        fonte.dispose();
+        fontes.dispose();
         shapes.dispose();
         batch.dispose();
     }
@@ -205,8 +208,12 @@ public class MissaoMarteGame extends Game {
         return shapes;
     }
 
-    BitmapFont fonte() {
-        return fonte;
+    BitmapFont fonte(FonteDoJogo tipo) {
+        return fontes.obter(tipo);
+    }
+
+    FontesDoJogo fontes() {
+        return fontes;
     }
 
     Recursos recursos() {

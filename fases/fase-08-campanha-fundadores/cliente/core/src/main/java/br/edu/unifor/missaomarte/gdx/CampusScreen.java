@@ -12,6 +12,7 @@ import br.edu.unifor.missaomarte.gdx.campanha.ResumoVisualDaCampanha;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.recursos.CamadaDoCampus;
+import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
@@ -180,17 +181,17 @@ public class CampusScreen extends TelaBase {
 
     private void desenharTextos(ResumoVisualDaCampanha resumo) {
         jogo.batch().begin();
-        escala(2f);
+        fonte(FonteDoJogo.TITULO);
         cor(AMBAR);
-        texto("CAMPUS UNIFOR MARTE", 32f, 572f);
-        escala(0.85f);
+        texto("CAMPUS UNIFOR MARTE", 32f, 592f);
+        fonte(FonteDoJogo.PEQUENO);
         cor(SECUNDARIO);
-        texto("Mapa autoral inspirado na disposição do campus de Fortaleza", 34f, 548f);
+        texto("Mapa autoral inspirado na disposição do campus de Fortaleza", 34f, 540f);
 
-        escala(1.25f);
+        fonte(FonteDoJogo.SUBTITULO);
         cor(TEXTO);
         texto("Fundadores: " + resumo.fundadoresResgatados() + "/3", 572f, 498f);
-        escala(0.95f);
+        fonte(FonteDoJogo.TEXTO);
         texto("Pontuação: " + resumo.pontuacaoTotal(), 572f, 472f);
         if (jogo.demonstracaoDaCampanha()) {
             cor(LILAS);
@@ -199,22 +200,22 @@ public class CampusScreen extends TelaBase {
 
         float y = 408f;
         for (ResumoVisualDaCampanha.Etapa etapa : resumo.etapas()) {
+            fonte(FonteDoJogo.TEXTO);
             cor(corDaEtapa(etapa.numero()));
             String marcador = etapa.situacao() == ResumoVisualDaCampanha.SituacaoDaEtapa.RESGATADA ? "[OK]"
                     : etapa.situacao() == ResumoVisualDaCampanha.SituacaoDaEtapa.ATUAL ? "[>]" : "[ ]";
             texto(marcador + " Etapa " + etapa.numero(), 572f, y);
-            escala(0.82f);
+            fonte(FonteDoJogo.PEQUENO);
             cor(SECUNDARIO);
             texto(etapa.local(), 588f, y - 20f);
             texto(etapa.fundador(), 588f, y - 38f);
-            escala(0.95f);
             y -= 88f;
         }
 
-        escala(1f);
+        fonte(FonteDoJogo.TEXTO);
         cor(campanha.concluida() ? LILAS : VERDE);
         textoCentralizado(resumo.rotuloDaAcao(), 670f, 155f);
-        escala(0.78f);
+        fonte(FonteDoJogo.PEQUENO);
         cor(SECUNDARIO);
         textoCentralizado(jogo.modoToque() ? "Use os botões abaixo"
                 : "Enter: selecionar   Esc: voltar", 670f, 122f);
@@ -238,16 +239,17 @@ public class CampusScreen extends TelaBase {
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
         jogo.batch().begin();
-        escala(1.55f);
+        fonte(FonteDoJogo.SUBTITULO);
         cor(LILAS);
         textoCentralizado("NOVA CAMPANHA", 400f, 360f);
-        escala(1f);
+        fonte(FonteDoJogo.TEXTO);
         cor(TEXTO);
-        textoCentralizado("Todo o progresso e as pontuações serão apagados.", 400f, 315f);
-        escala(0.9f);
+        textoCentralizado("O progresso e as pontuações", 400f, 320f);
+        textoCentralizado("serão apagados.", 400f, 292f);
+        fonte(FonteDoJogo.PEQUENO);
         cor(SECUNDARIO);
         textoCentralizado(jogo.modoToque() ? "Confirme ou cancele abaixo"
-                : "Enter ou S: confirmar   N ou Esc: cancelar", 400f, 278f);
+                : "Enter ou S: confirmar   N ou Esc: cancelar", 400f, 260f);
         jogo.batch().end();
     }
 

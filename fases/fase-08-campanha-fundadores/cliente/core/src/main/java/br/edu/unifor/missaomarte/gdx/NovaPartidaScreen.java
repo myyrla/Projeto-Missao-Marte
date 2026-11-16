@@ -10,6 +10,7 @@ import br.edu.unifor.missaomarte.domain.Dificuldade;
 import br.edu.unifor.missaomarte.domain.Missao;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
 import br.edu.unifor.missaomarte.gdx.plataforma.Plataforma.TipoDeTexto;
+import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
@@ -182,17 +183,17 @@ public class NovaPartidaScreen extends TelaBase {
 
         jogo.batch().begin();
 
-        escala(2f);
+        fonte(FonteDoJogo.TITULO);
         cor(DESTAQUE);
         textoCentralizado("NOVA PARTIDA", MissaoMarteGame.LARGURA / 2f, 500f);
 
-        escala(1.5f);
+        fonte(FonteDoJogo.SUBTITULO);
         cor(Color.WHITE);
         texto(logado() ? "Piloto: " + jogo.sessao().getNome() : "Nome do piloto: " + nome + cursor, 200f, 410f);
         texto("Dificuldade: < " + dificuldade + " >", 200f, 360f);
         texto("Modo: < " + (modo == ModoDeJogo.DINAMICO ? "Dinâmico" : "Clássico") + " >", 200f, 310f);
 
-        escala(1f);
+        fonte(FonteDoJogo.TEXTO);
         cor(Color.LIGHT_GRAY);
         int perseguidores = modo == ModoDeJogo.DINAMICO ? RegrasDeTempoReal.obter(dificuldade).getQuantidadeDePerseguidores() : 0;
         texto("Passageiros: " + cfg.getQuantidadePassageiros()
@@ -204,6 +205,7 @@ public class NovaPartidaScreen extends TelaBase {
                 ? "Tempo real: segure a direção. Tem tiro."
                 : "Por turnos: o jogo espera a sua jogada.", 200f, 234f);
 
+        fonte(FonteDoJogo.PEQUENO);
         cor(Color.LIGHT_GRAY);
         textoCentralizado(jogo.modoToque()
                 ? (logado() ? "< >: dificuldade e modo   |   Decolar: iniciar"

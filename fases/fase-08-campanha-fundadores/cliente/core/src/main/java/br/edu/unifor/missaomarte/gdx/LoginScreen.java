@@ -4,6 +4,7 @@ import br.edu.unifor.missaomarte.application.servidor.Resposta;
 import br.edu.unifor.missaomarte.application.servidor.Sessao;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
 import br.edu.unifor.missaomarte.gdx.plataforma.Plataforma.TipoDeTexto;
+import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
@@ -196,25 +197,27 @@ public class LoginScreen extends TelaBase {
 
         jogo.batch().begin();
 
-        escala(2f);
+        fonte(FonteDoJogo.TITULO);
         cor(DESTAQUE);
         textoCentralizado(cadastro ? "CRIAR CONTA" : "ENTRAR", MissaoMarteGame.LARGURA / 2f, 500f);
 
-        escala(1.5f);
+        fonte(FonteDoJogo.SUBTITULO);
         cor(Color.WHITE);
         texto((noNome ? "> " : "  ") + "Nome:  " + formulario.getNome() + (noNome && !enviando ? cursor : ""), 180f, 400f);
         texto((noNome ? "  " : "> ") + "Senha: " + formulario.getSenhaMascarada() + (!noNome && !enviando ? cursor : ""), 180f, 350f);
 
-        escala(1f);
+        fonte(FonteDoJogo.PEQUENO);
         cor(Color.LIGHT_GRAY);
-        texto(cadastro ? "Nome: 3 a 20 letras, números, _ ou -.   Senha: 8 a 72 caracteres."
-                : "Ainda não tem conta? Pressione F2 para criar uma.", 180f, 300f);
+        textoQuebrado(cadastro ? "Nome: 3 a 20 letras, números, _ ou -.   Senha: 8 a 72 caracteres."
+                : "Ainda não tem conta? Pressione F2 para criar uma.", 180f, 300f, 440f);
 
+        fonte(FonteDoJogo.TEXTO);
         cor(mensagemDeErro ? ERRO : DESTAQUE);
         texto(mensagem, 180f, 250f);
 
         cor(Color.LIGHT_GRAY);
         texto("Servidor: " + jogo.endereco().urlBase(), 180f, 225f);
+        fonte(FonteDoJogo.PEQUENO);
         textoCentralizado("Tab: campo  |  F2: entrar ou criar  |  F3: servidor  |  Enter: confirmar  |  Esc: voltar",
                 MissaoMarteGame.LARGURA / 2f, 40f);
 

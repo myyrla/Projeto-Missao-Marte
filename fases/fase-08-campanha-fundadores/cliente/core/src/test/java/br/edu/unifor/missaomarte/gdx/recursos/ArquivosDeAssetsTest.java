@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -40,6 +41,26 @@ class ArquivosDeAssetsTest {
             validarImagemDoCampus(camada.caminhoPlanta());
             validarImagemDoCampus(camada.caminhoConstruido());
         }
+    }
+
+    @Test
+    void cadaFontePossuiDescricaoImagemELicenca() throws IOException {
+        Map<FonteDoJogo, String> nomes = Map.of(
+                FonteDoJogo.TITULO, "titulo",
+                FonteDoJogo.SUBTITULO, "subtitulo",
+                FonteDoJogo.TEXTO, "texto",
+                FonteDoJogo.PEQUENO, "pequeno");
+        for (FonteDoJogo tipo : FonteDoJogo.values()) {
+            String nome = nomes.get(tipo);
+            Path descricao = ASSETS.resolve(tipo.caminho());
+            Path imagem = ASSETS.resolve("fontes/" + nome + ".png");
+            assertTrue(Files.isRegularFile(descricao), "descricao ausente: " + descricao);
+            assertTrue(Files.isRegularFile(imagem), "imagem ausente: " + imagem);
+            assertTrue(Files.readString(descricao).contains("file=\"" + nome + ".png\""),
+                    "pagina incorreta em " + descricao);
+        }
+        assertTrue(Files.isRegularFile(ASSETS.resolve("fontes/licencas/OFL-ChakraPetch.txt")));
+        assertTrue(Files.isRegularFile(ASSETS.resolve("fontes/licencas/OFL-Inter.txt")));
     }
 
     @Test

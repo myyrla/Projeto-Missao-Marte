@@ -6,6 +6,13 @@
 - Alterações da equipe: aviso de origem, comandos e caminhos deste README adaptados para macOS e permissão de execução dos scripts `gradlew`. Fontes, testes, assets, dependências e versões dos Wrappers preservados.
 - Validação em 12/11/2026: build interrompido no download do Gradle por `UnknownHostException: services.gradle.org`. Compilação, testes e execução do jogo não foram realizados nesta sessão. Veja o [registro da Etapa 2](../../docs/validacao-etapa-02.md).
 
+## Arte e tipografia da Fase 8
+
+- Os sprites e o campus em camadas foram gerados pelos scripts do pacote visual da equipe, sem arte de terceiros.
+- Títulos e cabeçalhos usam Chakra Petch. Textos e dicas usam Inter.
+- Chakra Petch e Inter são distribuídas sob a SIL Open Font License 1.1. As licenças acompanham os assets em [OFL-ChakraPetch.txt](cliente/core/assets/fontes/licencas/OFL-ChakraPetch.txt) e [OFL-Inter.txt](cliente/core/assets/fontes/licencas/OFL-Inter.txt).
+- As fontes e os sprites foram gerados em resolução dobrada e reduzidos no jogo para manter a nitidez em telas Retina.
+
 **Leitura da documentação herdada:** as contagens de testes e os relatos de verificações abaixo pertencem à base do professor; não são resultados da equipe nesta importação. As referências a fases anteriores também descrevem a sequência do professor, que usa pacotes e regras diferentes da Fase 1 da equipe.
 
 Selecione o JDK 17 conforme o [README da raiz](../../README.md#ambiente). Cada bloco que começa com `cd fases/` deve partir da raiz deste repositório, em um terminal próprio. Nos demais blocos, mantenha o terminal na pasta da fase ou do subprojeto indicado. Os Wrappers já estão executáveis.

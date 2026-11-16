@@ -19,6 +19,7 @@ import br.edu.unifor.missaomarte.gdx.entrada.ControleDeToque;
 import br.edu.unifor.missaomarte.gdx.hud.HudRenderer;
 import br.edu.unifor.missaomarte.gdx.layout.LayoutDaPartida;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
+import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
 import br.edu.unifor.missaomarte.gdx.visual.EfeitosVisuais;
@@ -110,8 +111,8 @@ public class GameScreen extends TelaBase {
         Viewport viewport = jogo.viewport();
         this.layout = layoutAtual(viewport);
         this.mapa = geometriaDe(layout);
-        this.mundo = new MundoRenderer(jogo.recursos(), jogo.batch(), jogo.fonte(), mapa);
-        this.hud = new HudRenderer(jogo.recursos(), jogo.batch(), jogo.shapes(), jogo.fonte());
+        this.mundo = new MundoRenderer(jogo.recursos(), jogo.batch(), jogo.fonte(FonteDoJogo.TEXTO), mapa);
+        this.hud = new HudRenderer(jogo.recursos(), jogo.batch(), jogo.shapes(), jogo.fontes());
     }
 
     private LayoutDaPartida layoutAtual(Viewport viewport) {
@@ -667,19 +668,18 @@ public class GameScreen extends TelaBase {
         return caixa;
     }
 
-    // Reduz o titulo se o mapa for pequeno (telas estreitas ou controles ocupando espaco).
-    private float escalaDoTitulo(float base, RetanguloDeTela caixa) {
-        float maximo = caixa.largura() / (170f * Math.max(1f, jogo.fatorDeTexto()));
-        return Math.max(0.8f, Math.min(base, maximo));
+    // Usa o subtitulo quando a caixa e estreita, sem ampliar ou reduzir a fonte em tempo de desenho.
+    private static FonteDoJogo fonteDoTitulo(RetanguloDeTela caixa) {
+        return caixa.largura() < 360f ? FonteDoJogo.SUBTITULO : FonteDoJogo.TITULO;
     }
 
     private void desenharPausa() {
         RetanguloDeTela caixa = desenharCaixa(380f, 150f);
         jogo.batch().begin();
-        escala(escalaDoTitulo(1.8f, caixa));
+        fonte(fonteDoTitulo(caixa));
         cor(DESTAQUE);
         textoCentralizado("PAUSADO", caixa.centroX(), caixa.centroY() + 30f);
-        escala(1f);
+        fonte(FonteDoJogo.PEQUENO);
         cor(Color.WHITE);
         if (!jogo.modoToque()) {
             textoCentralizado("P ou Enter: continuar", caixa.centroX(), caixa.centroY() - 10f);
@@ -699,10 +699,10 @@ public class GameScreen extends TelaBase {
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
         jogo.batch().begin();
-        escala(Math.max(2f, Math.min(5f, m.largura() / 110f)));
+        fonte(FonteDoJogo.TITULO);
         cor(DESTAQUE);
         textoCentralizado(String.valueOf(Math.max(1, (int) Math.ceil(session.getContagemRestante()))), m.centroX(), m.centroY() + 12f);
-        escala(1.2f);
+        fonte(FonteDoJogo.SUBTITULO);
         cor(Color.WHITE);
         textoCentralizado("Prepare-se!", m.centroX(), m.centroY() - 50f);
         jogo.batch().end();
@@ -715,12 +715,13 @@ public class GameScreen extends TelaBase {
 
         boolean vitoria = session.getEstado() == EstadoPartida.VITORIA;
         jogo.batch().begin();
-        escala(escalaDoTitulo(1.8f, caixa));
+        fonte(fonteDoTitulo(caixa));
         cor(vitoria ? VITORIA : DERROTA);
         textoCentralizado(vitoria ? "MISSÃO CUMPRIDA!" : "GAME OVER", cx, cy + 45f);
-        escala(1f);
+        fonte(FonteDoJogo.TEXTO);
         cor(Color.WHITE);
         textoCentralizado("Pontuação: " + session.getPontuacao(), cx, cy + 12f);
+        fonte(FonteDoJogo.PEQUENO);
         desenharSituacaoDoEnvio(cx, cy);
         cor(Color.WHITE);
         if (!jogo.modoToque()) {

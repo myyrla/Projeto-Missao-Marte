@@ -1,6 +1,8 @@
 package br.edu.unifor.missaomarte.gdx;
 
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
+import br.edu.unifor.missaomarte.gdx.layout.TextoResponsivo;
+import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
@@ -11,6 +13,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Vector2;
@@ -36,6 +39,7 @@ abstract class TelaBase implements Screen {
     protected final List<BotaoVirtual> botoes = new ArrayList<>();
     private final GlyphLayout layout = new GlyphLayout();
     private final Vector2 ponto = new Vector2();
+    private FonteDoJogo tipoDaFonte = FonteDoJogo.TEXTO;
 
     protected TelaBase(MissaoMarteGame jogo) {
         this.jogo = jogo;
@@ -83,7 +87,10 @@ abstract class TelaBase implements Screen {
         jogo.camera().update();
         jogo.batch().setProjectionMatrix(jogo.camera().combined);
         jogo.shapes().setProjectionMatrix(jogo.camera().combined);
-        jogo.fonte().getData().setScale(jogo.fatorDeTexto());
+        tipoDaFonte = FonteDoJogo.TEXTO;
+        for (FonteDoJogo tipo : FonteDoJogo.values()) {
+            jogo.fonte(tipo).setColor(Color.WHITE);
+        }
 
         jogo.batch().begin();
         jogo.batch().draw(jogo.recursos().textura(Imagem.FUNDO), centroX - larguraDoMundo / 2f, centroY - alturaDoMundo / 2f,
@@ -93,8 +100,7 @@ abstract class TelaBase implements Screen {
         desenhar(delta);
         desenharBotoes();
 
-        jogo.fonte().setColor(Color.WHITE);
-        jogo.fonte().getData().setScale(1f);
+        tipoDaFonte = FonteDoJogo.TEXTO;
     }
 
     private void desenharBotoes() {
@@ -126,7 +132,7 @@ abstract class TelaBase implements Screen {
         for (BotaoVirtual original : botoes) {
             BotaoVirtual b = efetivo(original);
             if (!b.getRotulo().isEmpty()) {
-                escala(b.getRotulo().length() <= 1 ? 2f : 1.2f);
+                fonte(b.getRotulo().length() <= 1 ? FonteDoJogo.SUBTITULO : FonteDoJogo.TEXTO);
                 cor(Color.WHITE);
                 textoCentralizado(b.getRotulo(), b.getX() + b.getLargura() / 2f, b.getY() + b.getAltura() / 2f);
             }
@@ -245,24 +251,35 @@ abstract class TelaBase implements Screen {
     }
 
     protected void cor(Color cor) {
-        jogo.fonte().setColor(cor);
+        fonteAtual().setColor(cor);
     }
 
-    protected void escala(float escala) {
-        jogo.fonte().getData().setScale(escala * jogo.fatorDeTexto());
+    protected void fonte(FonteDoJogo tipo) {
+        tipoDaFonte = tipo;
     }
 
     protected void texto(String texto, float x, float y) {
-        jogo.fonte().draw(jogo.batch(), texto, x, y);
+        fonteAtual().draw(jogo.batch(), texto, x, y);
     }
 
     protected void textoCentralizado(String texto, float centroX, float centroY) {
-        layout.setText(jogo.fonte(), texto);
-        jogo.fonte().draw(jogo.batch(), layout, centroX - layout.width / 2f, centroY + layout.height / 2f);
+        layout.setText(fonteAtual(), texto);
+        fonteAtual().draw(jogo.batch(), layout, centroX - layout.width / 2f, centroY + layout.height / 2f);
     }
 
     /** Desenha com quebra de linha e devolve a altura ocupada. */
     protected float textoQuebrado(String texto, float x, float y, float largura) {
-        return jogo.fonte().draw(jogo.batch(), texto, x, y, largura, Align.left, true).height;
+        return fonteAtual().draw(jogo.batch(), texto, x, y, largura, Align.left, true).height;
+    }
+
+    protected String textoLimitado(String texto, float larguraMaxima) {
+        return TextoResponsivo.limitarComReticencias(texto, larguraMaxima, candidato -> {
+            layout.setText(fonteAtual(), candidato);
+            return layout.width;
+        });
+    }
+
+    private BitmapFont fonteAtual() {
+        return jogo.fonte(tipoDaFonte);
     }
 }

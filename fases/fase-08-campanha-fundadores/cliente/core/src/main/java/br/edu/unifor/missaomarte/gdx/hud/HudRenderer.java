@@ -3,16 +3,21 @@ package br.edu.unifor.missaomarte.gdx.hud;
 import br.edu.unifor.missaomarte.application.Acao;
 import br.edu.unifor.missaomarte.application.GameSession;
 import br.edu.unifor.missaomarte.application.ModoDeJogo;
+import br.edu.unifor.missaomarte.domain.Dificuldade;
 import br.edu.unifor.missaomarte.domain.Nave;
 import br.edu.unifor.missaomarte.gdx.layout.LayoutDaPartida;
 import br.edu.unifor.missaomarte.gdx.layout.MargensSeguras;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
+import br.edu.unifor.missaomarte.gdx.layout.TextoResponsivo;
+import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
+import br.edu.unifor.missaomarte.gdx.recursos.FontesDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
 import br.edu.unifor.missaomarte.gdx.recursos.Recursos;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
@@ -22,7 +27,7 @@ import java.util.List;
 /**
  * HUD da partida: barra superior (vidas, pontuacao, tempo, som), painel de informacoes e rodape.
  * <p>As posicoes vem do {@link LayoutDaPartida}: em paisagem o painel fica ao lado do mapa (como nas fases anteriores); em retrato
- * vira uma faixa abaixo do mapa. O texto cresce pelo fator recebido (telas de celular), sem alterar os tamanhos do desktop.
+ * vira uma faixa abaixo do mapa. O fator recebido ajusta os espacamentos responsivos sem redimensionar as fontes.
  * <p>E desenhado depois do mundo, para ficar por cima. Apenas le o estado da {@link GameSession}; nao altera nada.
  * <p>SOLID: SRP (so apresentacao do HUD).
  */
@@ -34,18 +39,19 @@ public class HudRenderer {
     private final Recursos recursos;
     private final SpriteBatch batch;
     private final ShapeRenderer formas;
-    private final BitmapFont fonte;
+    private final FontesDoJogo fontes;
+    private final GlyphLayout medidor = new GlyphLayout();
     private int vidasMaximas;
     private LayoutDaPartida layout;
     private MargensSeguras margens = MargensSeguras.NENHUMA;
     private boolean modoToque;
     private float fator = 1f;
 
-    public HudRenderer(Recursos recursos, SpriteBatch batch, ShapeRenderer formas, BitmapFont fonte) {
+    public HudRenderer(Recursos recursos, SpriteBatch batch, ShapeRenderer formas, FontesDoJogo fontes) {
         this.recursos = recursos;
         this.batch = batch;
         this.formas = formas;
-        this.fonte = fonte;
+        this.fontes = fontes;
     }
 
     /** Layout do quadro atual, margens seguras, se os controles sao por toque e o multiplicador do texto. */
@@ -71,11 +77,6 @@ public class HudRenderer {
         }
         desenharRodape(session);
         batch.end();
-    }
-
-    private float escala(float base) {
-        fonte.getData().setScale(base * fator);
-        return base * fator;
     }
 
     private void desenharFundos(GameSession session) {
@@ -125,19 +126,18 @@ public class HudRenderer {
             batch.draw(recursos.quadro(icone), x0 + i * 28f, barra.y() + 6f, 24f, 24f);
         }
 
-        // O texto da barra cresce menos que o resto: ela tem so 36 unidades de altura e tres textos lado a lado.
-        float fatorDaBarra = Math.min(fator, 1.2f);
-        fonte.getData().setScale(fatorDaBarra);
+        BitmapFont fonte = fontes.obter(FonteDoJogo.PEQUENO);
         float baseline = barra.y() + 26f;
         float xPontos = Math.max(220f, x0 + vidasMaximas * 28f + 16f);
-        float xTempo = xPontos + 200f * fatorDaBarra;
-        float xSom = xTempo + 200f * fatorDaBarra + 20f;
+        float xTempo = xPontos + 200f;
+        float xSom = xTempo + 200f + 20f;
         fonte.setColor(Color.WHITE);
-        fonte.draw(batch, "Pontuação: " + session.getPontuacao(), xPontos, baseline);
-        fonte.draw(batch, String.format("Tempo: %02d:%02d", segundos / 60, segundos % 60), xTempo, baseline);
+        fonte.draw(batch, limitar("Pontuação: " + session.getPontuacao(), fonte, 180f), xPontos, baseline);
+        fonte.draw(batch, limitar(String.format("Tempo: %02d:%02d", segundos / 60, segundos % 60), fonte, 180f),
+                xTempo, baseline);
         fonte.setColor(mudo ? CINZA : Color.WHITE);
         String som = modoToque ? "Som: " + (mudo ? "off" : "on") : "Som: " + (mudo ? "desligado" : "ligado") + " (M)";
-        fonte.draw(batch, som, xSom, baseline);
+        fonte.draw(batch, limitar(som, fonte, 170f), xSom, baseline);
         fonte.setColor(Color.WHITE);
     }
 
@@ -146,20 +146,22 @@ public class HudRenderer {
         float x = painel.x() + 10f;
         float y = painel.topo() - 12f;
 
-        escala(1.3f);
-        fonte.setColor(DESTAQUE);
-        fonte.draw(batch, "MISSÃO MARTE", x, y);
+        BitmapFont cabecalho = fontes.obter(FonteDoJogo.SUBTITULO);
+        cabecalho.setColor(DESTAQUE);
+        cabecalho.draw(batch, "MISSÃO MARTE", x, y);
 
-        escala(1f);
+        BitmapFont fonte = fontes.obter(FonteDoJogo.TEXTO);
         fonte.setColor(Color.WHITE);
         y -= 32f * fator;
-        fonte.draw(batch, "Piloto: " + session.getPiloto(), x, y);
+        fonte.draw(batch, limitar("Piloto: " + session.getPiloto(), fonte,
+                LayoutDaPartida.PAINEL_LARGURA_DO_TEXTO), x, y);
         y -= 22f * fator;
-        fonte.draw(batch, "Dificuldade: " + session.getDificuldade(), x, y);
+        fonte.draw(batch, formatarDificuldade(session.getDificuldade()), x, y);
 
         int aBordo = nave.getPassageiros().size();
         y -= 36f * fator;
-        fonte.draw(batch, "A bordo: " + aBordo + "/" + nave.getCapacidade(), x, y);
+        fonte.draw(batch, limitar("A bordo: " + aBordo + "/" + nave.getCapacidade(), fonte,
+                LayoutDaPartida.PAINEL_LARGURA_DO_TEXTO), x, y);
         y -= 32f;
         for (int i = 0; i < nave.getCapacidade(); i++) {
             Imagem icone = i < aBordo ? Imagem.ICONE_PASSAGEIRO : Imagem.ICONE_VAGA;
@@ -167,14 +169,15 @@ public class HudRenderer {
         }
 
         y -= 28f * fator;
-        fonte.draw(batch, "Entregues: " + session.getResgatados() + "/" + session.getTotalPassageiros(), x, y);
+        fonte.draw(batch, limitar("Entregues: " + session.getResgatados() + "/" + session.getTotalPassageiros(), fonte,
+                LayoutDaPartida.PAINEL_LARGURA_DO_TEXTO), x, y);
         y -= 30f * fator + BARRA_ALTURA + 26f * fator - BARRA_ALTURA;
-        fonte.draw(batch, "Restantes no mapa: " + session.getMissao().getPassageiros().size(), x, y);
+        fonte.draw(batch, "No mapa: " + session.getMissao().getPassageiros().size(), x, y);
         y -= 22f * fator;
         if (session.getModo() == ModoDeJogo.DINAMICO) {
-            fonte.draw(batch, "Munição: " + session.getMunicao() + "   Mira: " + simboloDaMira(session.getMira()), x, y);
+            fonte.draw(batch, formatarMunicaoEMira(session.getMunicao(), session.getMira()), x, y);
         } else {
-            fonte.draw(batch, "Movimentos: " + session.getMovimentos(), x, y);
+            fonte.draw(batch, "Mov.: " + session.getMovimentos(), x, y);
         }
 
         if (!mensagens.isEmpty()) {
@@ -192,17 +195,19 @@ public class HudRenderer {
         float linha = 22f * fator;
         float y = faixa.topo() - 8f;
 
-        escala(1f);
+        BitmapFont fonte = fontes.obter(FonteDoJogo.PEQUENO);
         fonte.setColor(Color.WHITE);
-        fonte.draw(batch, "Piloto: " + session.getPiloto() + "   " + session.getDificuldade(), x, y);
+        float larguraDaLinha = faixa.largura() - 16f;
+        fonte.draw(batch, limitar(formatarDificuldade(session.getDificuldade()) + "   Piloto: " + session.getPiloto(), fonte,
+                larguraDaLinha), x, y);
         y -= linha;
-        fonte.draw(batch, "Entregues: " + session.getResgatados() + "/" + session.getTotalPassageiros()
-                + "   A bordo: " + nave.getPassageiros().size() + "/" + nave.getCapacidade(), x, y);
+        fonte.draw(batch, limitar("Entregues: " + session.getResgatados() + "/" + session.getTotalPassageiros()
+                + "   A bordo: " + nave.getPassageiros().size() + "/" + nave.getCapacidade(), fonte, larguraDaLinha), x, y);
         y -= linha;
         if (session.getModo() == ModoDeJogo.DINAMICO) {
-            fonte.draw(batch, "Munição: " + session.getMunicao() + "   Mira: " + simboloDaMira(session.getMira()), x, y);
+            fonte.draw(batch, formatarMunicaoEMira(session.getMunicao(), session.getMira()), x, y);
         } else {
-            fonte.draw(batch, "Movimentos: " + session.getMovimentos(), x, y);
+            fonte.draw(batch, "Mov.: " + session.getMovimentos(), x, y);
         }
 
         if (!mensagens.isEmpty()) {
@@ -215,7 +220,7 @@ public class HudRenderer {
 
     private void desenharRodape(GameSession session) {
         RetanguloDeTela barra = layout.barraInferior();
-        escala(1f);
+        BitmapFont fonte = fontes.obter(FonteDoJogo.PEQUENO);
         fonte.setColor(CINZA);
         String texto;
         if (modoToque) {
@@ -227,8 +232,24 @@ public class HudRenderer {
                     ? "W/A/S/D ou setas (segure): mover   F ou Espaço: atirar   P: pausa   M: som   Q ou Esc: abortar"
                     : "W/A/S/D ou setas: mover   E: embarcar   M: som   Q ou Esc: abortar";
         }
-        fonte.draw(batch, texto, 24f + margens.esquerda(), barra.topo() - 10f);
+        fonte.draw(batch, limitar(texto, fonte, barra.largura() - 48f - margens.esquerda() - margens.direita()),
+                24f + margens.esquerda(), barra.topo() - 10f);
         fonte.setColor(Color.WHITE);
+    }
+
+    private String limitar(String texto, BitmapFont fonte, float larguraMaxima) {
+        return TextoResponsivo.limitarComReticencias(texto, larguraMaxima, candidato -> {
+            medidor.setText(fonte, candidato);
+            return medidor.width;
+        });
+    }
+
+    static String formatarDificuldade(Dificuldade dificuldade) {
+        return "Dif.: " + dificuldade;
+    }
+
+    static String formatarMunicaoEMira(int municao, Acao mira) {
+        return "Mun. " + municao + "   Mira " + simboloDaMira(mira);
     }
 
     private static String simboloDaMira(Acao mira) {

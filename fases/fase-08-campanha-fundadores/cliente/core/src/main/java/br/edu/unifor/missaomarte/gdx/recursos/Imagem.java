@@ -5,24 +5,24 @@ package br.edu.unifor.missaomarte.gdx.recursos;
  * <p>Sem dependencia do libGDX: serve de contrato entre o gerador de assets, o carregador e os testes.
  */
 public enum Imagem {
-    FUNDO("fundo.png", 800, 600, 1),
-    TERRENO("terreno.png", 48, 48, 1),
-    NAVE("nave.png", 48, 48, 1),
-    PROPULSOR("propulsor.png", 48, 48, 4),
-    BASE("base.png", 48, 48, 4),
-    ASTEROIDE("asteroide.png", 48, 48, 1),
-    INIMIGO("inimigo.png", 48, 48, 2),
-    PERSEGUIDOR("perseguidor.png", 48, 48, 2),
-    PASSAGEIRO_PROFESSOR("passageiro_professor.png", 48, 48, 1),
-    PASSAGEIRO_ENGENHEIRO("passageiro_engenheiro.png", 48, 48, 1),
-    PASSAGEIRO_ASTRONAUTA("passageiro_astronauta.png", 48, 48, 1),
-    DESCONHECIDO("desconhecido.png", 48, 48, 1),
-    EXPLOSAO("explosao.png", 48, 48, 6),
-    BRILHO("brilho.png", 48, 48, 5),
-    ICONE_VIDA("icone_vida.png", 24, 24, 1),
-    ICONE_VIDA_VAZIA("icone_vida_vazia.png", 24, 24, 1),
-    ICONE_PASSAGEIRO("icone_passageiro.png", 24, 24, 1),
-    ICONE_VAGA("icone_vaga.png", 24, 24, 1);
+    FUNDO("fundo.png", 1600, 1200, 1),
+    TERRENO("terreno.png", 96, 96, 1),
+    NAVE("nave.png", 96, 96, 1),
+    PROPULSOR("propulsor.png", 96, 96, 4),
+    BASE("base.png", 96, 96, 4),
+    ASTEROIDE("asteroide.png", 96, 96, 1),
+    INIMIGO("inimigo.png", 96, 96, 2),
+    PERSEGUIDOR("perseguidor.png", 96, 96, 2),
+    PASSAGEIRO_PROFESSOR("passageiro_professor.png", 96, 96, 1),
+    PASSAGEIRO_ENGENHEIRO("passageiro_engenheiro.png", 96, 96, 1),
+    PASSAGEIRO_ASTRONAUTA("passageiro_astronauta.png", 96, 96, 1),
+    DESCONHECIDO("desconhecido.png", 96, 96, 1),
+    EXPLOSAO("explosao.png", 96, 96, 6),
+    BRILHO("brilho.png", 96, 96, 5),
+    ICONE_VIDA("icone_vida.png", 48, 48, 1),
+    ICONE_VIDA_VAZIA("icone_vida_vazia.png", 48, 48, 1),
+    ICONE_PASSAGEIRO("icone_passageiro.png", 48, 48, 1),
+    ICONE_VAGA("icone_vaga.png", 48, 48, 1);
 
     private static final String PASTA = "imagens/";
 

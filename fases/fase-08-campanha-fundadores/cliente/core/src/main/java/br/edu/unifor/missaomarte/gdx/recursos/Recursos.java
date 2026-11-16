@@ -3,6 +3,7 @@ package br.edu.unifor.missaomarte.gdx.recursos;
 import br.edu.unifor.missaomarte.application.campanha.EstadoDaConstrucao;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.assets.loaders.TextureLoader;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
@@ -24,13 +25,14 @@ public class Recursos implements Disposable {
 
     /** Carrega tudo de uma vez (poucos arquivos pequenos); bloqueia ate terminar. */
     public void carregar() {
+        TextureLoader.TextureParameter parametrosDaTextura = criarParametrosDaTextura();
         for (Imagem imagem : Imagem.values()) {
-            gerenciador.load(imagem.caminho(), Texture.class);
+            gerenciador.load(imagem.caminho(), Texture.class, parametrosDaTextura);
         }
-        gerenciador.load(CamadaDoCampus.caminhoDaBase(), Texture.class);
+        gerenciador.load(CamadaDoCampus.caminhoDaBase(), Texture.class, parametrosDaTextura);
         for (CamadaDoCampus camada : CamadaDoCampus.values()) {
-            gerenciador.load(camada.caminhoPlanta(), Texture.class);
-            gerenciador.load(camada.caminhoConstruido(), Texture.class);
+            gerenciador.load(camada.caminhoPlanta(), Texture.class, parametrosDaTextura);
+            gerenciador.load(camada.caminhoConstruido(), Texture.class, parametrosDaTextura);
         }
         for (Som som : Som.values()) {
             if (som.musica()) {
@@ -43,14 +45,8 @@ public class Recursos implements Disposable {
 
         for (Imagem imagem : Imagem.values()) {
             Texture textura = gerenciador.get(imagem.caminho(), Texture.class);
-            textura.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
             TextureRegion[][] grade = TextureRegion.split(textura, imagem.larguraQuadro(), imagem.alturaQuadro());
             quadros.put(imagem, grade[0]);
-        }
-        configurarFiltroLinear(CamadaDoCampus.caminhoDaBase());
-        for (CamadaDoCampus camada : CamadaDoCampus.values()) {
-            configurarFiltroLinear(camada.caminhoPlanta());
-            configurarFiltroLinear(camada.caminhoConstruido());
         }
         int totalDeImagens = Imagem.values().length + 1 + CamadaDoCampus.values().length * 2;
         Gdx.app.log("Recursos", totalDeImagens + " imagens e " + Som.values().length + " sons carregados");
@@ -91,9 +87,12 @@ public class Recursos implements Disposable {
         return gerenciador.get(Som.MUSICA.caminho(), Music.class);
     }
 
-    private void configurarFiltroLinear(String caminho) {
-        gerenciador.get(caminho, Texture.class)
-                .setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+    static TextureLoader.TextureParameter criarParametrosDaTextura() {
+        TextureLoader.TextureParameter parametros = new TextureLoader.TextureParameter();
+        parametros.genMipMaps = true;
+        parametros.minFilter = Texture.TextureFilter.MipMapLinearLinear;
+        parametros.magFilter = Texture.TextureFilter.Linear;
+        return parametros;
     }
 
     @Override
