@@ -1,67 +1,92 @@
 package br.edu.unifor.missaomarte.gdx;
 
+import br.edu.unifor.missaomarte.application.campanha.ProgressoDaCampanha;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
+import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
+import br.edu.unifor.missaomarte.gdx.ui.LayoutDoMenu;
+import br.edu.unifor.missaomarte.gdx.ui.ListaDeBotoes;
+import br.edu.unifor.missaomarte.gdx.ui.RodapeDeTeclas;
+import br.edu.unifor.missaomarte.gdx.ui.RodapeDeTeclas.Atalho;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Animation.PlayMode;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 
-/**
- * Menu principal. Partida rapida e Campanha sao fluxos independentes; as demais opcoes variam conforme a sessao.
- * <p>No modo toque cada opção vira um botão (o toque chama a mesma ação da tecla). A tecla Voltar do Android sai do jogo.
- * <p>GRASP: Controller de interface (traduz tecla e toque em navegacao). SOLID: SRP (so o menu).
- */
+/** Menu principal no estilo Switch: quatro acoes, foco por teclado e selecao por clique ou toque. */
 public class MenuScreen extends TelaBase {
-    private static final Color DESTAQUE = new Color(1f, 0.85f, 0.3f, 1f);
-    private static final int OPCOES = 7;
-    private static final float ESPACO_PADRAO = 40f;
+    private static final Color FUNDO = Color.valueOf("0A0612");
+    private static final Color TEXTO = Color.valueOf("F2EEF7");
+    private static final Color SECUNDARIO = Color.valueOf("B9B2C6");
+    private static final Color FRASE = Color.valueOf("E4DCEA");
+    private static final Color AMBAR = Color.valueOf("FFB000");
+    private static final int QUANTIDADE_DE_OPCOES = 4;
 
     private final Animation<TextureRegion> propulsor;
-    private float primeiraLinhaY;
-    private float espacoEntreLinhas;
-    private String mensagem = "";
+    private final ListaDeBotoes opcoes = new ListaDeBotoes(QUANTIDADE_DE_OPCOES);
+    private final ListaDeBotoes confirmacao = new ListaDeBotoes(2);
+    private final RodapeDeTeclas rodape = new RodapeDeTeclas();
+    private final GlyphLayout medidor = new GlyphLayout();
+    private LayoutDoMenu layout;
+    private boolean confirmandoSaida;
 
     public MenuScreen(MissaoMarteGame jogo) {
         super(jogo);
-        this.propulsor = jogo.recursos().animacao(Imagem.PROPULSOR, 0.08f, PlayMode.LOOP);
-        calcularLinhas();
+        propulsor = jogo.recursos().animacao(Imagem.PROPULSOR, 0.08f, PlayMode.LOOP);
+        atualizarLayout();
     }
 
-    // No toque as linhas ficam mais altas (alvo de 48 dp) enquanto houver espaco ate a borda de baixo da tela; sem toque, como antes.
-    private void calcularLinhas() {
-        botoes.clear();
-        if (jogo.modoToque()) {
-            float bordaDeBaixo = MissaoMarteGame.ALTURA / 2f - jogo.viewport().getWorldHeight() / 2f;
-            float maximo = (410f - (bordaDeBaixo + 120f)) / (OPCOES - 0.5f);
-            espacoEntreLinhas = Math.max(ESPACO_PADRAO, Math.min(jogo.alvoMinimo() + 4f, Math.min(maximo, 110f)));
-            primeiraLinhaY = 410f;
-        } else {
-            espacoEntreLinhas = ESPACO_PADRAO;
-            primeiraLinhaY = 380f;
-        }
-        for (int i = 1; i <= OPCOES; i++) {
-            botoes.add(new BotaoVirtual(String.valueOf(i), "", 250f, linhaY(i) - espacoEntreLinhas + 12f, 340f, espacoEntreLinhas - 4f));
-        }
+    @Override
+    protected boolean usaMundoInteiro() {
+        return true;
+    }
+
+    @Override
+    protected boolean desenhaBotoesVirtuais() {
+        return false;
+    }
+
+    @Override
+    protected boolean aceitaCliqueEsquerdo() {
+        return true;
     }
 
     @Override
     protected void aoRedimensionar() {
-        calcularLinhas();
+        atualizarLayout();
     }
 
-    private float linhaY(int opcao) {
-        return primeiraLinhaY - (opcao - 1) * espacoEntreLinhas;
+    private void atualizarLayout() {
+        layout = LayoutDoMenu.calcular(jogo.viewport().getWorldWidth(), jogo.viewport().getWorldHeight(), jogo.alvoMinimo());
+        atualizarAreasDeAcao();
     }
 
-    // Texto no meio da altura do botao (com o espaco padrao o deslocamento e zero).
-    private float textoY(int opcao) {
-        return linhaY(opcao) - (espacoEntreLinhas - ESPACO_PADRAO) / 2f;
+    private void atualizarAreasDeAcao() {
+        botoes.clear();
+        if (confirmandoSaida) {
+            RetanguloDeTela painel = painelDeConfirmacao();
+            float largura = (painel.largura() - 60f) / 2f;
+            botoes.add(botaoVirtual("sair", new RetanguloDeTela(painel.x() + 20f, painel.y() + 24f, largura, 50f)));
+            botoes.add(botaoVirtual("cancelar", new RetanguloDeTela(painel.x() + 40f + largura, painel.y() + 24f, largura, 50f)));
+            return;
+        }
+        for (int i = 0; i < QUANTIDADE_DE_OPCOES; i++) {
+            botoes.add(botaoVirtual("menu_" + i, layout.botaoMenu(i)));
+        }
+    }
+
+    private static BotaoVirtual botaoVirtual(String id, RetanguloDeTela area) {
+        return new BotaoVirtual(id, "", area.x(), area.y(), area.largura(), area.altura());
     }
 
     @Override
@@ -76,113 +101,274 @@ public class MenuScreen extends TelaBase {
         });
     }
 
-    @Override
-    protected boolean aoTocar(String id, int ponteiro) {
-        return executar(Integer.parseInt(id));
-    }
-
     private boolean tratarTecla(int keycode) {
-        if (keycode == Keys.BACK) {
-            Gdx.app.exit();
+        if (confirmandoSaida) {
+            return tratarTeclaDaConfirmacao(keycode);
+        }
+        if (keycode == Keys.UP || keycode == Keys.W) {
+            opcoes.subir();
             return true;
         }
-        if (keycode >= Keys.NUM_1 && keycode <= Keys.NUM_9) {
-            return executar(keycode - Keys.NUM_1 + 1);
+        if (keycode == Keys.DOWN || keycode == Keys.S) {
+            opcoes.descer();
+            return true;
         }
-        if (keycode >= Keys.NUMPAD_1 && keycode <= Keys.NUMPAD_9) {
-            return executar(keycode - Keys.NUMPAD_1 + 1);
+        if (keycode == Keys.ENTER || keycode == Keys.NUMPAD_ENTER || keycode == Keys.SPACE || keycode == Keys.BUTTON_A) {
+            executar(opcoes.foco());
+            return true;
+        }
+        if (ehVoltar(keycode)) {
+            abrirConfirmacaoDeSaida();
+            return true;
+        }
+        if (keycode >= Keys.NUM_1 && keycode <= Keys.NUM_4) {
+            executar(keycode - Keys.NUM_1);
+            return true;
+        }
+        if (keycode >= Keys.NUMPAD_1 && keycode <= Keys.NUMPAD_4) {
+            executar(keycode - Keys.NUMPAD_1);
+            return true;
         }
         return false;
     }
 
-    /** Executa a opcao do menu (1 a 7); devolve false para numeros sem opcao. */
-    private boolean executar(int opcao) {
-        switch (opcao) {
-            case 1:
-                jogo.sons().tocar(Som.SELECIONAR);
-                jogo.setScreen(new NovaPartidaScreen(jogo));
-                return true;
-            case 2:
-                jogo.sons().tocar(Som.SELECIONAR);
+    private boolean tratarTeclaDaConfirmacao(int keycode) {
+        if (keycode == Keys.LEFT || keycode == Keys.A || keycode == Keys.RIGHT || keycode == Keys.D) {
+            if (confirmacao.foco() == 0) {
+                confirmacao.descer();
+            } else {
+                confirmacao.subir();
+            }
+            return true;
+        }
+        if (keycode == Keys.ENTER || keycode == Keys.NUMPAD_ENTER || keycode == Keys.SPACE) {
+            confirmarOuCancelarSaida(confirmacao.foco());
+            return true;
+        }
+        if (ehVoltar(keycode) || keycode == Keys.N) {
+            fecharConfirmacaoDeSaida();
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected boolean aoTocar(String id, int ponteiro) {
+        if (id.startsWith("menu_")) {
+            int indice = Integer.parseInt(id.substring("menu_".length()));
+            opcoes.focar(indice);
+            executar(indice);
+            return true;
+        }
+        if (id.equals("sair")) {
+            confirmarOuCancelarSaida(0);
+            return true;
+        }
+        if (id.equals("cancelar")) {
+            confirmarOuCancelarSaida(1);
+            return true;
+        }
+        return false;
+    }
+
+    private void executar(int indice) {
+        jogo.sons().tocar(Som.SELECIONAR);
+        switch (indice) {
+            case 0:
                 jogo.setScreen(new CampusScreen(jogo));
-                return true;
-            case 3:
-                jogo.sons().tocar(Som.SELECIONAR);
+                break;
+            case 1:
+                jogo.setScreen(new NovaPartidaScreen(jogo));
+                break;
+            case 2:
                 jogo.setScreen(new RankingScreen(jogo, null, false));
-                return true;
-            case 4:
-                jogo.sons().tocar(Som.SELECIONAR);
-                if (logado()) {
-                    jogo.setScreen(new HistoricoScreen(jogo));
-                } else {
-                    jogo.rankingService().limpar();
-                    mensagem = "Ranking local limpo.";
-                }
-                return true;
-            case 5:
-                jogo.sons().tocar(Som.SELECIONAR);
-                if (logado()) {
-                    jogo.sair();
-                    mensagem = "Você saiu da conta.";
-                } else {
-                    jogo.setScreen(new LoginScreen(jogo));
-                }
-                return true;
-            case 6:
-                Gdx.app.exit();
-                return true;
-            case 7:
-                jogo.sons().tocar(Som.SELECIONAR);
-                jogo.setScreen(new ConfigServidorScreen(jogo, () -> new MenuScreen(jogo)));
-                return true;
+                break;
+            case 3:
+                jogo.setScreen(new OpcoesScreen(jogo));
+                break;
             default:
-                return false;
+                throw new IllegalArgumentException("Opção de menu inválida: " + indice);
         }
     }
 
-    private boolean logado() {
-        return jogo.sessao() != null;
+    private void abrirConfirmacaoDeSaida() {
+        confirmandoSaida = true;
+        confirmacao.focar(0);
+        atualizarAreasDeAcao();
+    }
+
+    private void fecharConfirmacaoDeSaida() {
+        confirmandoSaida = false;
+        atualizarAreasDeAcao();
+    }
+
+    private void confirmarOuCancelarSaida(int indice) {
+        if (indice == 0) {
+            Gdx.app.exit();
+        } else {
+            fecharConfirmacaoDeSaida();
+        }
     }
 
     @Override
     protected void desenhar(float delta) {
-        jogo.batch().begin();
+        desenharEscurecimento();
+        jogo.fontes().comEscalaTemporaria(layout.escala(), () -> {
+            jogo.batch().begin();
+            try {
+                desenharTituloEFrase();
+                desenharNave();
+                desenharOpcoes();
+                desenharRodape();
+            } finally {
+                jogo.batch().end();
+            }
+        });
+        if (confirmandoSaida) {
+            desenharConfirmacao();
+        }
+    }
 
-        float flutuar = (float) Math.sin(tempo * 2f) * 6f;
-        jogo.batch().draw(propulsor.getKeyFrame(tempo, true), 560f, 330f + flutuar, 128f, 128f);
-        jogo.batch().draw(jogo.recursos().quadro(Imagem.NAVE), 560f, 330f + flutuar, 128f, 128f);
+    private void desenharEscurecimento() {
+        ShapeRenderer formas = jogo.shapes();
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        formas.begin(ShapeType.Filled);
+        Color escuro = new Color(FUNDO).mul(1f, 1f, 1f, 0.90f);
+        Color transparente = new Color(FUNDO).mul(1f, 1f, 1f, layout.emRetrato() ? 0.38f : 0f);
+        float largura = layout.emRetrato() ? layout.largura() : layout.xDaReferencia(760f);
+        formas.rect(0f, 0f, largura, layout.altura(), escuro, transparente, transparente, escuro);
+        formas.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
 
-        fonte(FonteDoJogo.TITULO);
-        cor(DESTAQUE);
-        textoCentralizado("MISSÃO MARTE", MissaoMarteGame.LARGURA / 2f, 500f);
+    private void desenharTituloEFrase() {
+        float x = layout.emRetrato() ? 48f : layout.xDaReferencia(96f);
+        fonte(FonteDoJogo.ROTULO);
+        cor(AMBAR);
+        texto("UNIFOR · EXPEDIÇÃO 2087", x, layout.emRetrato() ? layout.altura() - 64f : layout.yDaReferencia(92f));
 
-        fonte(FonteDoJogo.SUBTITULO);
-        cor(Color.WHITE);
-        boolean logado = logado();
-        texto("1) Partida rápida", 280f, textoY(1));
-        texto("2) Campanha", 280f, textoY(2));
-        texto(logado ? "3) Ver ranking global" : "3) Ver ranking local", 280f, textoY(3));
-        texto(logado ? "4) Meu histórico" : "4) Limpar ranking local", 280f, textoY(4));
-        texto(logado ? "5) Sair da conta" : "5) Entrar ou criar conta", 280f, textoY(5));
-        texto("6) Sair", 280f, textoY(6));
-        texto("7) Servidor", 280f, textoY(7));
+        fonte(FonteDoJogo.DISPLAY);
+        cor(TEXTO);
+        float xTitulo = layout.emRetrato() ? 44f : layout.xDaReferencia(92f);
+        texto("MISSÃO", xTitulo, layout.emRetrato() ? layout.altura() - 118f : layout.yDaReferencia(112f));
+        texto("MARTE", xTitulo, layout.emRetrato() ? layout.altura() - 208f : layout.yDaReferencia(192f));
 
         fonte(FonteDoJogo.TEXTO);
-        cor(Color.LIGHT_GRAY);
-        texto(logado ? "Piloto: " + jogo.sessao().getNome() + "   (ranking global)"
-                : "Modo convidado   (ranking local)", 280f, jogo.modoToque() ? 470f : 440f);
-        float baseDasLinhas = linhaY(OPCOES) - espacoEntreLinhas + 12f;
-        float yRodape = Math.min(150f, baseDasLinhas - 8f);
-        texto("Servidor: " + jogo.endereco().urlBase(), 280f, yRodape);
-        cor(DESTAQUE);
-        texto(mensagem, 280f, yRodape - 28f);
+        cor(FRASE);
+        float yFrase = layout.emRetrato() ? layout.altura() - 330f : layout.yDaReferencia(304f);
+        float largura = layout.emRetrato() ? layout.largura() - 96f : 420f * layout.escala();
+        textoQuebrado("Resgate os três fundadores e construa o primeiro campus interplanetário.", x, yFrase, largura);
+    }
 
-        fonte(FonteDoJogo.PEQUENO);
-        cor(Color.LIGHT_GRAY);
-        textoCentralizado(jogo.modoToque() ? "Toque na opção   |   M: ligar ou desligar o som"
-                : "Pressione o número da opção   |   M: ligar ou desligar o som", MissaoMarteGame.LARGURA / 2f,
-                jogo.modoToque() ? yRodape - 62f : 60f);
+    private void desenharNave() {
+        if (layout.emRetrato()) {
+            return;
+        }
+        float flutuar = (float) Math.sin(tempo * 2f) * 6f * layout.escala();
+        float x = layout.xDaReferencia(1030f);
+        float y = layout.altura() - (150f + 96f) * layout.escala() + flutuar;
+        float tamanho = 96f * layout.escala();
+        jogo.batch().draw(propulsor.getKeyFrame(tempo, true), x, y, tamanho, tamanho);
+        jogo.batch().draw(jogo.recursos().quadro(Imagem.NAVE), x, y, tamanho, tamanho);
+    }
 
+    private void desenharOpcoes() {
+        String[] rotulos = {rotuloDaCampanha(), "Partida rápida", "Ranking", "Opções"};
+        String detalhe = detalheDaCampanha();
+        for (int i = 0; i < rotulos.length; i++) {
+            RetanguloDeTela area = layout.botaoMenu(i);
+            boolean foco = opcoes.emFoco(i);
+            jogo.estilo().botao(jogo.batch(), area, foco);
+            BitmapFont fonte = jogo.fonte(FonteDoJogo.SUBTITULO);
+            fonte.setColor(foco ? FUNDO : TEXTO);
+            medidor.setText(fonte, rotulos[i]);
+            fonte.draw(jogo.batch(), medidor, area.x() + 20f * layout.escala(), area.centroY() + medidor.height / 2f);
+            if (i == 0 && detalhe != null) {
+                BitmapFont pequena = jogo.fonte(FonteDoJogo.PEQUENO);
+                pequena.setColor(foco ? FUNDO : SECUNDARIO);
+                medidor.setText(pequena, detalhe);
+                pequena.draw(jogo.batch(), medidor, area.direita() - 18f * layout.escala() - medidor.width,
+                        area.centroY() + medidor.height / 2f);
+            }
+        }
+    }
+
+    private String rotuloDaCampanha() {
+        if (jogo.campanha().concluida()) {
+            return "Nova campanha";
+        }
+        ProgressoDaCampanha progresso = jogo.campanha().progresso();
+        if (progresso.etapaAtual() == 1 && progresso.pontuacaoTotal() == 0) {
+            return "Campanha";
+        }
+        return "Continuar campanha";
+    }
+
+    private String detalheDaCampanha() {
+        String rotulo = rotuloDaCampanha();
+        if (jogo.campanha().concluida() || rotulo.equals("Campanha")) {
+            return null;
+        }
+        return "Etapa " + jogo.campanha().progresso().etapaAtual();
+    }
+
+    private void desenharRodape() {
+        BitmapFont pequena = jogo.fonte(FonteDoJogo.PEQUENO);
+        pequena.setColor(SECUNDARIO);
+        String conta = jogo.sessao() == null ? "Convidado · ranking local"
+                : jogo.sessao().getNome() + " · ranking global";
+        medidor.setText(pequena, conta);
+        float margem = layout.emRetrato() ? 32f : 96f * layout.escala();
+        pequena.draw(jogo.batch(), medidor, layout.largura() - margem - medidor.width, margem + medidor.height);
+        if (layout.emRetrato()) {
+            pequena.draw(jogo.batch(), "Toque em uma opção para selecionar", margem, margem + 44f);
+            return;
+        }
+        rodape.desenhar(jogo.batch(), jogo.estilo(), layout.xDaReferencia(96f), 28f * layout.escala(),
+                new Atalho("Setas", "Navegar"), new Atalho("Enter", "Selecionar"), new Atalho("Esc", "Sair"));
+    }
+
+    private void desenharConfirmacao() {
+        RetanguloDeTela painel = painelDeConfirmacao();
+        escurecerTudo();
+        jogo.batch().begin();
+        jogo.estilo().painel(jogo.batch(), painel);
+        BitmapFont titulo = jogo.fonte(FonteDoJogo.TITULO);
+        titulo.setColor(AMBAR);
+        medidor.setText(titulo, "SAIR DO JOGO?");
+        titulo.draw(jogo.batch(), medidor, painel.centroX() - medidor.width / 2f, painel.topo() - 34f);
+        desenharBotaoDeConfirmacao(painel, 0, "Sair");
+        desenharBotaoDeConfirmacao(painel, 1, "Cancelar");
         jogo.batch().end();
     }
+
+    private void desenharBotaoDeConfirmacao(RetanguloDeTela painel, int indice, String rotulo) {
+        float largura = (painel.largura() - 60f) / 2f;
+        RetanguloDeTela area = new RetanguloDeTela(painel.x() + 20f + indice * (largura + 20f), painel.y() + 24f,
+                largura, 50f);
+        boolean foco = confirmacao.emFoco(indice);
+        jogo.estilo().botao(jogo.batch(), area, foco);
+        BitmapFont fonte = jogo.fonte(FonteDoJogo.TEXTO);
+        fonte.setColor(foco ? FUNDO : TEXTO);
+        medidor.setText(fonte, rotulo);
+        fonte.draw(jogo.batch(), medidor, area.centroX() - medidor.width / 2f, area.centroY() + medidor.height / 2f);
+    }
+
+    private RetanguloDeTela painelDeConfirmacao() {
+        float largura = Math.min(420f, layout.largura() - 48f);
+        return new RetanguloDeTela((layout.largura() - largura) / 2f, (layout.altura() - 190f) / 2f, largura, 190f);
+    }
+
+    private void escurecerTudo() {
+        ShapeRenderer formas = jogo.shapes();
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        formas.begin(ShapeType.Filled);
+        formas.setColor(0f, 0f, 0f, 0.72f);
+        formas.rect(0f, 0f, layout.largura(), layout.altura());
+        formas.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
 }

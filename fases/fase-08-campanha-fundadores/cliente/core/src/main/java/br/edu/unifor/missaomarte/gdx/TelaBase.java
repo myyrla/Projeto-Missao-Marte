@@ -6,6 +6,7 @@ import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
@@ -52,6 +53,16 @@ abstract class TelaBase implements Screen {
      * desenhadas numa area fixa de 800x600, centralizada na tela (em retrato sobra espaco em cima e embaixo).
      */
     protected boolean usaMundoInteiro() {
+        return false;
+    }
+
+    /** Telas com arte propria para os botoes desativam o desenho generico, mas preservam as areas de toque. */
+    protected boolean desenhaBotoesVirtuais() {
+        return true;
+    }
+
+    /** Clique de mouse no desktop e opt-in; toque continua disponivel em todas as telas com areas cadastradas. */
+    protected boolean aceitaCliqueEsquerdo() {
         return false;
     }
 
@@ -104,7 +115,7 @@ abstract class TelaBase implements Screen {
     }
 
     private void desenharBotoes() {
-        if (!jogo.modoToque() || botoes.isEmpty()) {
+        if (!jogo.modoToque() || !desenhaBotoesVirtuais() || botoes.isEmpty()) {
             return;
         }
         ShapeRenderer formas = jogo.shapes();
@@ -234,7 +245,7 @@ abstract class TelaBase implements Screen {
 
             @Override
             public boolean touchDown(int telaX, int telaY, int ponteiro, int botao) {
-                if (!jogo.modoToque()) {
+                if (!aceitaPonteiro(jogo.modoToque(), aceitaCliqueEsquerdo(), botao)) {
                     return false;
                 }
                 BotaoVirtual b = botaoEm(telaX, telaY);
@@ -248,6 +259,10 @@ abstract class TelaBase implements Screen {
             }
         };
         Gdx.input.setInputProcessor(new InputMultiplexer(atalhos, processador));
+    }
+
+    static boolean aceitaPonteiro(boolean modoToque, boolean aceitaCliqueEsquerdo, int botao) {
+        return modoToque || aceitaCliqueEsquerdo && botao == Buttons.LEFT;
     }
 
     protected void cor(Color cor) {
