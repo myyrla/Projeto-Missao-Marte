@@ -5,7 +5,7 @@ package br.edu.unifor.missaomarte.gdx.recursos;
  * <p>Sem dependencia do libGDX: serve de contrato entre o gerador de assets, o carregador e os testes.
  */
 public enum Imagem {
-    FUNDO("fundo.png", 1600, 1200, 1),
+    FUNDO("fundo.png", 2560, 1440, 1),
     TERRENO("terreno.png", 96, 96, 1),
     NAVE("nave.png", 96, 96, 1),
     PROPULSOR("propulsor.png", 96, 96, 4),

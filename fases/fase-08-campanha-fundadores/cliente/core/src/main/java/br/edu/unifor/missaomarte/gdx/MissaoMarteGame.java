@@ -23,7 +23,6 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
-import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import java.util.Random;
 
@@ -36,8 +35,8 @@ import java.util.Random;
  * A sessao fica so na memoria e e descartada ao sair da conta, ao expirar ou ao fechar o jogo.
  * <p>Limite: a classe Game nao chama dispose() das telas; as telas deste projeto nao guardam recursos pesados.
  * <p>Fase 6: o mesmo codigo roda no desktop e no Android. A {@link Plataforma} diz se o modo toque esta ligado; nesse modo o
- * viewport e um {@link ExtendViewport} (a area extra da tela recebe os controles virtuais), senao continua o {@link FitViewport}
- * de 800x600. O endereco do servidor vem de {@link EnderecoDoServidor} e pode ser trocado na tela de configuracao.
+ * viewport e um {@link ExtendViewport}: a area extra da tela recebe os controles virtuais no toque e aproveita o formato 16:9
+ * no desktop. O endereco do servidor vem de {@link EnderecoDoServidor} e pode ser trocado na tela de configuracao.
  */
 public class MissaoMarteGame extends Game {
     public static final String TAG = "MissaoMarte";
@@ -82,7 +81,7 @@ public class MissaoMarteGame extends Game {
         Gdx.app.log(TAG, "create(): janela " + Gdx.graphics.getWidth() + "x" + Gdx.graphics.getHeight()
                 + (plataforma.usaToque() ? " (modo toque)" : ""));
         camera = new OrthographicCamera();
-        viewport = plataforma.usaToque() ? new ExtendViewport(LARGURA, ALTURA, camera) : new FitViewport(LARGURA, ALTURA, camera);
+        viewport = new ExtendViewport(LARGURA, ALTURA, camera);
         viewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
         // No Android a tecla Voltar chega como tecla comum, em vez de fechar o app sem perguntar.
         Gdx.input.setCatchKey(Keys.BACK, true);

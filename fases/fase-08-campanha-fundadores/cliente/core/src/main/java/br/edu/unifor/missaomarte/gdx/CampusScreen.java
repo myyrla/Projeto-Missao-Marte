@@ -181,44 +181,54 @@ public class CampusScreen extends TelaBase {
 
     private void desenharTextos(ResumoVisualDaCampanha resumo) {
         jogo.batch().begin();
+        float y = 592f;
         fonte(FonteDoJogo.TITULO);
         cor(AMBAR);
-        texto("CAMPUS UNIFOR MARTE", 32f, 592f);
+        texto("CAMPUS UNIFOR MARTE", 32f, y);
+        y = linhaAbaixo(y, 6f);
         fonte(FonteDoJogo.PEQUENO);
         cor(SECUNDARIO);
-        texto("Mapa autoral inspirado na disposição do campus de Fortaleza", 34f, 540f);
+        texto(textoLimitado("Mapa autoral inspirado na disposição do campus de Fortaleza", 500f), 34f, y);
 
+        float xPainel = 572f;
+        float larguraPainel = 192f;
+        y = 498f;
         fonte(FonteDoJogo.SUBTITULO);
         cor(TEXTO);
-        texto("Fundadores: " + resumo.fundadoresResgatados() + "/3", 572f, 498f);
+        texto(textoLimitado("Fundadores: " + resumo.fundadoresResgatados() + "/3", larguraPainel), xPainel, y);
+        y = linhaAbaixo(y, 4f);
         fonte(FonteDoJogo.TEXTO);
-        texto("Pontuação: " + resumo.pontuacaoTotal(), 572f, 472f);
+        texto(textoLimitado("Pontuação: " + resumo.pontuacaoTotal(), larguraPainel), xPainel, y);
+        y = linhaAbaixo(y, 5f);
         if (jogo.demonstracaoDaCampanha()) {
             cor(LILAS);
-            texto("Modo demonstração", 572f, 446f);
+            texto(textoLimitado("Modo demonstração", larguraPainel), xPainel, y);
+            y = linhaAbaixo(y, 6f);
         }
 
-        float y = 408f;
+        y = Math.min(y, 420f);
         for (ResumoVisualDaCampanha.Etapa etapa : resumo.etapas()) {
             fonte(FonteDoJogo.TEXTO);
             cor(corDaEtapa(etapa.numero()));
             String marcador = etapa.situacao() == ResumoVisualDaCampanha.SituacaoDaEtapa.RESGATADA ? "[OK]"
                     : etapa.situacao() == ResumoVisualDaCampanha.SituacaoDaEtapa.ATUAL ? "[>]" : "[ ]";
-            texto(marcador + " Etapa " + etapa.numero(), 572f, y);
+            texto(textoLimitado(marcador + " Etapa " + etapa.numero(), larguraPainel), xPainel, y);
+            y = linhaAbaixo(y, 2f);
             fonte(FonteDoJogo.PEQUENO);
             cor(SECUNDARIO);
-            texto(etapa.local(), 588f, y - 20f);
-            texto(etapa.fundador(), 588f, y - 38f);
-            y -= 88f;
+            texto(textoLimitado(etapa.local(), larguraPainel - 16f), xPainel + 16f, y);
+            y = linhaAbaixo(y, 1f);
+            texto(textoLimitado(etapa.fundador(), larguraPainel - 16f), xPainel + 16f, y);
+            y = linhaAbaixo(y, 8f);
         }
 
         fonte(FonteDoJogo.TEXTO);
         cor(campanha.concluida() ? LILAS : VERDE);
-        textoCentralizado(resumo.rotuloDaAcao(), 670f, 155f);
+        textoCentralizado(textoLimitado(resumo.rotuloDaAcao(), larguraPainel), 670f, 155f);
         fonte(FonteDoJogo.PEQUENO);
         cor(SECUNDARIO);
-        textoCentralizado(jogo.modoToque() ? "Use os botões abaixo"
-                : "Enter: selecionar   Esc: voltar", 670f, 122f);
+        textoCentralizado(textoLimitado(jogo.modoToque() ? "Use os botões abaixo"
+                : "Enter: selecionar   Esc: voltar", larguraPainel), 670f, 122f);
         jogo.batch().end();
     }
 
@@ -239,17 +249,21 @@ public class CampusScreen extends TelaBase {
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
         jogo.batch().begin();
+        float y = 360f;
         fonte(FonteDoJogo.SUBTITULO);
         cor(LILAS);
-        textoCentralizado("NOVA CAMPANHA", 400f, 360f);
+        textoCentralizado("NOVA CAMPANHA", 400f, y);
+        y = linhaAbaixo(y, 10f);
         fonte(FonteDoJogo.TEXTO);
         cor(TEXTO);
-        textoCentralizado("O progresso e as pontuações", 400f, 320f);
-        textoCentralizado("serão apagados.", 400f, 292f);
+        textoCentralizado("O progresso e as pontuações", 400f, y);
+        y = linhaAbaixo(y, 4f);
+        textoCentralizado("serão apagados.", 400f, y);
+        y = linhaAbaixo(y, 8f);
         fonte(FonteDoJogo.PEQUENO);
         cor(SECUNDARIO);
         textoCentralizado(jogo.modoToque() ? "Confirme ou cancele abaixo"
-                : "Enter ou S: confirmar   N ou Esc: cancelar", 400f, 260f);
+                : "Enter ou S: confirmar   N ou Esc: cancelar", 400f, y);
         jogo.batch().end();
     }
 

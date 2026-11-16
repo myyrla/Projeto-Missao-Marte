@@ -1,0 +1,34 @@
+package br.edu.unifor.missaomarte.lwjgl3;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+
+import java.lang.reflect.Method;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+class Lwjgl3LauncherTest {
+    @AfterEach
+    void limparPropriedade() {
+        System.clearProperty("missaomarte.janela");
+    }
+
+    @Test
+    void janelaPadraoUsaFormatoDezesseisPorNove() throws Exception {
+        System.clearProperty("missaomarte.janela");
+
+        assertArrayEquals(new int[] {1280, 720}, tamanhoDaJanela(false));
+    }
+
+    @Test
+    void propriedadeDaJanelaContinuaPrevalecendo() throws Exception {
+        System.setProperty("missaomarte.janela", "540x1200");
+
+        assertArrayEquals(new int[] {540, 1200}, tamanhoDaJanela(true));
+    }
+
+    private static int[] tamanhoDaJanela(boolean toque) throws Exception {
+        Method metodo = Lwjgl3Launcher.class.getDeclaredMethod("tamanhoDaJanela", boolean.class);
+        metodo.setAccessible(true);
+        return (int[]) metodo.invoke(null, toque);
+    }
+}

@@ -279,6 +279,16 @@ abstract class TelaBase implements Screen {
         });
     }
 
+    /** Altura da linha da fonte atual, incluindo a escala aplicada no carregamento. */
+    protected float alturaDaLinha() {
+        return fonteAtual().getLineHeight();
+    }
+
+    /** Linha seguinte calculada pela metrica real da fonte, acrescida de uma folga visual. */
+    protected float linhaAbaixo(float linhaAtual, float respiro) {
+        return linhaAtual - alturaDaLinha() - respiro;
+    }
+
     private BitmapFont fonteAtual() {
         return jogo.fonte(tipoDaFonte);
     }

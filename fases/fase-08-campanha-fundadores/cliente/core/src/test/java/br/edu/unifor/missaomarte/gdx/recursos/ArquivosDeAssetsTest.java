@@ -64,6 +64,22 @@ class ArquivosDeAssetsTest {
     }
 
     @Test
+    void fontesPossuemAsMetricasDaVersaoTres() throws IOException {
+        Map<FonteDoJogo, String> metricas = Map.of(
+                FonteDoJogo.TITULO, "size=68|lineHeight=89",
+                FonteDoJogo.SUBTITULO, "size=44|lineHeight=58",
+                FonteDoJogo.TEXTO, "size=34|lineHeight=42",
+                FonteDoJogo.PEQUENO, "size=26|lineHeight=33");
+
+        for (FonteDoJogo tipo : FonteDoJogo.values()) {
+            String descricao = Files.readString(ASSETS.resolve(tipo.caminho()));
+            String[] esperadas = metricas.get(tipo).split("\\|");
+            assertTrue(descricao.contains(esperadas[0]), "tamanho incorreto em " + tipo.caminho());
+            assertTrue(descricao.contains(esperadas[1]), "altura de linha incorreta em " + tipo.caminho());
+        }
+    }
+
+    @Test
     void cadaSomExisteEEUmWavValido() throws IOException, UnsupportedAudioFileException {
         for (Som som : Som.values()) {
             Path arquivo = ASSETS.resolve(som.caminho());

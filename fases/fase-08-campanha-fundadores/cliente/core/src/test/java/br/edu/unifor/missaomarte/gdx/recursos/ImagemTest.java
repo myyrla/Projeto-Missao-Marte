@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 class ImagemTest {
     @Test
     void catalogaOsSpritesNaResolucaoDobrada() {
-        assertEquals(1600, Imagem.FUNDO.larguraQuadro());
-        assertEquals(1200, Imagem.FUNDO.alturaQuadro());
+        assertEquals(2560, Imagem.FUNDO.larguraQuadro());
+        assertEquals(1440, Imagem.FUNDO.alturaQuadro());
 
         assertEquals(96, Imagem.TERRENO.larguraQuadro());
         assertEquals(96, Imagem.TERRENO.alturaQuadro());

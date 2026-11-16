@@ -116,6 +116,15 @@ class LayoutDaPartidaTest {
     }
 
     @Test
+    void emDezesseisPorNoveOPainelOcupaALarguraAteAMargemDireita() {
+        LayoutDaPartida l = LayoutDaPartida.calcular(1067f, 600f, CELULAS, false, MargensSeguras.NENHUMA);
+
+        assertEquals(1047f, l.painel().direita(), 0.001f);
+        assertTrue(l.painel().largura() > LayoutDaPartida.PAINEL_LARGURA);
+        assertTrue(l.painel().x() >= l.mapa().direita());
+    }
+
+    @Test
     void emRetratoOMapaUsaALarguraEOsControlesFicamEmbaixo() {
         LayoutDaPartida l = LayoutDaPartida.calcular(800f, 1422f, CELULAS, true, MargensSeguras.NENHUMA);
 

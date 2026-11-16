@@ -109,13 +109,19 @@ public class HudRenderer {
         if (layout.emRetrato()) {
             return new RetanguloDeTela(painel.x() + 8f, painel.y() + 6f, painel.largura() - 16f, 8f);
         }
-        return new RetanguloDeTela(painel.x() + 10f, yDasEntregas() - 30f * fator, LayoutDaPartida.PAINEL_LARGURA_DO_TEXTO,
-                BARRA_ALTURA);
+        BitmapFont fonte = fontes.obter(FonteDoJogo.PEQUENO);
+        float y = yDasEntregas() - fonte.getLineHeight() - 6f * fator - BARRA_ALTURA;
+        return new RetanguloDeTela(painel.x() + 10f, y, larguraDoTextoNoPainel(), BARRA_ALTURA);
     }
 
-    // Linha de base do texto "Entregues" no painel lateral (soma dos espacos das linhas anteriores).
+    // Linha de base do texto "Entregues" no painel lateral, calculada pelas metricas reais das fontes.
     private float yDasEntregas() {
-        return layout.painel().topo() - 12f - (32f + 22f + 36f + 28f) * fator - 32f;
+        float y = layout.painel().topo() - 12f;
+        y = linhaAbaixo(y, fontes.obter(FonteDoJogo.SUBTITULO), 4f);
+        y = linhaAbaixo(y, fontes.obter(FonteDoJogo.PEQUENO), 3f);
+        y = linhaAbaixo(y, fontes.obter(FonteDoJogo.PEQUENO), 8f);
+        y = linhaAbaixo(y, fontes.obter(FonteDoJogo.TEXTO), 4f);
+        return y - 24f - 8f * fator;
     }
 
     private void desenharBarraSuperior(GameSession session, Nave nave, boolean mudo, long segundos) {
@@ -145,46 +151,48 @@ public class HudRenderer {
         RetanguloDeTela painel = layout.painel();
         float x = painel.x() + 10f;
         float y = painel.topo() - 12f;
+        float largura = larguraDoTextoNoPainel();
 
         BitmapFont cabecalho = fontes.obter(FonteDoJogo.SUBTITULO);
         cabecalho.setColor(DESTAQUE);
-        cabecalho.draw(batch, "MISSÃO MARTE", x, y);
+        cabecalho.draw(batch, limitar("MISSÃO MARTE", cabecalho, largura), x, y);
 
-        BitmapFont fonte = fontes.obter(FonteDoJogo.TEXTO);
-        fonte.setColor(Color.WHITE);
-        y -= 32f * fator;
-        fonte.draw(batch, limitar("Piloto: " + session.getPiloto(), fonte,
-                LayoutDaPartida.PAINEL_LARGURA_DO_TEXTO), x, y);
-        y -= 22f * fator;
-        fonte.draw(batch, formatarDificuldade(session.getDificuldade()), x, y);
+        BitmapFont corpo = fontes.obter(FonteDoJogo.PEQUENO);
+        corpo.setColor(Color.WHITE);
+        y = linhaAbaixo(y, cabecalho, 4f);
+        corpo.draw(batch, limitar("Piloto: " + session.getPiloto(), corpo, largura), x, y);
+        y = linhaAbaixo(y, corpo, 3f);
+        corpo.draw(batch, limitar(formatarDificuldade(session.getDificuldade()), corpo, largura), x, y);
 
         int aBordo = nave.getPassageiros().size();
-        y -= 36f * fator;
-        fonte.draw(batch, limitar("A bordo: " + aBordo + "/" + nave.getCapacidade(), fonte,
-                LayoutDaPartida.PAINEL_LARGURA_DO_TEXTO), x, y);
-        y -= 32f;
+        BitmapFont destaque = fontes.obter(FonteDoJogo.TEXTO);
+        destaque.setColor(Color.WHITE);
+        y = linhaAbaixo(y, corpo, 8f);
+        destaque.draw(batch, limitar("A bordo: " + aBordo + "/" + nave.getCapacidade(), destaque, largura), x, y);
+        y = linhaAbaixo(y, destaque, 4f) - 24f;
         for (int i = 0; i < nave.getCapacidade(); i++) {
             Imagem icone = i < aBordo ? Imagem.ICONE_PASSAGEIRO : Imagem.ICONE_VAGA;
             batch.draw(recursos.quadro(icone), x + i * 25f, y, 24f, 24f);
         }
 
-        y -= 28f * fator;
-        fonte.draw(batch, limitar("Entregues: " + session.getResgatados() + "/" + session.getTotalPassageiros(), fonte,
-                LayoutDaPartida.PAINEL_LARGURA_DO_TEXTO), x, y);
-        y -= 30f * fator + BARRA_ALTURA + 26f * fator - BARRA_ALTURA;
-        fonte.draw(batch, "No mapa: " + session.getMissao().getPassageiros().size(), x, y);
-        y -= 22f * fator;
+        y -= 8f * fator;
+        corpo.draw(batch, limitar("Entregues: " + session.getResgatados() + "/" + session.getTotalPassageiros(), corpo,
+                largura), x, y);
+        RetanguloDeTela barra = areaDaBarraDeProgresso();
+        y = barra.y() - 8f * fator;
+        corpo.draw(batch, limitar("No mapa: " + session.getMissao().getPassageiros().size(), corpo, largura), x, y);
+        y = linhaAbaixo(y, corpo, 3f);
         if (session.getModo() == ModoDeJogo.DINAMICO) {
-            fonte.draw(batch, formatarMunicaoEMira(session.getMunicao(), session.getMira()), x, y);
+            corpo.draw(batch, limitar(formatarMunicaoEMira(session.getMunicao(), session.getMira()), corpo, largura), x, y);
         } else {
-            fonte.draw(batch, "Mov.: " + session.getMovimentos(), x, y);
+            corpo.draw(batch, limitar("Mov.: " + session.getMovimentos(), corpo, largura), x, y);
         }
 
         if (!mensagens.isEmpty()) {
-            y -= 38f * fator;
-            fonte.setColor(DESTAQUE);
-            fonte.draw(batch, String.join("\n", mensagens), x, y, LayoutDaPartida.PAINEL_LARGURA_DO_TEXTO, Align.left, true);
-            fonte.setColor(Color.WHITE);
+            y = linhaAbaixo(y, corpo, 8f);
+            corpo.setColor(DESTAQUE);
+            corpo.draw(batch, String.join("\n", mensagens), x, y, largura, Align.left, true);
+            corpo.setColor(Color.WHITE);
         }
     }
 
@@ -192,10 +200,10 @@ public class HudRenderer {
     private void desenharFaixa(GameSession session, Nave nave, List<String> mensagens) {
         RetanguloDeTela faixa = layout.painel();
         float x = faixa.x() + 8f;
-        float linha = 22f * fator;
         float y = faixa.topo() - 8f;
 
         BitmapFont fonte = fontes.obter(FonteDoJogo.PEQUENO);
+        float linha = fonte.getLineHeight() + 4f * fator;
         fonte.setColor(Color.WHITE);
         float larguraDaLinha = faixa.largura() - 16f;
         fonte.draw(batch, limitar(formatarDificuldade(session.getDificuldade()) + "   Piloto: " + session.getPiloto(), fonte,
@@ -242,6 +250,14 @@ public class HudRenderer {
             medidor.setText(fonte, candidato);
             return medidor.width;
         });
+    }
+
+    private float larguraDoTextoNoPainel() {
+        return Math.max(1f, layout.painel().largura() - 20f);
+    }
+
+    private float linhaAbaixo(float linhaAtual, BitmapFont fonte, float respiro) {
+        return linhaAtual - fonte.getLineHeight() - respiro * fator;
     }
 
     static String formatarDificuldade(Dificuldade dificuldade) {

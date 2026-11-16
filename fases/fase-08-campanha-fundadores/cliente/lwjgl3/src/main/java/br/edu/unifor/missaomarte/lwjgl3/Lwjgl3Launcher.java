@@ -70,13 +70,13 @@ public class Lwjgl3Launcher {
         new Lwjgl3Application(jogo, configuracao);
     }
 
-    // -Dmissaomarte.janela=540x1200 simula uma tela de celular em retrato; sem a opcao: 800x600 ou, no modo toque, 1200x540.
+    // -Dmissaomarte.janela=540x1200 simula uma tela de celular em retrato; sem a opcao: 1280x720.
     private static int[] tamanhoDaJanela(boolean toque) {
         String pedido = System.getProperty("missaomarte.janela", "");
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d{3,4})x(\\d{3,4})").matcher(pedido);
         if (m.matches()) {
             return new int[] {Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2))};
         }
-        return toque ? new int[] {1200, 540} : new int[] {800, 600};
+        return new int[] {1280, 720};
     }
 }
