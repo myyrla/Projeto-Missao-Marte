@@ -1,6 +1,8 @@
 package br.edu.unifor.missaomarte.gdx.recursos;
 
 import br.edu.unifor.missaomarte.application.campanha.EstadoDaConstrucao;
+import br.edu.unifor.missaomarte.gdx.ui.IconeDaInterface;
+import br.edu.unifor.missaomarte.gdx.ui.PecaDaInterface;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.TextureLoader;
@@ -22,12 +24,19 @@ import java.util.Map;
 public class Recursos implements Disposable {
     private final AssetManager gerenciador = new AssetManager();
     private final Map<Imagem, TextureRegion[]> quadros = new EnumMap<>(Imagem.class);
+    private final Map<IconeDaInterface, TextureRegion> iconesDaInterface = new EnumMap<>(IconeDaInterface.class);
 
     /** Carrega tudo de uma vez (poucos arquivos pequenos); bloqueia ate terminar. */
     public void carregar() {
         TextureLoader.TextureParameter parametrosDaTextura = criarParametrosDaTextura();
         for (Imagem imagem : Imagem.values()) {
             gerenciador.load(imagem.caminho(), Texture.class, parametrosDaTextura);
+        }
+        for (PecaDaInterface peca : PecaDaInterface.values()) {
+            gerenciador.load(peca.caminho(), Texture.class, parametrosDaTextura);
+        }
+        for (IconeDaInterface icone : IconeDaInterface.values()) {
+            gerenciador.load(icone.caminho(), Texture.class, parametrosDaTextura);
         }
         gerenciador.load(CamadaDoCampus.caminhoDaBase(), Texture.class, parametrosDaTextura);
         for (CamadaDoCampus camada : CamadaDoCampus.values()) {
@@ -48,12 +57,28 @@ public class Recursos implements Disposable {
             TextureRegion[][] grade = TextureRegion.split(textura, imagem.larguraQuadro(), imagem.alturaQuadro());
             quadros.put(imagem, grade[0]);
         }
-        int totalDeImagens = Imagem.values().length + 1 + CamadaDoCampus.values().length * 2;
+        for (IconeDaInterface icone : IconeDaInterface.values()) {
+            iconesDaInterface.put(icone, new TextureRegion(textura(icone)));
+        }
+        int totalDeImagens = Imagem.values().length + PecaDaInterface.values().length + IconeDaInterface.values().length
+                + 1 + CamadaDoCampus.values().length * 2;
         Gdx.app.log("Recursos", totalDeImagens + " imagens e " + Som.values().length + " sons carregados");
     }
 
     public Texture textura(Imagem imagem) {
         return gerenciador.get(imagem.caminho(), Texture.class);
+    }
+
+    public Texture textura(PecaDaInterface peca) {
+        return gerenciador.get(peca.caminho(), Texture.class);
+    }
+
+    private Texture textura(IconeDaInterface icone) {
+        return gerenciador.get(icone.caminho(), Texture.class);
+    }
+
+    public TextureRegion icone(IconeDaInterface icone) {
+        return iconesDaInterface.get(icone);
     }
 
     public Texture texturaDaBaseDoCampus() {

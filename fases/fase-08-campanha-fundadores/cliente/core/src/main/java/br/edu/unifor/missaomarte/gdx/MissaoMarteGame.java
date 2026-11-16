@@ -15,6 +15,7 @@ import br.edu.unifor.missaomarte.gdx.plataforma.Plataforma;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.FontesDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Recursos;
+import br.edu.unifor.missaomarte.gdx.ui.EstiloDaInterface;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
@@ -62,6 +63,7 @@ public class MissaoMarteGame extends Game {
     private ShapeRenderer shapes;
     private FontesDoJogo fontes;
     private Recursos recursos;
+    private EstiloDaInterface estilo;
     private GerenciadorDeSom sons;
 
     public MissaoMarteGame(MissaoFactory missaoFactory, RankingService rankingService, ServidorDoJogo servidor,
@@ -93,6 +95,7 @@ public class MissaoMarteGame extends Game {
 
         recursos = new Recursos();
         recursos.carregar();
+        estilo = new EstiloDaInterface(recursos, fontes);
         sons = new GerenciadorDeSom(recursos);
 
         InicioDaCampanha inicioDaCampanha = preparacaoInicialDaCampanha.iniciar();
@@ -217,6 +220,10 @@ public class MissaoMarteGame extends Game {
 
     Recursos recursos() {
         return recursos;
+    }
+
+    EstiloDaInterface estilo() {
+        return estilo;
     }
 
     GerenciadorDeSom sons() {

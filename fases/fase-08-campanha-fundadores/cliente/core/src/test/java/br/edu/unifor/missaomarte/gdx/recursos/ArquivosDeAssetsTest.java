@@ -45,13 +45,16 @@ class ArquivosDeAssetsTest {
 
     @Test
     void cadaFontePossuiDescricaoImagemELicenca() throws IOException {
-        Map<FonteDoJogo, String> nomes = Map.of(
-                FonteDoJogo.TITULO, "titulo",
-                FonteDoJogo.SUBTITULO, "subtitulo",
-                FonteDoJogo.TEXTO, "texto",
-                FonteDoJogo.PEQUENO, "pequeno");
-        for (FonteDoJogo tipo : FonteDoJogo.values()) {
-            String nome = nomes.get(tipo);
+        Map<String, String> nomes = Map.of(
+                "DISPLAY", "display",
+                "TITULO", "titulo",
+                "SUBTITULO", "subtitulo",
+                "TEXTO", "texto",
+                "PEQUENO", "pequeno",
+                "ROTULO", "rotulo");
+        for (Map.Entry<String, String> entrada : nomes.entrySet()) {
+            FonteDoJogo tipo = FonteDoJogo.valueOf(entrada.getKey());
+            String nome = entrada.getValue();
             Path descricao = ASSETS.resolve(tipo.caminho());
             Path imagem = ASSETS.resolve("fontes/" + nome + ".png");
             assertTrue(Files.isRegularFile(descricao), "descricao ausente: " + descricao);
@@ -59,21 +62,25 @@ class ArquivosDeAssetsTest {
             assertTrue(Files.readString(descricao).contains("file=\"" + nome + ".png\""),
                     "pagina incorreta em " + descricao);
         }
+        assertEquals(nomes.size(), FonteDoJogo.values().length);
         assertTrue(Files.isRegularFile(ASSETS.resolve("fontes/licencas/OFL-ChakraPetch.txt")));
         assertTrue(Files.isRegularFile(ASSETS.resolve("fontes/licencas/OFL-Inter.txt")));
     }
 
     @Test
-    void fontesPossuemAsMetricasDaVersaoTres() throws IOException {
-        Map<FonteDoJogo, String> metricas = Map.of(
-                FonteDoJogo.TITULO, "size=68|lineHeight=89",
-                FonteDoJogo.SUBTITULO, "size=44|lineHeight=58",
-                FonteDoJogo.TEXTO, "size=34|lineHeight=42",
-                FonteDoJogo.PEQUENO, "size=26|lineHeight=33");
+    void fontesPossuemAsMetricasDoPacoteVisual() throws IOException {
+        Map<String, String> metricas = Map.of(
+                "DISPLAY", "size=184|lineHeight=240",
+                "TITULO", "size=68|lineHeight=89",
+                "SUBTITULO", "size=44|lineHeight=58",
+                "TEXTO", "size=34|lineHeight=42",
+                "PEQUENO", "size=26|lineHeight=33",
+                "ROTULO", "size=30|lineHeight=40");
 
-        for (FonteDoJogo tipo : FonteDoJogo.values()) {
+        for (Map.Entry<String, String> entrada : metricas.entrySet()) {
+            FonteDoJogo tipo = FonteDoJogo.valueOf(entrada.getKey());
             String descricao = Files.readString(ASSETS.resolve(tipo.caminho()));
-            String[] esperadas = metricas.get(tipo).split("\\|");
+            String[] esperadas = entrada.getValue().split("\\|");
             assertTrue(descricao.contains(esperadas[0]), "tamanho incorreto em " + tipo.caminho());
             assertTrue(descricao.contains(esperadas[1]), "altura de linha incorreta em " + tipo.caminho());
         }
