@@ -201,7 +201,7 @@ public final class HudRenderer {
     private void desenharPiloto(GameSession session) {
         float s = layout.escala();
         RetanguloDeTela painel = layout.piloto();
-        rotulo("PILOTO " + session.getPiloto().toUpperCase() + " · " + session.getDificuldade(),
+        rotulo(tituloDoPiloto(session.getPiloto(), session.getDificuldade()),
                 painel.x() + 16f * s, painel.topo() - 17f * s);
         rotulo("CASCO", painel.x() + 16f * s, painel.topo() - 51f * s);
         rotulo("PONTOS", painel.x() + 16f * s, painel.y() + 27f * s);
@@ -432,7 +432,23 @@ public final class HudRenderer {
     }
 
     static String formatarDificuldade(br.edu.unifor.missaomarte.domain.Dificuldade dificuldade) {
-        return "Dif.: " + dificuldade;
+        return "Dif.: " + nomeDaDificuldade(dificuldade);
+    }
+
+    static String tituloDoPiloto(String piloto, br.edu.unifor.missaomarte.domain.Dificuldade dificuldade) {
+        String nome = "Piloto".equalsIgnoreCase(piloto) ? "CONVIDADO" : "PILOTO " + piloto.toUpperCase();
+        return nome + " · " + nomeDaDificuldade(dificuldade);
+    }
+
+    private static String nomeDaDificuldade(br.edu.unifor.missaomarte.domain.Dificuldade dificuldade) {
+        switch (dificuldade) {
+            case MEDIO:
+                return "MÉDIO";
+            case DIFICIL:
+                return "DIFÍCIL";
+            default:
+                return "FÁCIL";
+        }
     }
 
     static String formatarMunicaoEMira(int municao, Acao mira) {

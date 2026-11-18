@@ -10,8 +10,15 @@ import org.junit.jupiter.api.Test;
 class HudRendererTextoTest {
     @Test
     void preservaDificuldadeMunicaoEMiraEmFormatosCurtos() {
-        assertEquals("Dif.: DIFICIL", HudRenderer.formatarDificuldade(Dificuldade.DIFICIL));
+        assertEquals("Dif.: DIFÍCIL", HudRenderer.formatarDificuldade(Dificuldade.DIFICIL));
         assertEquals("Mun. 5   Mira >", HudRenderer.formatarMunicaoEMira(5, Acao.DIREITA));
+    }
+
+    @Test
+    void painelIdentificaConvidadoENomesDeDificuldadeComAcento() {
+        assertEquals("CONVIDADO · FÁCIL", HudRenderer.tituloDoPiloto("Piloto", Dificuldade.FACIL));
+        assertEquals("PILOTO MYRLA · MÉDIO", HudRenderer.tituloDoPiloto("Myrla", Dificuldade.MEDIO));
+        assertEquals("PILOTO CRIS · DIFÍCIL", HudRenderer.tituloDoPiloto("Cris", Dificuldade.DIFICIL));
     }
 
     @Test

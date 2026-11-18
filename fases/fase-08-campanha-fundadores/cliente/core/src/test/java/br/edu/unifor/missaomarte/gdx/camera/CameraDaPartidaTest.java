@@ -6,26 +6,29 @@ import org.junit.jupiter.api.Test;
 
 class CameraDaPartidaTest {
     @Test
-    void prendeOCentroNasBordasQuandoOMapaEMaiorQueAJanela() {
+    void moveSomenteNoEixoEmQueOMapaNaoCabeNaJanela() {
         CameraDaPartida esquerda = new CameraDaPartida();
-        CameraDaPartida.Centro inicio = esquerda.atualizar(1056f, 1056f, 720f, 600f, 0f, 0f);
-        assertEquals(360f, inicio.x(), 0.001f);
-        assertEquals(300f, inicio.y(), 0.001f);
+        CameraDaPartida.Centro inicio = esquerda.atualizar(792f, 792f, 540f, 1200f, 0f, 0f);
+        assertEquals(270f, inicio.x(), 0.001f);
+        assertEquals(396f, inicio.y(), 0.001f);
 
         CameraDaPartida direita = new CameraDaPartida();
-        CameraDaPartida.Centro fim = direita.atualizar(1056f, 1056f, 720f, 600f, 1056f, 1056f);
-        assertEquals(696f, fim.x(), 0.001f);
-        assertEquals(756f, fim.y(), 0.001f);
+        CameraDaPartida.Centro fim = direita.atualizar(792f, 792f, 540f, 1200f, 792f, 792f);
+        assertEquals(522f, fim.x(), 0.001f);
+        assertEquals(396f, fim.y(), 0.001f);
     }
 
     @Test
-    void centralizaMapaMenorQueAJanela() {
+    void centralizaENaoSegueOAlvoQuandoOMapaCabeNaJanela() {
         CameraDaPartida camera = new CameraDaPartida();
 
-        CameraDaPartida.Centro centro = camera.atualizar(500f, 400f, 720f, 600f, 20f, 380f);
+        CameraDaPartida.Centro inicio = camera.atualizar(720f, 720f, 1280f, 720f, 20f, 700f);
+        CameraDaPartida.Centro depois = camera.atualizar(720f, 720f, 1280f, 720f, 700f, 20f);
 
-        assertEquals(250f, centro.x(), 0.001f);
-        assertEquals(200f, centro.y(), 0.001f);
+        assertEquals(360f, inicio.x(), 0.001f);
+        assertEquals(360f, inicio.y(), 0.001f);
+        assertEquals(360f, depois.x(), 0.001f);
+        assertEquals(360f, depois.y(), 0.001f);
     }
 
     @Test

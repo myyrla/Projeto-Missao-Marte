@@ -6,9 +6,10 @@ import org.junit.jupiter.api.Test;
 
 class EscalaDaCelulaTest {
     @Test
-    void respeitaEscalaMinimaIntermediariaEMaxima() {
-        assertEquals(64f, EscalaDaCelula.calcular(320f, 320f, 11, 11), 0.001f);
-        assertEquals(800f / 11f, EscalaDaCelula.calcular(800f, 600f, 11, 11), 0.001f);
-        assertEquals(96f, EscalaDaCelula.calcular(1280f, 720f, 11, 11), 0.001f);
+    void usaSomenteAAlturaTotalDaJanelaELimitaEntreQuarentaEOitoESetentaEDois() {
+        assertEquals(48f, EscalaDaCelula.calcular(320f, 11), 0.001f);
+        assertEquals(600f / 11f, EscalaDaCelula.calcular(600f, 11), 0.001f);
+        assertEquals(720f / 11f, EscalaDaCelula.calcular(720f, 11), 0.001f);
+        assertEquals(72f, EscalaDaCelula.calcular(1200f, 11), 0.001f);
     }
 }
