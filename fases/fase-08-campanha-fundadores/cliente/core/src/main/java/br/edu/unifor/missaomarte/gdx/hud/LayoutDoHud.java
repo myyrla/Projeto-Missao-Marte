@@ -163,6 +163,12 @@ public final class LayoutDoHud {
     }
     public RetanguloDeTela rodapeDireito() { return rodapeDireito; }
     public RetanguloDeTela aviso() { return aviso; }
+    public RetanguloDeTela seloDaTempestade() {
+        float larguraDoSelo = 240f * escala;
+        float alturaDoSelo = 34f * escala;
+        return new RetanguloDeTela(objetivo.centroX() - larguraDoSelo / 2f,
+                objetivo.y() - 8f * escala - alturaDoSelo, larguraDoSelo, alturaDoSelo);
+    }
     public RetanguloDeTela controles() { return controles; }
     public RetanguloDeTela painelDoFim() { return painelDoFim; }
     public RetanguloDeTela botaoDoFim(int indice) { return botoesDoFim[indice]; }

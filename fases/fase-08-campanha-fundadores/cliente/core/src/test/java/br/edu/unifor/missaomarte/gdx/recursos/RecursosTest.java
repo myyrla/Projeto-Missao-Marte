@@ -24,4 +24,12 @@ class RecursosTest {
         assertEquals(Texture.TextureWrap.Repeat, parametros.wrapU);
         assertEquals(Texture.TextureWrap.Repeat, parametros.wrapV);
     }
+
+    @Test
+    void configuraPoeiraParaRepetirSobreOMapa() {
+        TextureLoader.TextureParameter parametros = Recursos.criarParametrosDaTextura(Imagem.POEIRA);
+
+        assertEquals(Texture.TextureWrap.Repeat, parametros.wrapU);
+        assertEquals(Texture.TextureWrap.Repeat, parametros.wrapV);
+    }
 }

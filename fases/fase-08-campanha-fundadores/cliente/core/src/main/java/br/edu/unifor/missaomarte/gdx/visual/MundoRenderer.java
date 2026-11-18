@@ -4,6 +4,7 @@ import br.edu.unifor.missaomarte.domain.Missao;
 import br.edu.unifor.missaomarte.domain.Inimigo;
 import br.edu.unifor.missaomarte.domain.ObjetoRenderizavel;
 import br.edu.unifor.missaomarte.domain.Passageiro;
+import br.edu.unifor.missaomarte.domain.Posicao;
 import br.edu.unifor.missaomarte.gdx.MapaGeometria;
 import br.edu.unifor.missaomarte.gdx.MissaoMarteGame;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
@@ -26,6 +27,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Desenha o mundo do jogo: terreno repetido, grade, limites, objetos, nave, efeitos e textos flutuantes.
@@ -44,6 +46,9 @@ public class MundoRenderer {
     private static final float REPETICAO_DO_TERRENO = 512f;
     private static final float TAMANHO_DO_OBJETO = 0.9f;
     private static final float ESPACAMENTO_DO_RASTRO = 10f;
+    private static final float DURACAO_DO_CICLO_ESPECIAL = 0.5f;
+    private static final float ALFA_DA_POEIRA = 0.45f;
+    private static final Color ESCURIDAO_DA_TEMPESTADE = new Color(Color.valueOf("0A0612")).mul(1f, 1f, 1f, 0.82f);
 
     private final Recursos recursos;
     private final SpriteBatch batch;
@@ -57,6 +62,8 @@ public class MundoRenderer {
     private final Animation<TextureRegion> animacaoInimigo;
     private final Animation<TextureRegion> animacaoPerseguidor;
     private final Animation<TextureRegion> animacaoPropulsor;
+    private final Animation<TextureRegion> animacaoNami;
+    private final Animation<TextureRegion> animacaoParadaDoRover;
 
     public MundoRenderer(Recursos recursos, SpriteBatch batch, ShapeRenderer formas, BitmapFont fonte,
             BitmapFont fonteRotulo, EstiloDaInterface estilo, MapaGeometria mapa) {
@@ -71,6 +78,8 @@ public class MundoRenderer {
         this.animacaoInimigo = recursos.animacao(Imagem.INIMIGO, 0.3f, PlayMode.LOOP);
         this.animacaoPerseguidor = recursos.animacao(Imagem.PERSEGUIDOR, 0.2f, PlayMode.LOOP);
         this.animacaoPropulsor = recursos.animacao(Imagem.PROPULSOR, 0.08f, PlayMode.LOOP);
+        this.animacaoNami = recursos.animacao(Imagem.NAMI, duracaoDoQuadroEspecial(), PlayMode.LOOP);
+        this.animacaoParadaDoRover = recursos.animacao(Imagem.PARADA_ROVER, duracaoDoQuadroEspecial(), PlayMode.LOOP);
     }
 
     /** A geometria muda quando a tela muda de tamanho ou de orientacao; o desenho passa a usar a nova no proximo quadro. */
@@ -86,7 +95,7 @@ public class MundoRenderer {
     public void desenhar(Missao missao, PosicoesVisuais posicoes, RastroDaNave rastro,
             EfeitosVisuais efeitos, MensagensFlutuantes flutuantes,
             float tempo, float anguloNave, boolean naveVisivel, float deslocX, float deslocY,
-            RetanguloDeTela areaVisivel) {
+            RetanguloDeTela areaVisivel, Predicate<Posicao> estaVisivel, boolean tempestadeAtiva) {
         desenharTerreno(areaVisivel);
         desenharGradeELimites(areaVisivel);
 
@@ -95,6 +104,7 @@ public class MundoRenderer {
         try {
             desenharRastro(rastro, deslocX, deslocY);
             desenharAlcances(missao.getInimigos(), posicoes, deslocX, deslocY);
+            desenharRotasDoRover(missao, deslocX, deslocY);
             desenharObjetos(Collections.singletonList(missao.getBase()), posicoes, tempo, deslocX, deslocY);
             desenharObjetos(missao.getEstacoesNami(), posicoes, tempo, deslocX, deslocY);
             desenharObjetos(missao.getParadasDoRover(), posicoes, tempo, deslocX, deslocY);
@@ -107,10 +117,74 @@ public class MundoRenderer {
             }
 
             desenharEfeitos(efeitos, deslocX, deslocY);
-            desenharEtiquetas(missao, posicoes, deslocX, deslocY);
+        } finally {
+            batch.setColor(corAnterior);
+            batch.end();
+        }
+        if (tempestadeAtiva) {
+            desenharEscuridao(estaVisivel);
+            desenharPoeira(tempo);
+        }
+        batch.begin();
+        try {
+            desenharEtiquetas(missao, posicoes, deslocX, deslocY, estaVisivel);
             desenharFlutuantes(flutuantes, deslocX, deslocY);
         } finally {
             batch.setColor(corAnterior);
+            batch.end();
+        }
+    }
+
+    private void desenharRotasDoRover(Missao missao, float dx, float dy) {
+        Texture ponto = recursos.textura(ImagemDoMapa.RASTRO_PONTO);
+        float tamanho = 6f;
+        batch.setColor(VERDE_PASSAGEIRO.r, VERDE_PASSAGEIRO.g, VERDE_PASSAGEIRO.b, 0.65f);
+        for (RotasDoRover.Rota rota : RotasDoRover.agrupar(missao.getParadasDoRover())) {
+            List<RastroDaNave.Casa> casas = List.of(
+                    new RastroDaNave.Casa(rota.origem().getX(), rota.origem().getY()),
+                    new RastroDaNave.Casa(rota.destino().getX(), rota.destino().getY()));
+            for (GeometriaDoRastro.Ponto amostra : GeometriaDoRastro.calcular(casas,
+                    MissaoMarteGame.MIN, MissaoMarteGame.MAX, mapa.celula(), mapa.origemX(), mapa.origemY(), 14f)) {
+                batch.draw(ponto, amostra.x() - tamanho / 2f + dx, amostra.y() - tamanho / 2f + dy,
+                        tamanho, tamanho);
+            }
+        }
+        batch.setColor(Color.WHITE);
+    }
+
+    private void desenharEscuridao(Predicate<Posicao> estaVisivel) {
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        formas.begin(ShapeType.Filled);
+        try {
+            formas.setColor(ESCURIDAO_DA_TEMPESTADE);
+            for (int y = MissaoMarteGame.MIN; y <= MissaoMarteGame.MAX; y++) {
+                for (int x = MissaoMarteGame.MIN; x <= MissaoMarteGame.MAX; x++) {
+                    if (!estaVisivel.test(new Posicao(x, y))) {
+                        formas.rect(mapa.xCentro(x) - mapa.celula() / 2f,
+                                mapa.yCentro(y) - mapa.celula() / 2f, mapa.celula(), mapa.celula());
+                    }
+                }
+            }
+        } finally {
+            formas.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        }
+    }
+
+    private void desenharPoeira(float tempo) {
+        Texture poeira = recursos.textura(Imagem.POEIRA);
+        float deslocamentoU = tempo * 0.012f;
+        float deslocamentoV = tempo * 0.004f;
+        float repeticoesX = mapa.largura() / Imagem.POEIRA.larguraQuadro();
+        float repeticoesY = mapa.altura() / Imagem.POEIRA.alturaQuadro();
+        batch.begin();
+        try {
+            batch.setColor(1f, 1f, 1f, ALFA_DA_POEIRA);
+            batch.draw(poeira, mapa.origemX(), mapa.origemY(), mapa.largura(), mapa.altura(),
+                    deslocamentoU, deslocamentoV, deslocamentoU + repeticoesX, deslocamentoV + repeticoesY);
+        } finally {
+            batch.setColor(Color.WHITE);
             batch.end();
         }
     }
@@ -252,6 +326,10 @@ public class MundoRenderer {
                 return animacaoInimigo.getKeyFrame(tempo, true);
             case PERSEGUIDOR:
                 return animacaoPerseguidor.getKeyFrame(tempo, true);
+            case NAMI:
+                return animacaoNami.getKeyFrame(tempo, true);
+            case PARADA_ROVER:
+                return animacaoParadaDoRover.getKeyFrame(tempo, true);
             default:
                 return recursos.quadro(imagem);
         }
@@ -288,12 +366,14 @@ public class MundoRenderer {
         }
     }
 
-    private void desenharEtiquetas(Missao missao, PosicoesVisuais posicoes, float dx, float dy) {
+    private void desenharEtiquetas(Missao missao, PosicoesVisuais posicoes, float dx, float dy,
+            Predicate<Posicao> estaVisivel) {
         Color corAnterior = new Color(fonteRotulo.getColor());
         try {
             fonteRotulo.setColor(Color.WHITE);
             for (MarcadoresDePassageiros.Marcador marcador : MarcadoresDePassageiros.selecionar(
-                    missao.getNave().getPosicao(), missao.getPassageiros())) {
+                    missao.getNave().getPosicao(),
+                    VisibilidadeDaTempestade.filtrar(missao.getPassageiros(), estaVisivel))) {
                 PosicaoVisual visual = posicoes.de(marcador.passageiro());
                 layout.setText(fonteRotulo, marcador.texto());
                 float largura = layout.width + 24f;
@@ -323,6 +403,10 @@ public class MundoRenderer {
 
     static float tamanhoDoObjeto(float celula) {
         return celula * TAMANHO_DO_OBJETO;
+    }
+
+    static float duracaoDoQuadroEspecial() {
+        return DURACAO_DO_CICLO_ESPECIAL / 2f;
     }
 
     private void desenharFlutuantes(MensagensFlutuantes flutuantes, float dx, float dy) {

@@ -28,10 +28,10 @@ public class Recursos implements Disposable {
 
     /** Carrega tudo de uma vez (poucos arquivos pequenos); bloqueia ate terminar. */
     public void carregar() {
-        TextureLoader.TextureParameter parametrosDaTextura = criarParametrosDaTextura();
         for (Imagem imagem : Imagem.values()) {
-            gerenciador.load(imagem.caminho(), Texture.class, parametrosDaTextura);
+            gerenciador.load(imagem.caminho(), Texture.class, criarParametrosDaTextura(imagem));
         }
+        TextureLoader.TextureParameter parametrosDaTextura = criarParametrosDaTextura();
         for (ImagemDoMapa imagem : ImagemDoMapa.values()) {
             gerenciador.load(imagem.caminho(), Texture.class, criarParametrosDoMapa(imagem));
         }
@@ -125,6 +125,15 @@ public class Recursos implements Disposable {
         parametros.genMipMaps = true;
         parametros.minFilter = Texture.TextureFilter.MipMapLinearLinear;
         parametros.magFilter = Texture.TextureFilter.Linear;
+        return parametros;
+    }
+
+    static TextureLoader.TextureParameter criarParametrosDaTextura(Imagem imagem) {
+        TextureLoader.TextureParameter parametros = criarParametrosDaTextura();
+        if (imagem == Imagem.POEIRA) {
+            parametros.wrapU = Texture.TextureWrap.Repeat;
+            parametros.wrapV = Texture.TextureWrap.Repeat;
+        }
         return parametros;
     }
 

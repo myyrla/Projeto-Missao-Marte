@@ -10,4 +10,9 @@ class MundoRendererGeometriaTest {
         assertEquals(43.2f, MundoRenderer.tamanhoDoObjeto(48f), 0.001f);
         assertEquals(64.8f, MundoRenderer.tamanhoDoObjeto(72f), 0.001f);
     }
+
+    @Test
+    void doisQuadrosCompletamOCicloEspecialEmMeioSegundo() {
+        assertEquals(0.25f, MundoRenderer.duracaoDoQuadroEspecial(), 0.001f);
+    }
 }

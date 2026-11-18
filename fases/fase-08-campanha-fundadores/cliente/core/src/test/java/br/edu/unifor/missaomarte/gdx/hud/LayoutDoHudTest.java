@@ -22,6 +22,9 @@ class LayoutDoHudTest {
         assertRetangulo(layout.fichaDoObjetivo(1), 554f, 600f, 170f, 52f);
         assertRetangulo(layout.fichaDoObjetivo(2), 732f, 600f, 170f, 52f);
         assertRetangulo(layout.radar(), 1036f, 546f, 220f, 150f);
+        assertRetangulo(layout.seloDaTempestade(), 520f, 546f, 240f, 34f);
+        assertFalse(layout.seloDaTempestade().sobrepoe(layout.objetivo()));
+        assertFalse(layout.seloDaTempestade().sobrepoe(layout.aviso()));
         assertRetangulo(layout.mapa(), 395f, 80f, 490f, 490f);
         assertRetangulo(layout.painelDoFim(), 400f, 210f, 480f, 300f);
         assertRetangulo(layout.botaoDoFim(0), 450f, 240f, 180f, 50f);

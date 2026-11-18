@@ -18,6 +18,7 @@ import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.layout.TextoResponsivo;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.FontesDoJogo;
+import br.edu.unifor.missaomarte.gdx.visual.VisibilidadeDaTempestade;
 import br.edu.unifor.missaomarte.gdx.ui.EstiloDaInterface;
 import br.edu.unifor.missaomarte.gdx.ui.IconeDaInterface;
 import com.badlogic.gdx.Gdx;
@@ -70,15 +71,15 @@ public final class HudRenderer {
     }
 
     public void desenhar(GameSession session, List<String> mensagens, boolean mudo, long segundos,
-            RetanguloDeTela janelaVisivel) {
+            RetanguloDeTela janelaVisivel, boolean tempestadeAtiva) {
         Nave nave = session.getMissao().getNave();
         vidasMaximas = Math.max(vidasMaximas, nave.getVidas());
         fontes.comEscalaTemporaria(layout.escala(), () -> {
             try {
                 RetanguloDeTela rodapeEsquerdo = areaDoRodapeEsquerdo(session, mudo, segundos);
-                desenharPecas(session, nave, rodapeEsquerdo);
+                desenharPecas(session, nave, rodapeEsquerdo, tempestadeAtiva);
                 desenharRadar(session, janelaVisivel);
-                desenharTextos(session, nave, mensagens, mudo, segundos, rodapeEsquerdo);
+                desenharTextos(session, nave, mensagens, mudo, segundos, rodapeEsquerdo, tempestadeAtiva);
             } finally {
                 for (FonteDoJogo tipo : FonteDoJogo.values()) {
                     fontes.obter(tipo).setColor(Color.WHITE);
@@ -87,7 +88,8 @@ public final class HudRenderer {
         });
     }
 
-    private void desenharPecas(GameSession session, Nave nave, RetanguloDeTela rodapeEsquerdo) {
+    private void desenharPecas(GameSession session, Nave nave, RetanguloDeTela rodapeEsquerdo,
+            boolean tempestadeAtiva) {
         lote(() -> {
             estilo.painel(batch, layout.piloto());
             estilo.painel(batch, layout.objetivo());
@@ -97,6 +99,9 @@ public final class HudRenderer {
             estilo.painel(batch, rodapeEsquerdo);
             if (layout.exibeAtalhos()) {
                 estilo.painel(batch, layout.rodapeDireito());
+            }
+            if (tempestadeAtiva) {
+                estilo.painel(batch, layout.seloDaTempestade());
             }
             for (int i = 0; i < 3; i++) {
                 Color borda = campanha == null ? null : corDaBordaDoFundador(session, Fundador.values()[i]);
@@ -123,17 +128,24 @@ public final class HudRenderer {
         try {
             formas.setColor(FUNDO_DO_RADAR);
             formas.rect(area.x(), area.y(), area.largura(), area.altura());
-            session.getMissao().getAsteroides().forEach(a -> quadrado(radar, a.getPosicao(), CINZA_DO_ASTEROIDE, 4f));
-            ponto(radar, session.getMissao().getBase().getPosicao(), AMBAR, 4f);
+            VisibilidadeDaTempestade.filtrar(session.getMissao().getAsteroides(), session::estaVisivel)
+                    .forEach(a -> quadrado(radar, a.getPosicao(), CINZA_DO_ASTEROIDE, 4f));
+            if (session.estaVisivel(session.getMissao().getBase().getPosicao())) {
+                ponto(radar, session.getMissao().getBase().getPosicao(), AMBAR, 4f);
+            }
             ponto(radar, session.getMissao().getNave().getPosicao(), CIANO, 4f);
-            for (Passageiro passageiro : session.getMissao().getPassageiros()) {
+            for (Passageiro passageiro : VisibilidadeDaTempestade.filtrar(
+                    session.getMissao().getPassageiros(), session::estaVisivel)) {
                 ponto(radar, passageiro.getPosicao(), corDoPassageiro(passageiro), 4f);
             }
-            for (Inimigo inimigo : session.getMissao().getInimigos()) {
+            for (Inimigo inimigo : VisibilidadeDaTempestade.filtrar(
+                    session.getMissao().getInimigos(), session::estaVisivel)) {
                 ponto(radar, inimigo.getPosicao(), inimigo.persegue() ? LARANJA : VERMELHO, 4f);
             }
-            session.getMissao().getEstacoesNami().forEach(e -> ponto(radar, e.getPosicao(), VERDE, 4f));
-            session.getMissao().getParadasDoRover().forEach(p -> ponto(radar, p.getPosicao(), VERDE, 3f));
+            VisibilidadeDaTempestade.filtrar(session.getMissao().getEstacoesNami(), session::estaVisivel)
+                    .forEach(e -> ponto(radar, e.getPosicao(), VERDE, 4f));
+            VisibilidadeDaTempestade.filtrar(session.getMissao().getParadasDoRover(), session::estaVisivel)
+                    .forEach(p -> ponto(radar, p.getPosicao(), VERDE, 3f));
             desenharJanelaVisivel(janelaVisivel);
         } finally {
             formas.end();
@@ -183,7 +195,7 @@ public final class HudRenderer {
     }
 
     private void desenharTextos(GameSession session, Nave nave, List<String> mensagens, boolean mudo, long segundos,
-            RetanguloDeTela rodapeEsquerdo) {
+            RetanguloDeTela rodapeEsquerdo, boolean tempestadeAtiva) {
         lote(() -> {
             desenharPiloto(session);
             desenharObjetivo(session, nave);
@@ -192,10 +204,22 @@ public final class HudRenderer {
                         layout.radar().topo() - 16f * layout.escala());
             }
             desenharRodape(session, mudo, segundos, rodapeEsquerdo);
+            if (tempestadeAtiva) {
+                desenharSeloDaTempestade();
+            }
             if (!mensagens.isEmpty()) {
                 desenharAviso(mensagens);
             }
         });
+    }
+
+    private void desenharSeloDaTempestade() {
+        RetanguloDeTela selo = layout.seloDaTempestade();
+        BitmapFont fonte = fontes.obter(FonteDoJogo.ROTULO);
+        fonte.setColor(AMBAR);
+        medidor.setText(fonte, textoDaTempestade());
+        fonte.draw(batch, medidor, selo.centroX() - medidor.width / 2f,
+                selo.centroY() + medidor.height / 2f);
     }
 
     private void desenharPiloto(GameSession session) {
@@ -467,6 +491,10 @@ public final class HudRenderer {
             default:
                 throw new IllegalArgumentException("Ficha de objetivo inválida: " + indice);
         }
+    }
+
+    static String textoDaTempestade() {
+        return "TEMPESTADE DE AREIA";
     }
 
     private record EstadoVisual(String texto, boolean marcado) {

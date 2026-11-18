@@ -27,4 +27,9 @@ class HudRendererTextoTest {
         assertEquals(IconeDaInterface.CHECK, HudRenderer.iconeDaPartidaRapida(1));
         assertEquals(IconeDaInterface.SETA, HudRenderer.iconeDaPartidaRapida(2));
     }
+
+    @Test
+    void seloDaTempestadeTemTextoFixoSemUsarOsAvisosTransitorios() {
+        assertEquals("TEMPESTADE DE AREIA", HudRenderer.textoDaTempestade());
+    }
 }

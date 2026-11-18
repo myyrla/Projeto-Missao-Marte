@@ -29,6 +29,7 @@ import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
+import br.edu.unifor.missaomarte.gdx.visual.AvisosDaCampanha;
 import br.edu.unifor.missaomarte.gdx.visual.EfeitosVisuais;
 import br.edu.unifor.missaomarte.gdx.visual.MensagensFlutuantes;
 import br.edu.unifor.missaomarte.gdx.visual.MundoRenderer;
@@ -36,6 +37,7 @@ import br.edu.unifor.missaomarte.gdx.visual.PosicoesVisuais;
 import br.edu.unifor.missaomarte.gdx.visual.PosicaoVisual;
 import br.edu.unifor.missaomarte.gdx.visual.RastroDaNave;
 import br.edu.unifor.missaomarte.gdx.visual.Tremor;
+import br.edu.unifor.missaomarte.gdx.visual.VisibilidadeDaTempestade;
 import br.edu.unifor.missaomarte.gdx.ui.ControleDoFimDaPartida;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
@@ -485,6 +487,16 @@ public class GameScreen extends TelaBase {
                     }
                     jogo.sons().tocar(Som.COLISAO);
                     break;
+                case NAMI_ATIVADA:
+                case ROVER_UTILIZADO:
+                    String aviso = AvisosDaCampanha.texto(evento, session.getMissao());
+                    if (aviso != null) {
+                        flutuantes.adicionar(aviso, nave.getX(), nave.getY() - 0.6f, true);
+                    }
+                    if (evento == EventoJogo.NAMI_ATIVADA) {
+                        efeitos.adicionar(Imagem.BRILHO, nave.getX(), nave.getY(), 0.5f);
+                    }
+                    break;
                 case VITORIA:
                     jogo.sons().pausarMusica();
                     jogo.sons().tocar(Som.VITORIA);
@@ -639,9 +651,12 @@ public class GameScreen extends TelaBase {
         }
 
         boolean naveVisivel = tempoPiscando <= 0f || ((int) (tempoPiscando * 14f)) % 2 == 0;
+        boolean tempestadeAtiva = VisibilidadeDaTempestade.estaAtiva(
+                session::estaVisivel, MissaoMarteGame.MIN, MissaoMarteGame.MAX);
         try {
             mundo.desenhar(missao, posicoes, rastro, efeitos, flutuantes, tempo, anguloNave, naveVisivel,
-                    tremor.deslocamentoX(), tremor.deslocamentoY(), areaVisivelDoMundo);
+                    tremor.deslocamentoX(), tremor.deslocamentoY(), areaVisivelDoMundo,
+                    session::estaVisivel, tempestadeAtiva);
             desenharRaio();
             desenharFlashDeColisao();
         } finally {
@@ -650,7 +665,8 @@ public class GameScreen extends TelaBase {
 
         boolean fim = session.getEstado() != EstadoPartida.EM_ANDAMENTO;
         hud.definirLayout(layout);
-        hud.desenhar(session, mensagens, jogo.sons().mudo(), session.getDuracaoSegundos(), janelaDoRadar);
+        hud.desenhar(session, mensagens, jogo.sons().mudo(), session.getDuracaoSegundos(), janelaDoRadar,
+                tempestadeAtiva);
 
         if (fim) {
             desenharFimDePartida();
