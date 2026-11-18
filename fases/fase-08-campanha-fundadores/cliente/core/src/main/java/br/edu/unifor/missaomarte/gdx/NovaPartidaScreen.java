@@ -6,6 +6,7 @@ import br.edu.unifor.missaomarte.application.MissaoFactory;
 import br.edu.unifor.missaomarte.application.ModoDeJogo;
 import br.edu.unifor.missaomarte.application.RegrasDeTempoReal;
 import br.edu.unifor.missaomarte.application.RegrasDificuldade;
+import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoPadrao;
 import br.edu.unifor.missaomarte.domain.Dificuldade;
 import br.edu.unifor.missaomarte.domain.Missao;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
@@ -168,7 +169,7 @@ public class NovaPartidaScreen extends TelaBase {
         MissaoFactory fabrica = jogo.missaoFactory();
         Missao missao = fabrica.criarMissao(dificuldade, MissaoMarteGame.MIN, MissaoMarteGame.MAX, jogo.random(), modo);
         GameSession session = new GameSession(
-                piloto, dificuldade, missao, fabrica.pontuacaoInicial(dificuldade),
+                piloto, dificuldade, missao, new RegraDePontuacaoPadrao(fabrica.pontuacaoInicial(dificuldade)),
                 MissaoMarteGame.MIN, MissaoMarteGame.MAX, jogo.random(), modo);
         jogo.sons().tocar(Som.SELECIONAR);
         jogo.setScreen(new GameScreen(jogo, session));

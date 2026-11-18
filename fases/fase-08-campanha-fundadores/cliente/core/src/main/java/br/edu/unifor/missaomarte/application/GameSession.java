@@ -7,6 +7,8 @@ import br.edu.unifor.missaomarte.domain.Passageiro;
 import br.edu.unifor.missaomarte.domain.Posicao;
 import br.edu.unifor.missaomarte.domain.ResultadoDoTiro;
 import br.edu.unifor.missaomarte.application.campanha.MecanicasDaPartida;
+import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacao;
+import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoPadrao;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -31,6 +33,7 @@ public class GameSession {
     private final Random random;
     private final long inicioMillis;
     private final MecanicasDaPartida mecanicasDaPartida;
+    private final RegraDePontuacao regraDePontuacao;
     private long fimMillis = -1;
 
     private final ModoDeJogo modo;
@@ -65,10 +68,22 @@ public class GameSession {
 
     public GameSession(String piloto, Dificuldade dificuldade, Missao missao, int pontuacaoInicial, int min, int max, Random random,
             ModoDeJogo modo, MecanicasDaPartida mecanicasDaPartida) {
+        this(piloto, dificuldade, missao, new RegraDePontuacaoPadrao(pontuacaoInicial), min, max, random, modo,
+                mecanicasDaPartida);
+    }
+
+    public GameSession(String piloto, Dificuldade dificuldade, Missao missao, RegraDePontuacao regraDePontuacao,
+            int min, int max, Random random, ModoDeJogo modo) {
+        this(piloto, dificuldade, missao, regraDePontuacao, min, max, random, modo, MecanicasDaPartida.nenhuma(missao));
+    }
+
+    public GameSession(String piloto, Dificuldade dificuldade, Missao missao, RegraDePontuacao regraDePontuacao,
+            int min, int max, Random random, ModoDeJogo modo, MecanicasDaPartida mecanicasDaPartida) {
         this.piloto = piloto;
         this.dificuldade = dificuldade;
         this.missao = missao;
-        this.pontuacao = pontuacaoInicial;
+        this.regraDePontuacao = regraDePontuacao;
+        this.pontuacao = regraDePontuacao.pontuacaoInicial();
         this.min = min;
         this.max = max;
         this.random = random;
@@ -122,7 +137,7 @@ public class GameSession {
             embarcarPassageiro(mensagens, eventos);
         } else {
             moverNave(acao);
-            pontuacao -= 1;
+            pontuacao -= regraDePontuacao.custoDoMovimento();
             movimentos += 1;
             eventos.add(EventoJogo.MOVIMENTO);
             eventos.addAll(mecanicasDaPartida.aposMovimentoDaNave());
@@ -166,8 +181,9 @@ public class GameSession {
 
         if (nave.embarcar(passageiro)) {
             missao.removerPassageiro(passageiro);
-            pontuacao += passageiro.getPontuacao();
-            mensagens.add("Passageiro " + passageiro.getNome() + " embarcou! +" + passageiro.getPontuacao() + " pontos.");
+            int pontos = regraDePontuacao.pontosDoResgate(passageiro);
+            pontuacao += pontos;
+            mensagens.add("Passageiro " + passageiro.getNome() + " embarcou! +" + pontos + " pontos.");
             eventos.add(EventoJogo.EMBARQUE);
         }
     }
@@ -178,7 +194,10 @@ public class GameSession {
         if (nave.getPosicao().equals(missao.getBase().getPosicao()) && !nave.getPassageiros().isEmpty()) {
             int desembarcados = nave.desembarcarTodos();
             resgatados += desembarcados;
-            mensagens.add("Base alcancada. " + desembarcados + " passageiro(s) desembarcado(s).");
+            int pontos = regraDePontuacao.pontosDaEntrega(desembarcados);
+            pontuacao += pontos;
+            String bonus = pontos > 0 ? " +" + pontos + " pontos." : "";
+            mensagens.add("Base alcancada. " + desembarcados + " passageiro(s) desembarcado(s)." + bonus);
             eventos.add(EventoJogo.ENTREGA);
         }
     }
@@ -209,14 +228,16 @@ public class GameSession {
 
         int removidos = missao.removerPerigosNaPosicaoDaNave();
         missao.getNave().perderVida();
-        pontuacao -= 5 * Math.max(1, removidos);
+        int custo = regraDePontuacao.custoDaColisao(removidos);
+        pontuacao -= custo;
         eventos.add(EventoJogo.COLISAO);
 
         if (missao.getNave().getVidas() <= 0) {
             estado = EstadoPartida.DERROTA;
             mensagens.add("Colisao fatal! Suas vidas acabaram.");
         } else {
-            mensagens.add("Colisao detectada! -5 pontos por perigo e -1 vida.");
+            int custoPorPerigo = custo / Math.max(1, removidos);
+            mensagens.add("Colisao detectada! -" + custoPorPerigo + " pontos por perigo e -1 vida.");
         }
     }
 
@@ -233,6 +254,7 @@ public class GameSession {
             return;
         }
 
+        pontuacao += regraDePontuacao.bonusDaVitoria(missao.getNave().getVidas());
         estado = EstadoPartida.VITORIA;
     }
 
@@ -397,7 +419,7 @@ public class GameSession {
             }
         }
         for (int i = relogioDaPontuacao.avancar(passo); i > 0 && estado == EstadoPartida.EM_ANDAMENTO; i--) {
-            pontuacao -= 1;
+            pontuacao -= regraDePontuacao.custoPorSegundo();
             verificarPontuacao(mensagens);
         }
 
@@ -453,7 +475,7 @@ public class GameSession {
         }
 
         esperaDoTiro = tempoReal.getRecargaDoTiro();
-        pontuacao -= tempoReal.getCustoDoTiro();
+        pontuacao -= regraDePontuacao.custoDoTiro();
         int dx = mira == Acao.ESQUERDA ? -1 : mira == Acao.DIREITA ? 1 : 0;
         int dy = mira == Acao.CIMA ? -1 : mira == Acao.BAIXO ? 1 : 0;
         ultimoTiro = missao.disparar(missao.getNave().getPosicao(), dx, dy, min, max);

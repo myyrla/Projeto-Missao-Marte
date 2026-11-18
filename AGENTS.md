@@ -220,7 +220,7 @@ A partida continua com **as mesmas regras** (resgatar os passageiros e voltar à
 Regras da campanha:
 - Vitória avança para a próxima etapa; derrota ou abandono mantém a etapa atual (pode tentar de novo).
 - Pontuação da campanha = soma das melhores pontuações de cada etapa.
-- Cada partida da campanha é enviada ao servidor como uma partida normal (sem alterar a API). Registrar como limitação: o ranking global não distingue partidas de campanha.
+- Partidas da campanha não entram no ranking local nem são enviadas ao servidor. A pontuação da campanha fica somente no progresso local e não é sincronizada entre dispositivos.
 - O progresso fica salvo localmente pela porta de armazenamento que a base já usa (`ArmazemDeTexto`/preferências), funcionando também no modo convidado.
 
 #### 3.2 Novas mecânicas (domínio, sem libGDX)
@@ -298,7 +298,7 @@ Aceite da Fase 8: `./gradlew clean build` verde no cliente; campanha jogável do
 ### Etapa 5 · Fechamento (Sprint 5)
 
 1. Revisar todos os comandos do README rodando-os do zero.
-2. `docs/relatorio-tecnico.md` (2 a 4 páginas): arquitetura e decisões com trechos de código; padrões e princípios (tabela da seção 6 com classes reais); testes e resultados (números); dificuldades, limitações (incluindo: o servidor não valida se a pontuação é legítima, o ranking não distingue campanha) e melhorias futuras; origem do código; participação de cada integrante.
+2. `docs/relatorio-tecnico.md` (2 a 4 páginas): arquitetura e decisões com trechos de código; padrões e princípios (tabela da seção 6 com classes reais); testes e resultados (números); dificuldades, limitações (incluindo: o servidor não valida se a pontuação é legítima, a pontuação da campanha fica somente no progresso local) e melhorias futuras; origem do código; participação de cada integrante.
 3. `docs/retrospectiva.md`; Kanban com todas as issues fechadas ou justificadas.
 
 ## 8. Fora do escopo agora

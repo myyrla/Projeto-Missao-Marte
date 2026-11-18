@@ -10,6 +10,8 @@ import br.edu.unifor.missaomarte.application.ResultadoTurno;
 import br.edu.unifor.missaomarte.application.campanha.Campanha;
 import br.edu.unifor.missaomarte.application.campanha.EtapaDaCampanha;
 import br.edu.unifor.missaomarte.application.campanha.PreparacaoDaEtapa;
+import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoDaCampanha;
+import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoPadrao;
 import br.edu.unifor.missaomarte.application.servidor.PartidaConcluida;
 import br.edu.unifor.missaomarte.application.servidor.Resposta;
 import br.edu.unifor.missaomarte.domain.Missao;
@@ -18,7 +20,6 @@ import br.edu.unifor.missaomarte.domain.Posicao;
 import br.edu.unifor.missaomarte.domain.ResultadoDoTiro;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
 import br.edu.unifor.missaomarte.gdx.entrada.ControleDeToque;
-import br.edu.unifor.missaomarte.gdx.camera.AreaVisivelDaCamera;
 import br.edu.unifor.missaomarte.gdx.camera.CameraDaPartida;
 import br.edu.unifor.missaomarte.gdx.camera.EscalaDaCelula;
 import br.edu.unifor.missaomarte.gdx.hud.HudRenderer;
@@ -33,6 +34,7 @@ import br.edu.unifor.missaomarte.gdx.visual.MensagensFlutuantes;
 import br.edu.unifor.missaomarte.gdx.visual.MundoRenderer;
 import br.edu.unifor.missaomarte.gdx.visual.PosicoesVisuais;
 import br.edu.unifor.missaomarte.gdx.visual.PosicaoVisual;
+import br.edu.unifor.missaomarte.gdx.visual.RastroDaNave;
 import br.edu.unifor.missaomarte.gdx.visual.Tremor;
 import br.edu.unifor.missaomarte.gdx.ui.ControleDoFimDaPartida;
 import com.badlogic.gdx.Gdx;
@@ -77,6 +79,7 @@ public class GameScreen extends TelaBase {
     private final Campanha campanha;
     private final EtapaDaCampanha etapaDaCampanha;
     private final PosicoesVisuais posicoes = new PosicoesVisuais(VELOCIDADE_VISUAL);
+    private final RastroDaNave rastro = new RastroDaNave();
     private final EfeitosVisuais efeitos = new EfeitosVisuais();
     private final MensagensFlutuantes flutuantes = new MensagensFlutuantes();
     private final Tremor tremor = new Tremor();
@@ -125,7 +128,7 @@ public class GameScreen extends TelaBase {
         this.layout = layoutAtual(viewport);
         this.mapa = geometriaAtual();
         this.mundo = new MundoRenderer(jogo.recursos(), jogo.batch(), jogo.shapes(),
-                jogo.fonte(FonteDoJogo.TEXTO), mapa);
+                jogo.fonte(FonteDoJogo.TEXTO), jogo.fonte(FonteDoJogo.ROTULO), jogo.estilo(), mapa);
         this.hud = new HudRenderer(jogo.batch(), jogo.shapes(), jogo.fontes(), jogo.estilo(),
                 campanha, etapaDaCampanha);
     }
@@ -136,22 +139,9 @@ public class GameScreen extends TelaBase {
     }
 
     private MapaGeometria geometriaAtual() {
-        RetanguloDeTela area = areaLogicaDaCamera();
-        float celula = EscalaDaCelula.calcular(area.largura(), area.altura(), CELULAS, CELULAS);
+        float alturaDaJanela = Math.max(1f, Gdx.graphics.getHeight());
+        float celula = EscalaDaCelula.calcular(alturaDaJanela, CELULAS);
         return new MapaGeometria(MissaoMarteGame.MIN, MissaoMarteGame.MAX, celula, 0f, 0f);
-    }
-
-    private RetanguloDeTela areaLogicaDaCamera() {
-        float largura = Math.max(1f, Gdx.graphics.getWidth());
-        float altura = Math.max(1f, Gdx.graphics.getHeight());
-        if (!jogo.modoToque() || !layout.emRetrato()) {
-            return new RetanguloDeTela(0f, 0f, largura, altura);
-        }
-        Viewport viewport = jogo.viewport();
-        return AreaVisivelDaCamera.converter(layout.mapa(),
-                viewport.getWorldWidth(), viewport.getWorldHeight(),
-                viewport.getScreenX(), viewport.getScreenY(),
-                viewport.getScreenWidth(), viewport.getScreenHeight());
     }
 
     @Override
@@ -523,15 +513,18 @@ public class GameScreen extends TelaBase {
         } else if (estado == EstadoPartida.VITORIA) {
             pararRepeticao();
             session.soltarTudo();
-            if (jogo.sessao() == null) {
+            PoliticaDeRegistroNoRanking.Destino destino = PoliticaDeRegistroNoRanking.destino(
+                    emCampanha(), jogo.sessao() != null, estado);
+            if (destino == PoliticaDeRegistroNoRanking.Destino.LOCAL) {
                 jogo.rankingService().registrarVitoria(session);
-            } else {
+            } else if (destino == PoliticaDeRegistroNoRanking.Destino.GLOBAL) {
                 enviarResultado();
             }
         } else if (estado == EstadoPartida.DERROTA) {
             pararRepeticao();
             session.soltarTudo();
-            if (jogo.sessao() != null) {
+            if (PoliticaDeRegistroNoRanking.destino(emCampanha(), jogo.sessao() != null, estado)
+                    == PoliticaDeRegistroNoRanking.Destino.GLOBAL) {
                 enviarResultado();
             }
         }
@@ -584,14 +577,17 @@ public class GameScreen extends TelaBase {
         if (emCampanha()) {
             PreparacaoDaEtapa preparacao = fabrica.criarEtapaDaCampanha(
                     etapaDaCampanha, MissaoMarteGame.MIN, MissaoMarteGame.MAX, jogo.random());
+            RegraDePontuacaoDaCampanha pontuacao = new RegraDePontuacaoDaCampanha(
+                    new RegraDePontuacaoPadrao(fabrica.pontuacaoInicial(etapaDaCampanha.dificuldade())));
             nova = new GameSession(session.getPiloto(), etapaDaCampanha.dificuldade(), preparacao.missao(),
-                    fabrica.pontuacaoInicial(etapaDaCampanha.dificuldade()), MissaoMarteGame.MIN, MissaoMarteGame.MAX,
+                    pontuacao, MissaoMarteGame.MIN, MissaoMarteGame.MAX,
                     jogo.random(), etapaDaCampanha.modo(), preparacao.mecanicas());
         } else {
             Missao missao = fabrica.criarMissao(session.getDificuldade(), MissaoMarteGame.MIN, MissaoMarteGame.MAX,
                     jogo.random(), session.getModo());
             nova = new GameSession(session.getPiloto(), session.getDificuldade(), missao,
-                    fabrica.pontuacaoInicial(session.getDificuldade()), MissaoMarteGame.MIN, MissaoMarteGame.MAX,
+                    new RegraDePontuacaoPadrao(fabrica.pontuacaoInicial(session.getDificuldade())),
+                    MissaoMarteGame.MIN, MissaoMarteGame.MAX,
                     jogo.random(), session.getModo());
         }
         jogo.sons().retomarMusica();
@@ -628,6 +624,7 @@ public class GameScreen extends TelaBase {
 
         Missao missao = session.getMissao();
         posicoes.sincronizar(todosOsObjetos(missao), delta);
+        rastro.registrar(missao.getNave().getPosicao().getX(), missao.getNave().getPosicao().getY());
         atualizarCameraDoMundo(missao);
         efeitos.atualizar(delta);
         flutuantes.atualizar(delta);
@@ -643,7 +640,7 @@ public class GameScreen extends TelaBase {
 
         boolean naveVisivel = tempoPiscando <= 0f || ((int) (tempoPiscando * 14f)) % 2 == 0;
         try {
-            mundo.desenhar(missao, posicoes, efeitos, flutuantes, tempo, anguloNave, naveVisivel,
+            mundo.desenhar(missao, posicoes, rastro, efeitos, flutuantes, tempo, anguloNave, naveVisivel,
                     tremor.deslocamentoX(), tremor.deslocamentoY(), areaVisivelDoMundo);
             desenharRaio();
             desenharFlashDeColisao();
@@ -669,24 +666,21 @@ public class GameScreen extends TelaBase {
         mundo.definirMapa(mapa);
         float larguraDaTela = Math.max(1f, Gdx.graphics.getWidth());
         float alturaDaTela = Math.max(1f, Gdx.graphics.getHeight());
-        RetanguloDeTela areaLogica = areaLogicaDaCamera();
         PosicaoVisual nave = posicoes.de(missao.getNave());
         CameraDaPartida.Centro centro = acompanhamentoDaCamera.atualizar(
-                mapa.largura(), mapa.altura(), areaLogica.largura(), areaLogica.altura(),
+                mapa.largura(), mapa.altura(), larguraDaTela, alturaDaTela,
                 mapa.xCentro(nave.x()), mapa.yCentro(nave.y()));
 
-        float cameraX = centro.x() + larguraDaTela / 2f - areaLogica.centroX();
-        float cameraY = centro.y() + alturaDaTela / 2f - areaLogica.centroY();
         cameraDoMundo.setToOrtho(false, larguraDaTela, alturaDaTela);
-        cameraDoMundo.position.set(cameraX, cameraY, 0f);
+        cameraDoMundo.position.set(centro.x(), centro.y(), 0f);
         cameraDoMundo.update();
         jogo.batch().setProjectionMatrix(cameraDoMundo.combined);
         jogo.shapes().setProjectionMatrix(cameraDoMundo.combined);
 
-        areaVisivelDoMundo = new RetanguloDeTela(cameraX - larguraDaTela / 2f,
-                cameraY - alturaDaTela / 2f, larguraDaTela, alturaDaTela);
+        areaVisivelDoMundo = new RetanguloDeTela(centro.x() - larguraDaTela / 2f,
+                centro.y() - alturaDaTela / 2f, larguraDaTela, alturaDaTela);
         janelaDoRadar = JanelaDoRadar.projetar(layout.radarInterno(), mapa.largura(), mapa.altura(),
-                centro.x(), centro.y(), areaLogica.largura(), areaLogica.altura());
+                centro.x(), centro.y(), larguraDaTela, alturaDaTela);
     }
 
     private void restaurarCameraDaInterface() {
@@ -720,6 +714,8 @@ public class GameScreen extends TelaBase {
         objetos.addAll(missao.getAsteroides());
         objetos.addAll(missao.getInimigos());
         objetos.addAll(missao.getPassageiros());
+        objetos.addAll(missao.getEstacoesNami());
+        objetos.addAll(missao.getParadasDoRover());
         objetos.add(missao.getNave());
         return objetos;
     }

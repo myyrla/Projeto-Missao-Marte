@@ -6,6 +6,8 @@ import br.edu.unifor.missaomarte.application.campanha.Campanha;
 import br.edu.unifor.missaomarte.application.campanha.Campus;
 import br.edu.unifor.missaomarte.application.campanha.EtapaDaCampanha;
 import br.edu.unifor.missaomarte.application.campanha.PreparacaoDaEtapa;
+import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoDaCampanha;
+import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoPadrao;
 import br.edu.unifor.missaomarte.gdx.campanha.CampusLayout;
 import br.edu.unifor.missaomarte.gdx.campanha.ControleDoCampus;
 import br.edu.unifor.missaomarte.gdx.campanha.ResumoVisualDaCampanha;
@@ -123,8 +125,10 @@ public class CampusScreen extends TelaBase {
         PreparacaoDaEtapa preparacao = fabrica.criarEtapaDaCampanha(
                 etapa, MissaoMarteGame.MIN, MissaoMarteGame.MAX, jogo.random());
         String piloto = jogo.sessao() == null ? "Piloto" : jogo.sessao().getNome();
+        RegraDePontuacaoDaCampanha pontuacao = new RegraDePontuacaoDaCampanha(
+                new RegraDePontuacaoPadrao(fabrica.pontuacaoInicial(etapa.dificuldade())));
         GameSession session = new GameSession(piloto, etapa.dificuldade(), preparacao.missao(),
-                fabrica.pontuacaoInicial(etapa.dificuldade()), MissaoMarteGame.MIN, MissaoMarteGame.MAX,
+                pontuacao, MissaoMarteGame.MIN, MissaoMarteGame.MAX,
                 jogo.random(), etapa.modo(), preparacao.mecanicas());
         jogo.setScreen(new GameScreen(jogo, session, campanha, etapa));
     }

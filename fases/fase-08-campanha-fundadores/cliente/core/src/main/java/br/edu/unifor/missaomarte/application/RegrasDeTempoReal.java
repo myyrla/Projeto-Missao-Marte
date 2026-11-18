@@ -10,7 +10,6 @@ public final class RegrasDeTempoReal {
     private static final float CONTAGEM = 3f;
     private static final float DELTA_MAXIMO = 0.1f;
     private static final int MUNICAO = 3;
-    private static final int CUSTO_DO_TIRO = 2;
 
     private RegrasDeTempoReal() {
     }
@@ -28,6 +27,6 @@ public final class RegrasDeTempoReal {
 
     private static ConfiguracaoDeTempoReal nova(float inimigos, float perseguidores, int quantidadeDePerseguidores) {
         return new ConfiguracaoDeTempoReal(NAVE, inimigos, perseguidores, PONTUACAO, RECARGA_DO_TIRO, CONTAGEM, DELTA_MAXIMO,
-                quantidadeDePerseguidores, MUNICAO, CUSTO_DO_TIRO);
+                quantidadeDePerseguidores, MUNICAO);
     }
 }

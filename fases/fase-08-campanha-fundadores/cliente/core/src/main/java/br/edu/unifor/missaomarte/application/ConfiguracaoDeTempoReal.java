@@ -11,11 +11,10 @@ public final class ConfiguracaoDeTempoReal {
     private final float deltaMaximo;
     private final int quantidadeDePerseguidores;
     private final int municaoInicial;
-    private final int custoDoTiro;
 
     public ConfiguracaoDeTempoReal(float intervaloDaNave, float intervaloDosInimigos, float intervaloDosPerseguidores,
             float intervaloDaPontuacao, float recargaDoTiro, float contagemInicial, float deltaMaximo,
-            int quantidadeDePerseguidores, int municaoInicial, int custoDoTiro) {
+            int quantidadeDePerseguidores, int municaoInicial) {
         this.intervaloDaNave = intervaloDaNave;
         this.intervaloDosInimigos = intervaloDosInimigos;
         this.intervaloDosPerseguidores = intervaloDosPerseguidores;
@@ -25,7 +24,6 @@ public final class ConfiguracaoDeTempoReal {
         this.deltaMaximo = deltaMaximo;
         this.quantidadeDePerseguidores = quantidadeDePerseguidores;
         this.municaoInicial = municaoInicial;
-        this.custoDoTiro = custoDoTiro;
     }
 
     /** Tempo minimo entre dois passos da nave enquanto a direcao esta pressionada. */
@@ -67,7 +65,4 @@ public final class ConfiguracaoDeTempoReal {
         return municaoInicial;
     }
 
-    public int getCustoDoTiro() {
-        return custoDoTiro;
-    }
 }

@@ -13,6 +13,14 @@
 - Chakra Petch e Inter são distribuídas sob a SIL Open Font License 1.1. As licenças acompanham os assets em [OFL-ChakraPetch.txt](cliente/core/assets/fontes/licencas/OFL-ChakraPetch.txt) e [OFL-Inter.txt](cliente/core/assets/fontes/licencas/OFL-Inter.txt).
 - As fontes e os sprites foram gerados em resolução dobrada e reduzidos no jogo para manter a nitidez em telas Retina.
 
+## Pontuação própria da campanha
+
+- A partida rápida preserva integralmente a regra original, inclusive o custo de 2 pontos por tiro.
+- A campanha usa uma Strategy que deriva da regra padrão: pontuação inicial, resgates e custos são multiplicados por 10. Os valores de cada tipo de passageiro continuam definidos no domínio.
+- Cada passageiro entregue na base concede mais 50 pontos. Uma vitória concede mais 100 pontos por vida restante.
+- A pontuação total da campanha é a soma da melhor pontuação de cada etapa e aparece no painel do campus.
+- Por decisão intencional da equipe, partidas da campanha não entram no ranking local nem são enviadas ao ranking global. O progresso e a pontuação da campanha ficam somente no armazenamento local e não são sincronizados entre dispositivos.
+
 **Leitura da documentação herdada:** as contagens de testes e os relatos de verificações abaixo pertencem à base do professor; não são resultados da equipe nesta importação. As referências a fases anteriores também descrevem a sequência do professor, que usa pacotes e regras diferentes da Fase 1 da equipe.
 
 Selecione o JDK 17 conforme o [README da raiz](../../README.md#ambiente). Cada bloco que começa com `cd fases/` deve partir da raiz deste repositório, em um terminal próprio. Nos demais blocos, mantenha o terminal na pasta da fase ou do subprojeto indicado. Os Wrappers já estão executáveis.
