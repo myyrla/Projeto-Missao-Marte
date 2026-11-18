@@ -9,6 +9,7 @@ import br.edu.unifor.missaomarte.application.ModoDeJogo;
 import br.edu.unifor.missaomarte.application.ResultadoTurno;
 import br.edu.unifor.missaomarte.application.campanha.Campanha;
 import br.edu.unifor.missaomarte.application.campanha.EtapaDaCampanha;
+import br.edu.unifor.missaomarte.application.campanha.Fundador;
 import br.edu.unifor.missaomarte.application.campanha.PreparacaoDaEtapa;
 import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoDaCampanha;
 import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoPadrao;
@@ -35,7 +36,9 @@ import br.edu.unifor.missaomarte.gdx.visual.MensagensFlutuantes;
 import br.edu.unifor.missaomarte.gdx.visual.MundoRenderer;
 import br.edu.unifor.missaomarte.gdx.visual.PosicoesVisuais;
 import br.edu.unifor.missaomarte.gdx.visual.PosicaoVisual;
+import br.edu.unifor.missaomarte.gdx.visual.PoliticaDeDestaque;
 import br.edu.unifor.missaomarte.gdx.visual.RastroDaNave;
+import br.edu.unifor.missaomarte.gdx.visual.RotasDoRover;
 import br.edu.unifor.missaomarte.gdx.visual.Tremor;
 import br.edu.unifor.missaomarte.gdx.visual.VisibilidadeDaTempestade;
 import br.edu.unifor.missaomarte.gdx.ui.ControleDoFimDaPartida;
@@ -45,6 +48,7 @@ import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -52,6 +56,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Tela da partida: converte teclas e toques em {@link Acao}, chama a {@link GameSession} e reage ao que aconteceu.
@@ -92,6 +97,7 @@ public class GameScreen extends TelaBase {
     private final MundoRenderer mundo;
     private final HudRenderer hud;
     private final Map<Integer, Acao> setasPorDedo = new HashMap<>();
+    private final GlyphLayout medidorDeEtiqueta = new GlyphLayout();
 
     private LayoutDoHud layout;
     private MapaGeometria mapa;
@@ -623,6 +629,7 @@ public class GameScreen extends TelaBase {
     @Override
     protected void desenhar(float delta) {
         layout = layoutAtual(jogo.viewport());
+        hud.definirLayout(layout);
         atualizarBotoes();
 
         if (dinamico) {
@@ -653,10 +660,15 @@ public class GameScreen extends TelaBase {
         boolean naveVisivel = tempoPiscando <= 0f || ((int) (tempoPiscando * 14f)) % 2 == 0;
         boolean tempestadeAtiva = VisibilidadeDaTempestade.estaAtiva(
                 session::estaVisivel, MissaoMarteGame.MIN, MissaoMarteGame.MAX);
+        boolean mudo = jogo.sons().mudo();
+        long segundos = session.getDuracaoSegundos();
+        RetanguloDeTela rodapeEsquerdo = hud.areaOcupadaDoRodape(session, mudo, segundos);
+        PoliticaDeDestaque.Resultado destaques = calcularDestaques(
+                missao, tempestadeAtiva, rodapeEsquerdo);
         try {
             mundo.desenhar(missao, posicoes, rastro, efeitos, flutuantes, tempo, anguloNave, naveVisivel,
                     tremor.deslocamentoX(), tremor.deslocamentoY(), areaVisivelDoMundo,
-                    session::estaVisivel, tempestadeAtiva);
+                    session::estaVisivel, tempestadeAtiva, destaques);
             desenharRaio();
             desenharFlashDeColisao();
         } finally {
@@ -664,9 +676,7 @@ public class GameScreen extends TelaBase {
         }
 
         boolean fim = session.getEstado() != EstadoPartida.EM_ANDAMENTO;
-        hud.definirLayout(layout);
-        hud.desenhar(session, mensagens, jogo.sons().mudo(), session.getDuracaoSegundos(), janelaDoRadar,
-                tempestadeAtiva);
+        hud.desenhar(session, mensagens, mudo, segundos, janelaDoRadar, tempestadeAtiva);
 
         if (fim) {
             desenharFimDePartida();
@@ -697,6 +707,92 @@ public class GameScreen extends TelaBase {
                 centro.y() - alturaDaTela / 2f, larguraDaTela, alturaDaTela);
         janelaDoRadar = JanelaDoRadar.projetar(layout.radarInterno(), mapa.largura(), mapa.altura(),
                 centro.x(), centro.y(), larguraDaTela, alturaDaTela);
+    }
+
+    private PoliticaDeDestaque.Resultado calcularDestaques(Missao missao, boolean tempestadeAtiva,
+            RetanguloDeTela rodapeEsquerdo) {
+        PoliticaDeDestaque.Resultado resultado = PoliticaDeDestaque.decidir(
+                missao.getNave().getPosicao(), missao.getPassageiros(), tipoDoFundador(), tiposResgatados(),
+                missao.getInimigos(), RotasDoRover.agrupar(missao.getParadasDoRover()));
+        if (resultado.alvo().isEmpty()) {
+            return resultado;
+        }
+        if (!session.estaVisivel(resultado.alvo().orElseThrow().getPosicao())) {
+            return resultado.semAlvoDestacado();
+        }
+
+        PosicaoVisual visual = posicoes.de(resultado.alvo().orElseThrow());
+        float tamanho = mapa.celula() * 0.9f;
+        RetanguloDeTela alvo = new RetanguloDeTela(
+                mapa.xCentro(visual.x()) - tamanho / 2f + tremor.deslocamentoX(),
+                mapa.yCentro(visual.y()) - tamanho / 2f + tremor.deslocamentoY(), tamanho, tamanho);
+        medidorDeEtiqueta.setText(jogo.fonte(FonteDoJogo.ROTULO), resultado.textoDaEtiqueta());
+        float largura = medidorDeEtiqueta.width + 24f;
+        float altura = Math.max(28f, medidorDeEtiqueta.height + 12f);
+        return PoliticaDeDestaque.posicionarEtiqueta(alvo, largura, altura, 8f,
+                        areaVisivelDoMundo, areasDoHudNoMundo(tempestadeAtiva, rodapeEsquerdo))
+                .map(resultado::comEtiqueta)
+                .orElse(resultado);
+    }
+
+    private List<RetanguloDeTela> areasDoHudNoMundo(boolean tempestadeAtiva, RetanguloDeTela rodapeEsquerdo) {
+        List<RetanguloDeTela> areas = new ArrayList<>();
+        areas.add(paraCoordenadasDoMundo(layout.piloto()));
+        areas.add(paraCoordenadasDoMundo(layout.objetivo()));
+        areas.add(paraCoordenadasDoMundo(rodapeEsquerdo));
+        if (!mensagens.isEmpty()) {
+            areas.add(paraCoordenadasDoMundo(layout.aviso()));
+        }
+        if (layout.exibeRadar()) {
+            areas.add(paraCoordenadasDoMundo(layout.radar()));
+        }
+        if (layout.exibeAtalhos()) {
+            areas.add(paraCoordenadasDoMundo(layout.rodapeDireito()));
+        }
+        if (layout.controles().largura() > 0f && layout.controles().altura() > 0f) {
+            areas.add(paraCoordenadasDoMundo(layout.controles()));
+        }
+        if (tempestadeAtiva) {
+            areas.add(paraCoordenadasDoMundo(layout.seloDaTempestade()));
+        }
+        return List.copyOf(areas);
+    }
+
+    private RetanguloDeTela paraCoordenadasDoMundo(RetanguloDeTela interfaceArea) {
+        float escalaX = areaVisivelDoMundo.largura() / layout.largura();
+        float escalaY = areaVisivelDoMundo.altura() / layout.altura();
+        return new RetanguloDeTela(
+                areaVisivelDoMundo.x() + interfaceArea.x() * escalaX,
+                areaVisivelDoMundo.y() + interfaceArea.y() * escalaY,
+                interfaceArea.largura() * escalaX, interfaceArea.altura() * escalaY);
+    }
+
+    private PoliticaDeDestaque.Tipo tipoDoFundador() {
+        return etapaDaCampanha == null ? null : tipo(etapaDaCampanha.fundador());
+    }
+
+    private Set<PoliticaDeDestaque.Tipo> tiposResgatados() {
+        if (campanha == null) {
+            return Set.of();
+        }
+        java.util.EnumSet<PoliticaDeDestaque.Tipo> tipos = java.util.EnumSet.noneOf(PoliticaDeDestaque.Tipo.class);
+        int etapaAtual = campanha.progresso().etapaAtual();
+        for (Fundador fundador : Fundador.values()) {
+            if (fundador.ordinal() + 1 < etapaAtual) {
+                tipos.add(tipo(fundador));
+            }
+        }
+        return Set.copyOf(tipos);
+    }
+
+    private static PoliticaDeDestaque.Tipo tipo(Fundador fundador) {
+        if (fundador == Fundador.ASTRONAUTA) {
+            return PoliticaDeDestaque.Tipo.ASTRONAUTA;
+        }
+        if (fundador == Fundador.PROFESSOR) {
+            return PoliticaDeDestaque.Tipo.PROFESSOR;
+        }
+        return PoliticaDeDestaque.Tipo.ENGENHEIRO;
     }
 
     private void restaurarCameraDaInterface() {

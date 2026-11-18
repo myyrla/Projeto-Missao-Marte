@@ -182,6 +182,18 @@ public final class LayoutDoHud {
                 larguraDaFicha, 52f * escala);
     }
 
+    public RetanguloDeTela checkDoFundador(int indice) {
+        RetanguloDeTela ficha = fichaDoObjetivo(indice);
+        return new RetanguloDeTela(ficha.x() + 24f * escala, ficha.y() + 6f * escala,
+                14f * escala, 14f * escala);
+    }
+
+    public RetanguloDeTela textoDaFichaDoObjetivo(int indice) {
+        RetanguloDeTela ficha = fichaDoObjetivo(indice);
+        float x = ficha.x() + 44f * escala;
+        return new RetanguloDeTela(x, ficha.y(), ficha.direita() - x, ficha.altura());
+    }
+
     public float celula() { return mapa.largura() / celulas; }
     public float origemX() { return mapa.x(); }
     public float origemY() { return mapa.y(); }

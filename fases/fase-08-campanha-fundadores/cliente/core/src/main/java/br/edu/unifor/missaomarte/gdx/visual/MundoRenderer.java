@@ -95,7 +95,8 @@ public class MundoRenderer {
     public void desenhar(Missao missao, PosicoesVisuais posicoes, RastroDaNave rastro,
             EfeitosVisuais efeitos, MensagensFlutuantes flutuantes,
             float tempo, float anguloNave, boolean naveVisivel, float deslocX, float deslocY,
-            RetanguloDeTela areaVisivel, Predicate<Posicao> estaVisivel, boolean tempestadeAtiva) {
+            RetanguloDeTela areaVisivel, Predicate<Posicao> estaVisivel, boolean tempestadeAtiva,
+            PoliticaDeDestaque.Resultado destaques) {
         desenharTerreno(areaVisivel);
         desenharGradeELimites(areaVisivel);
 
@@ -103,12 +104,12 @@ public class MundoRenderer {
         batch.begin();
         try {
             desenharRastro(rastro, deslocX, deslocY);
-            desenharAlcances(missao.getInimigos(), posicoes, deslocX, deslocY);
-            desenharRotasDoRover(missao, deslocX, deslocY);
+            desenharAlcances(missao.getInimigos(), posicoes, deslocX, deslocY, destaques);
+            desenharRotaDoRover(destaques, deslocX, deslocY);
             desenharObjetos(Collections.singletonList(missao.getBase()), posicoes, tempo, deslocX, deslocY);
             desenharObjetos(missao.getEstacoesNami(), posicoes, tempo, deslocX, deslocY);
             desenharObjetos(missao.getParadasDoRover(), posicoes, tempo, deslocX, deslocY);
-            desenharPassageiros(missao.getPassageiros(), posicoes, tempo, deslocX, deslocY);
+            desenharPassageiros(missao.getPassageiros(), posicoes, tempo, deslocX, deslocY, destaques);
             desenharObjetos(missao.getAsteroides(), posicoes, tempo, deslocX, deslocY);
             desenharObjetos(missao.getInimigos(), posicoes, tempo, deslocX, deslocY);
 
@@ -127,7 +128,7 @@ public class MundoRenderer {
         }
         batch.begin();
         try {
-            desenharEtiquetas(missao, posicoes, deslocX, deslocY, estaVisivel);
+            desenharEtiqueta(destaques);
             desenharFlutuantes(flutuantes, deslocX, deslocY);
         } finally {
             batch.setColor(corAnterior);
@@ -135,19 +136,21 @@ public class MundoRenderer {
         }
     }
 
-    private void desenharRotasDoRover(Missao missao, float dx, float dy) {
+    private void desenharRotaDoRover(PoliticaDeDestaque.Resultado destaques, float dx, float dy) {
+        if (destaques.rota().isEmpty()) {
+            return;
+        }
         Texture ponto = recursos.textura(ImagemDoMapa.RASTRO_PONTO);
         float tamanho = 6f;
         batch.setColor(VERDE_PASSAGEIRO.r, VERDE_PASSAGEIRO.g, VERDE_PASSAGEIRO.b, 0.65f);
-        for (RotasDoRover.Rota rota : RotasDoRover.agrupar(missao.getParadasDoRover())) {
-            List<RastroDaNave.Casa> casas = List.of(
-                    new RastroDaNave.Casa(rota.origem().getX(), rota.origem().getY()),
-                    new RastroDaNave.Casa(rota.destino().getX(), rota.destino().getY()));
-            for (GeometriaDoRastro.Ponto amostra : GeometriaDoRastro.calcular(casas,
-                    MissaoMarteGame.MIN, MissaoMarteGame.MAX, mapa.celula(), mapa.origemX(), mapa.origemY(), 14f)) {
-                batch.draw(ponto, amostra.x() - tamanho / 2f + dx, amostra.y() - tamanho / 2f + dy,
-                        tamanho, tamanho);
-            }
+        RotasDoRover.Rota rota = destaques.rota().orElseThrow();
+        List<RastroDaNave.Casa> casas = List.of(
+                new RastroDaNave.Casa(rota.origem().getX(), rota.origem().getY()),
+                new RastroDaNave.Casa(rota.destino().getX(), rota.destino().getY()));
+        for (GeometriaDoRastro.Ponto amostra : GeometriaDoRastro.calcular(casas,
+                MissaoMarteGame.MIN, MissaoMarteGame.MAX, mapa.celula(), mapa.origemX(), mapa.origemY(), 14f)) {
+            batch.draw(ponto, amostra.x() - tamanho / 2f + dx, amostra.y() - tamanho / 2f + dy,
+                    tamanho, tamanho);
         }
         batch.setColor(Color.WHITE);
     }
@@ -202,13 +205,18 @@ public class MundoRenderer {
         batch.setColor(Color.WHITE);
     }
 
-    private void desenharAlcances(List<Inimigo> inimigos, PosicoesVisuais posicoes, float dx, float dy) {
+    private void desenharAlcances(List<Inimigo> inimigos, PosicoesVisuais posicoes, float dx, float dy,
+            PoliticaDeDestaque.Resultado destaques) {
         Texture alcance = recursos.textura(ImagemDoMapa.ALCANCE);
         float tamanho = mapa.celula() * 3f;
         for (Inimigo inimigo : inimigos) {
+            float opacidade = destaques.opacidadeDaZona(inimigo);
+            if (opacidade <= 0f) {
+                continue;
+            }
             PosicaoVisual visual = posicoes.de(inimigo);
             Color cor = inimigo.persegue() ? LARANJA_PERSEGUIDOR : VERMELHO_INIMIGO;
-            batch.setColor(cor);
+            batch.setColor(cor.r, cor.g, cor.b, opacidade);
             batch.draw(alcance, mapa.xCentro(visual.x()) - tamanho / 2f + dx,
                     mapa.yCentro(visual.y()) - tamanho / 2f + dy, tamanho, tamanho);
         }
@@ -216,16 +224,23 @@ public class MundoRenderer {
     }
 
     private void desenharPassageiros(List<Passageiro> passageiros, PosicoesVisuais posicoes,
-            float tempo, float dx, float dy) {
+            float tempo, float dx, float dy, PoliticaDeDestaque.Resultado destaques) {
         Texture pulso = recursos.textura(ImagemDoMapa.PULSO);
-        for (Passageiro passageiro : passageiros) {
+        destaques.alvo().ifPresent(passageiro -> {
             PosicaoVisual visual = posicoes.de(passageiro);
-            Color cor = cor(MarcadoresDePassageiros.Tipo.de(passageiro));
+            Color cor = cor(PoliticaDeDestaque.Tipo.de(passageiro));
             desenharPulso(pulso, visual, cor, AnimacaoDoPulso.calcular(tempo, 0f), dx, dy);
             desenharPulso(pulso, visual, cor, AnimacaoDoPulso.calcular(tempo, 0.8f), dx, dy);
+        });
+        for (Passageiro passageiro : passageiros) {
+            PosicaoVisual visual = posicoes.de(passageiro);
+            float opacidade = destaques.opacidade(passageiro);
+            batch.setColor(1f, 1f, 1f, opacidade);
+            float tamanho = tamanhoDoObjeto(mapa.celula());
+            batch.draw(regiao(passageiro, tempo), mapa.xCentro(visual.x()) - tamanho / 2f + dx,
+                    mapa.yCentro(visual.y()) - tamanho / 2f + dy, tamanho, tamanho);
         }
         batch.setColor(Color.WHITE);
-        desenharObjetos(passageiros, posicoes, tempo, dx, dy);
     }
 
     private void desenharPulso(Texture pulso, PosicaoVisual visual, Color cor,
@@ -366,36 +381,29 @@ public class MundoRenderer {
         }
     }
 
-    private void desenharEtiquetas(Missao missao, PosicoesVisuais posicoes, float dx, float dy,
-            Predicate<Posicao> estaVisivel) {
+    private void desenharEtiqueta(PoliticaDeDestaque.Resultado destaques) {
+        if (destaques.alvo().isEmpty() || destaques.etiqueta().isEmpty()) {
+            return;
+        }
         Color corAnterior = new Color(fonteRotulo.getColor());
         try {
             fonteRotulo.setColor(Color.WHITE);
-            for (MarcadoresDePassageiros.Marcador marcador : MarcadoresDePassageiros.selecionar(
-                    missao.getNave().getPosicao(),
-                    VisibilidadeDaTempestade.filtrar(missao.getPassageiros(), estaVisivel))) {
-                PosicaoVisual visual = posicoes.de(marcador.passageiro());
-                layout.setText(fonteRotulo, marcador.texto());
-                float largura = layout.width + 24f;
-                float altura = Math.max(28f, layout.height + 12f);
-                float centroX = mapa.xCentro(visual.x()) + dx;
-                float base = mapa.yCentro(visual.y()) + dy
-                        + mapa.celula() * TAMANHO_DO_OBJETO / 2f + mapa.celula() / 2f;
-                RetanguloDeTela area = new RetanguloDeTela(centroX - largura / 2f, base, largura, altura);
-                estilo.ficha(batch, area, cor(marcador.tipo()));
-                fonteRotulo.draw(batch, layout, area.centroX() - layout.width / 2f,
-                        area.centroY() + layout.height / 2f);
-            }
+            RetanguloDeTela area = destaques.etiqueta().orElseThrow();
+            layout.setText(fonteRotulo, destaques.textoDaEtiqueta());
+            PoliticaDeDestaque.Tipo tipo = PoliticaDeDestaque.Tipo.de(destaques.alvo().orElseThrow());
+            estilo.ficha(batch, area, cor(tipo));
+            fonteRotulo.draw(batch, layout, area.centroX() - layout.width / 2f,
+                    area.centroY() + layout.height / 2f);
         } finally {
             fonteRotulo.setColor(corAnterior);
         }
     }
 
-    private static Color cor(MarcadoresDePassageiros.Tipo tipo) {
-        if (tipo == MarcadoresDePassageiros.Tipo.ASTRONAUTA) {
+    private static Color cor(PoliticaDeDestaque.Tipo tipo) {
+        if (tipo == PoliticaDeDestaque.Tipo.ASTRONAUTA) {
             return CIANO;
         }
-        if (tipo == MarcadoresDePassageiros.Tipo.PROFESSOR) {
+        if (tipo == PoliticaDeDestaque.Tipo.PROFESSOR) {
             return AMBAR;
         }
         return VERDE_PASSAGEIRO;

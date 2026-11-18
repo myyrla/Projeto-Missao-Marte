@@ -74,9 +74,9 @@ public final class HudRenderer {
             RetanguloDeTela janelaVisivel, boolean tempestadeAtiva) {
         Nave nave = session.getMissao().getNave();
         vidasMaximas = Math.max(vidasMaximas, nave.getVidas());
+        RetanguloDeTela rodapeEsquerdo = areaOcupadaDoRodape(session, mudo, segundos);
         fontes.comEscalaTemporaria(layout.escala(), () -> {
             try {
-                RetanguloDeTela rodapeEsquerdo = areaDoRodapeEsquerdo(session, mudo, segundos);
                 desenharPecas(session, nave, rodapeEsquerdo, tempestadeAtiva);
                 desenharRadar(session, janelaVisivel);
                 desenharTextos(session, nave, mensagens, mudo, segundos, rodapeEsquerdo, tempestadeAtiva);
@@ -274,9 +274,9 @@ public final class HudRenderer {
                 : fundador == Fundador.PROFESSOR ? IconeDaInterface.PROFESSOR : IconeDaInterface.ENGENHEIRO;
         textoDaFicha(nome(fundador), estado.texto(), ficha, icone, estado.marcado() ? cor(fundador) : null);
         if (estado.marcado()) {
-            float s = layout.escala();
-            batch.draw(estilo.icone(IconeDaInterface.CHECK), ficha.x() + 38f * s, ficha.y() + 6f * s,
-                    14f * s, 14f * s);
+            RetanguloDeTela check = layout.checkDoFundador(fundador.ordinal());
+            batch.draw(estilo.icone(IconeDaInterface.CHECK), check.x(), check.y(),
+                    check.largura(), check.altura());
         }
     }
 
@@ -378,11 +378,11 @@ public final class HudRenderer {
         return texto;
     }
 
-    private RetanguloDeTela areaDoRodapeEsquerdo(GameSession session, boolean mudo, long segundos) {
+    public RetanguloDeTela areaOcupadaDoRodape(GameSession session, boolean mudo, long segundos) {
         BitmapFont fonte = fontes.obter(FonteDoJogo.ROTULO);
         String texto = informacoesDaPartida(session, segundos) + (mudo ? " · SOM DESLIGADO" : "");
         medidor.setText(fonte, texto);
-        return layout.rodapeEsquerdo(medidor.width);
+        return layout.rodapeEsquerdo(medidor.width * layout.escala());
     }
 
     private void desenharAviso(List<String> mensagens) {
