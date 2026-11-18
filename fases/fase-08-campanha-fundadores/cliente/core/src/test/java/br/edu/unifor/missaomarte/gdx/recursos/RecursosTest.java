@@ -16,4 +16,12 @@ class RecursosTest {
         assertEquals(Texture.TextureFilter.MipMapLinearLinear, parametros.minFilter);
         assertEquals(Texture.TextureFilter.Linear, parametros.magFilter);
     }
+
+    @Test
+    void configuraTerrenoDoMapaParaRepetirSemEmenda() {
+        TextureLoader.TextureParameter parametros = Recursos.criarParametrosDoMapa(ImagemDoMapa.TERRENO);
+
+        assertEquals(Texture.TextureWrap.Repeat, parametros.wrapU);
+        assertEquals(Texture.TextureWrap.Repeat, parametros.wrapV);
+    }
 }

@@ -3,16 +3,23 @@ package br.edu.unifor.missaomarte.gdx.hud;
 import br.edu.unifor.missaomarte.application.Acao;
 import br.edu.unifor.missaomarte.application.GameSession;
 import br.edu.unifor.missaomarte.application.ModoDeJogo;
-import br.edu.unifor.missaomarte.domain.Dificuldade;
+import br.edu.unifor.missaomarte.application.campanha.Campanha;
+import br.edu.unifor.missaomarte.application.campanha.EtapaDaCampanha;
+import br.edu.unifor.missaomarte.application.campanha.Fundador;
+import br.edu.unifor.missaomarte.domain.Astronauta;
+import br.edu.unifor.missaomarte.domain.Engenheiro;
+import br.edu.unifor.missaomarte.domain.Inimigo;
 import br.edu.unifor.missaomarte.domain.Nave;
-import br.edu.unifor.missaomarte.gdx.layout.LayoutDaPartida;
-import br.edu.unifor.missaomarte.gdx.layout.MargensSeguras;
+import br.edu.unifor.missaomarte.domain.Passageiro;
+import br.edu.unifor.missaomarte.domain.Posicao;
+import br.edu.unifor.missaomarte.domain.Professor;
+import br.edu.unifor.missaomarte.gdx.MissaoMarteGame;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.layout.TextoResponsivo;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.FontesDoJogo;
-import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
-import br.edu.unifor.missaomarte.gdx.recursos.Recursos;
+import br.edu.unifor.missaomarte.gdx.ui.EstiloDaInterface;
+import br.edu.unifor.missaomarte.gdx.ui.IconeDaInterface;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -21,263 +28,431 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
-import com.badlogic.gdx.utils.Align;
 import java.util.List;
 
-/**
- * HUD da partida: barra superior (vidas, pontuacao, tempo, som), painel de informacoes e rodape.
- * <p>As posicoes vem do {@link LayoutDaPartida}: em paisagem o painel fica ao lado do mapa (como nas fases anteriores); em retrato
- * vira uma faixa abaixo do mapa. O fator recebido ajusta os espacamentos responsivos sem redimensionar as fontes.
- * <p>E desenhado depois do mundo, para ficar por cima. Apenas le o estado da {@link GameSession}; nao altera nada.
- * <p>SOLID: SRP (so apresentacao do HUD).
- */
-public class HudRenderer {
-    private static final float BARRA_ALTURA = 12f;
-    private static final Color DESTAQUE = new Color(1f, 0.85f, 0.3f, 1f);
-    private static final Color CINZA = new Color(0.75f, 0.75f, 0.8f, 1f);
+/** HUD no estilo Switch. Apenas projeta o estado da sessao, sem alterar regras da partida. */
+public final class HudRenderer {
+    private static final Color FUNDO_DO_RADAR = Color.valueOf("2A1410");
+    private static final Color TEXTO = Color.valueOf("F2EEF7");
+    private static final Color SECUNDARIO = Color.valueOf("B9B2C6");
+    private static final Color CIANO = Color.valueOf("4CC9F0");
+    private static final Color AMBAR = Color.valueOf("FFB000");
+    private static final Color VERDE = Color.valueOf("9EF01A");
+    private static final Color VERMELHO = Color.valueOf("FF3B5C");
+    private static final Color LARANJA = Color.valueOf("FF7A00");
+    private static final Color CINZA_DO_ASTEROIDE = Color.valueOf("6B5A55");
+    private static final Color VIDA_PERDIDA = Color.valueOf("3A3448");
 
-    private final Recursos recursos;
     private final SpriteBatch batch;
     private final ShapeRenderer formas;
     private final FontesDoJogo fontes;
+    private final EstiloDaInterface estilo;
+    private final Campanha campanha;
+    private final EtapaDaCampanha etapa;
     private final GlyphLayout medidor = new GlyphLayout();
+    private final GlyphLayout nomeDaFicha = new GlyphLayout();
+    private final GlyphLayout estadoDaFicha = new GlyphLayout();
+    private LayoutDoHud layout;
     private int vidasMaximas;
-    private LayoutDaPartida layout;
-    private MargensSeguras margens = MargensSeguras.NENHUMA;
-    private boolean modoToque;
-    private float fator = 1f;
 
-    public HudRenderer(Recursos recursos, SpriteBatch batch, ShapeRenderer formas, FontesDoJogo fontes) {
-        this.recursos = recursos;
+    public HudRenderer(SpriteBatch batch, ShapeRenderer formas, FontesDoJogo fontes, EstiloDaInterface estilo,
+            Campanha campanha, EtapaDaCampanha etapa) {
         this.batch = batch;
         this.formas = formas;
         this.fontes = fontes;
+        this.estilo = estilo;
+        this.campanha = campanha;
+        this.etapa = etapa;
     }
 
-    /** Layout do quadro atual, margens seguras, se os controles sao por toque e o multiplicador do texto. */
-    public void definirLayout(LayoutDaPartida layout, MargensSeguras margens, boolean modoToque, float fatorDeTexto) {
+    public void definirLayout(LayoutDoHud layout) {
         this.layout = layout;
-        this.margens = margens;
-        this.modoToque = modoToque;
-        this.fator = Math.max(1f, fatorDeTexto);
     }
 
-    public void desenhar(GameSession session, List<String> mensagens, boolean mudo, long segundos) {
+    public void desenhar(GameSession session, List<String> mensagens, boolean mudo, long segundos,
+            RetanguloDeTela janelaVisivel) {
         Nave nave = session.getMissao().getNave();
         vidasMaximas = Math.max(vidasMaximas, nave.getVidas());
-
-        desenharFundos(session);
-
-        batch.begin();
-        desenharBarraSuperior(session, nave, mudo, segundos);
-        if (layout.emRetrato()) {
-            desenharFaixa(session, nave, mensagens);
-        } else {
-            desenharPainel(session, nave, mensagens);
-        }
-        desenharRodape(session);
-        batch.end();
+        fontes.comEscalaTemporaria(layout.escala(), () -> {
+            try {
+                RetanguloDeTela rodapeEsquerdo = areaDoRodapeEsquerdo(session, mudo, segundos);
+                desenharPecas(session, nave, rodapeEsquerdo);
+                desenharRadar(session, janelaVisivel);
+                desenharTextos(session, nave, mensagens, mudo, segundos, rodapeEsquerdo);
+            } finally {
+                for (FonteDoJogo tipo : FonteDoJogo.values()) {
+                    fontes.obter(tipo).setColor(Color.WHITE);
+                }
+            }
+        });
     }
 
-    private void desenharFundos(GameSession session) {
+    private void desenharPecas(GameSession session, Nave nave, RetanguloDeTela rodapeEsquerdo) {
+        lote(() -> {
+            estilo.painel(batch, layout.piloto());
+            estilo.painel(batch, layout.objetivo());
+            if (layout.exibeRadar()) {
+                estilo.painel(batch, layout.radar());
+            }
+            estilo.painel(batch, rodapeEsquerdo);
+            if (layout.exibeAtalhos()) {
+                estilo.painel(batch, layout.rodapeDireito());
+            }
+            for (int i = 0; i < 3; i++) {
+                Color borda = campanha == null ? null : corDaBordaDoFundador(session, Fundador.values()[i]);
+                estilo.ficha(batch, layout.fichaDoObjetivo(i), borda);
+            }
+            float s = layout.escala();
+            for (int i = 0; i < vidasMaximas; i++) {
+                estilo.segmento(batch, new RetanguloDeTela(layout.piloto().x() + (88f + i * 40f) * s,
+                        layout.piloto().y() + 61f * s, 34f * s, 12f * s),
+                        i < nave.getVidas() ? CIANO : VIDA_PERDIDA);
+            }
+        });
+    }
+
+    private void desenharRadar(GameSession session, RetanguloDeTela janelaVisivel) {
+        if (!layout.exibeRadar()) {
+            return;
+        }
+        RetanguloDeTela area = layout.radarInterno();
+        RadarGeometria radar = new RadarGeometria(area, MissaoMarteGame.MIN, MissaoMarteGame.MAX);
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         formas.begin(ShapeType.Filled);
-        formas.setColor(0f, 0f, 0f, 0.55f);
-        retangulo(layout.barraSuperior());
-        retangulo(layout.barraInferior());
-        formas.setColor(0f, 0f, 0f, 0.45f);
-        retangulo(layout.painel());
-
-        float progresso = session.getTotalPassageiros() == 0 ? 0f : (float) session.getResgatados() / session.getTotalPassageiros();
-        RetanguloDeTela barra = areaDaBarraDeProgresso();
-        formas.setColor(0.2f, 0.2f, 0.28f, 1f);
-        formas.rect(barra.x(), barra.y(), barra.largura(), barra.altura());
-        formas.setColor(0.3f, 0.85f, 0.5f, 1f);
-        formas.rect(barra.x(), barra.y(), barra.largura() * progresso, barra.altura());
-        formas.end();
-        Gdx.gl.glDisable(GL20.GL_BLEND);
-    }
-
-    private void retangulo(RetanguloDeTela r) {
-        formas.rect(r.x(), r.y(), r.largura(), r.altura());
-    }
-
-    // Em paisagem a barra fica abaixo da linha "Entregues"; em retrato, no pe da faixa.
-    private RetanguloDeTela areaDaBarraDeProgresso() {
-        RetanguloDeTela painel = layout.painel();
-        if (layout.emRetrato()) {
-            return new RetanguloDeTela(painel.x() + 8f, painel.y() + 6f, painel.largura() - 16f, 8f);
+        try {
+            formas.setColor(FUNDO_DO_RADAR);
+            formas.rect(area.x(), area.y(), area.largura(), area.altura());
+            session.getMissao().getAsteroides().forEach(a -> quadrado(radar, a.getPosicao(), CINZA_DO_ASTEROIDE, 4f));
+            ponto(radar, session.getMissao().getBase().getPosicao(), AMBAR, 4f);
+            ponto(radar, session.getMissao().getNave().getPosicao(), CIANO, 4f);
+            for (Passageiro passageiro : session.getMissao().getPassageiros()) {
+                ponto(radar, passageiro.getPosicao(), corDoPassageiro(passageiro), 4f);
+            }
+            for (Inimigo inimigo : session.getMissao().getInimigos()) {
+                ponto(radar, inimigo.getPosicao(), inimigo.persegue() ? LARANJA : VERMELHO, 4f);
+            }
+            session.getMissao().getEstacoesNami().forEach(e -> ponto(radar, e.getPosicao(), VERDE, 4f));
+            session.getMissao().getParadasDoRover().forEach(p -> ponto(radar, p.getPosicao(), VERDE, 3f));
+            desenharJanelaVisivel(janelaVisivel);
+        } finally {
+            formas.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
         }
-        BitmapFont fonte = fontes.obter(FonteDoJogo.PEQUENO);
-        float y = yDasEntregas() - fonte.getLineHeight() - 6f * fator - BARRA_ALTURA;
-        return new RetanguloDeTela(painel.x() + 10f, y, larguraDoTextoNoPainel(), BARRA_ALTURA);
     }
 
-    // Linha de base do texto "Entregues" no painel lateral, calculada pelas metricas reais das fontes.
-    private float yDasEntregas() {
-        float y = layout.painel().topo() - 12f;
-        y = linhaAbaixo(y, fontes.obter(FonteDoJogo.SUBTITULO), 4f);
-        y = linhaAbaixo(y, fontes.obter(FonteDoJogo.PEQUENO), 3f);
-        y = linhaAbaixo(y, fontes.obter(FonteDoJogo.PEQUENO), 8f);
-        y = linhaAbaixo(y, fontes.obter(FonteDoJogo.TEXTO), 4f);
-        return y - 24f - 8f * fator;
+    private void ponto(RadarGeometria radar, Posicao posicao, Color cor, float raioDeReferencia) {
+        formas.setColor(cor);
+        formas.circle(radar.x(posicao.getX()), radar.y(posicao.getY()), raioDeReferencia * layout.escala(), 16);
     }
 
-    private void desenharBarraSuperior(GameSession session, Nave nave, boolean mudo, long segundos) {
-        RetanguloDeTela barra = layout.barraSuperior();
-        float x0 = 24f + margens.esquerda();
-        for (int i = 0; i < vidasMaximas; i++) {
-            Imagem icone = i < nave.getVidas() ? Imagem.ICONE_VIDA : Imagem.ICONE_VIDA_VAZIA;
-            batch.draw(recursos.quadro(icone), x0 + i * 28f, barra.y() + 6f, 24f, 24f);
+    private void quadrado(RadarGeometria radar, Posicao posicao, Color cor, float tamanhoDeReferencia) {
+        float tamanho = tamanhoDeReferencia * layout.escala();
+        formas.setColor(cor);
+        formas.rect(radar.x(posicao.getX()) - tamanho / 2f, radar.y(posicao.getY()) - tamanho / 2f,
+                tamanho, tamanho);
+    }
+
+    private void desenharJanelaVisivel(RetanguloDeTela janela) {
+        if (janela == null || janela.largura() <= 0f || janela.altura() <= 0f) {
+            return;
         }
-
-        BitmapFont fonte = fontes.obter(FonteDoJogo.PEQUENO);
-        float baseline = barra.y() + 26f;
-        float xPontos = Math.max(220f, x0 + vidasMaximas * 28f + 16f);
-        float xTempo = xPontos + 200f;
-        float xSom = xTempo + 200f + 20f;
-        fonte.setColor(Color.WHITE);
-        fonte.draw(batch, limitar("Pontuação: " + session.getPontuacao(), fonte, 180f), xPontos, baseline);
-        fonte.draw(batch, limitar(String.format("Tempo: %02d:%02d", segundos / 60, segundos % 60), fonte, 180f),
-                xTempo, baseline);
-        fonte.setColor(mudo ? CINZA : Color.WHITE);
-        String som = modoToque ? "Som: " + (mudo ? "off" : "on") : "Som: " + (mudo ? "desligado" : "ligado") + " (M)";
-        fonte.draw(batch, limitar(som, fonte, 170f), xSom, baseline);
-        fonte.setColor(Color.WHITE);
+        formas.setColor(1f, 1f, 1f, 0.5f);
+        linhaTracejadaHorizontal(janela.x(), janela.direita(), janela.y());
+        linhaTracejadaHorizontal(janela.x(), janela.direita(), janela.topo());
+        linhaTracejadaVertical(janela.y(), janela.topo(), janela.x());
+        linhaTracejadaVertical(janela.y(), janela.topo(), janela.direita());
     }
 
-    private void desenharPainel(GameSession session, Nave nave, List<String> mensagens) {
-        RetanguloDeTela painel = layout.painel();
-        float x = painel.x() + 10f;
-        float y = painel.topo() - 12f;
-        float largura = larguraDoTextoNoPainel();
-
-        BitmapFont cabecalho = fontes.obter(FonteDoJogo.SUBTITULO);
-        cabecalho.setColor(DESTAQUE);
-        cabecalho.draw(batch, limitar("MISSÃO MARTE", cabecalho, largura), x, y);
-
-        BitmapFont corpo = fontes.obter(FonteDoJogo.PEQUENO);
-        corpo.setColor(Color.WHITE);
-        y = linhaAbaixo(y, cabecalho, 4f);
-        corpo.draw(batch, limitar("Piloto: " + session.getPiloto(), corpo, largura), x, y);
-        y = linhaAbaixo(y, corpo, 3f);
-        corpo.draw(batch, limitar(formatarDificuldade(session.getDificuldade()), corpo, largura), x, y);
-
-        int aBordo = nave.getPassageiros().size();
-        BitmapFont destaque = fontes.obter(FonteDoJogo.TEXTO);
-        destaque.setColor(Color.WHITE);
-        y = linhaAbaixo(y, corpo, 8f);
-        destaque.draw(batch, limitar("A bordo: " + aBordo + "/" + nave.getCapacidade(), destaque, largura), x, y);
-        y = linhaAbaixo(y, destaque, 4f) - 24f;
-        for (int i = 0; i < nave.getCapacidade(); i++) {
-            Imagem icone = i < aBordo ? Imagem.ICONE_PASSAGEIRO : Imagem.ICONE_VAGA;
-            batch.draw(recursos.quadro(icone), x + i * 25f, y, 24f, 24f);
+    private void linhaTracejadaHorizontal(float inicio, float fim, float y) {
+        float passo = 7f * layout.escala();
+        float traco = 4f * layout.escala();
+        float espessura = Math.max(0.6f, layout.escala());
+        for (float x = inicio; x < fim; x += passo) {
+            formas.rect(x, y - espessura / 2f, Math.min(traco, fim - x), espessura);
         }
+    }
 
-        y -= 8f * fator;
-        corpo.draw(batch, limitar("Entregues: " + session.getResgatados() + "/" + session.getTotalPassageiros(), corpo,
-                largura), x, y);
-        RetanguloDeTela barra = areaDaBarraDeProgresso();
-        y = barra.y() - 8f * fator;
-        corpo.draw(batch, limitar("No mapa: " + session.getMissao().getPassageiros().size(), corpo, largura), x, y);
-        y = linhaAbaixo(y, corpo, 3f);
+    private void linhaTracejadaVertical(float inicio, float fim, float x) {
+        float passo = 7f * layout.escala();
+        float traco = 4f * layout.escala();
+        float espessura = Math.max(0.6f, layout.escala());
+        for (float y = inicio; y < fim; y += passo) {
+            formas.rect(x - espessura / 2f, y, espessura, Math.min(traco, fim - y));
+        }
+    }
+
+    private void desenharTextos(GameSession session, Nave nave, List<String> mensagens, boolean mudo, long segundos,
+            RetanguloDeTela rodapeEsquerdo) {
+        lote(() -> {
+            desenharPiloto(session);
+            desenharObjetivo(session, nave);
+            if (layout.exibeRadar()) {
+                rotulo("RADAR", layout.radar().x() + 14f * layout.escala(),
+                        layout.radar().topo() - 16f * layout.escala());
+            }
+            desenharRodape(session, mudo, segundos, rodapeEsquerdo);
+            if (!mensagens.isEmpty()) {
+                desenharAviso(mensagens);
+            }
+        });
+    }
+
+    private void desenharPiloto(GameSession session) {
+        float s = layout.escala();
+        RetanguloDeTela painel = layout.piloto();
+        rotulo("PILOTO " + session.getPiloto().toUpperCase() + " · " + session.getDificuldade(),
+                painel.x() + 16f * s, painel.topo() - 17f * s);
+        rotulo("CASCO", painel.x() + 16f * s, painel.topo() - 51f * s);
+        rotulo("PONTOS", painel.x() + 16f * s, painel.y() + 27f * s);
+
+        BitmapFont titulo = fontes.obter(FonteDoJogo.TITULO);
+        titulo.setColor(TEXTO);
+        String pontos = String.format("%,d", session.getPontuacao()).replace(',', '.');
+        medidor.setText(titulo, pontos);
+        titulo.draw(batch, medidor, painel.direita() - 16f * s - medidor.width,
+                painel.y() + 15f * s + medidor.height);
+    }
+
+    private void desenharObjetivo(GameSession session, Nave nave) {
+        float s = layout.escala();
+        RetanguloDeTela painel = layout.objetivo();
+        rotulo("OBJETIVO", painel.x() + 16f * s, painel.topo() - 17f * s);
+        BitmapFont texto = fontes.obter(FonteDoJogo.TEXTO);
+        texto.setColor(TEXTO);
+        String frase = campanha == null ? "Resgate os passageiros e retorne à base"
+                : "Resgate os fundadores do campus";
+        texto.draw(batch, limitar(frase, texto, painel.largura() - 118f * s),
+                painel.x() + 106f * s, painel.topo() - 16f * s);
+
+        if (campanha == null) {
+            desenharObjetivoRapido(session, nave);
+            return;
+        }
+        for (int i = 0; i < Fundador.values().length; i++) {
+            desenharFundador(session, Fundador.values()[i], layout.fichaDoObjetivo(i));
+        }
+    }
+
+    private void desenharObjetivoRapido(GameSession session, Nave nave) {
+        String[] nomes = {"A bordo", "Entregues", "No mapa"};
+        String[] valores = {nave.getPassageiros().size() + "/" + nave.getCapacidade(),
+                session.getResgatados() + "/" + session.getTotalPassageiros(),
+                String.valueOf(session.getMissao().getPassageiros().size())};
+        for (int i = 0; i < 3; i++) {
+            textoDaFicha(nomes[i], valores[i], layout.fichaDoObjetivo(i), iconeDaPartidaRapida(i), null);
+        }
+    }
+
+    private void desenharFundador(GameSession session, Fundador fundador, RetanguloDeTela ficha) {
+        EstadoVisual estado = estadoDoFundador(session, fundador);
+        IconeDaInterface icone = fundador == Fundador.ASTRONAUTA ? IconeDaInterface.ASTRONAUTA
+                : fundador == Fundador.PROFESSOR ? IconeDaInterface.PROFESSOR : IconeDaInterface.ENGENHEIRO;
+        textoDaFicha(nome(fundador), estado.texto(), ficha, icone, estado.marcado() ? cor(fundador) : null);
+        if (estado.marcado()) {
+            float s = layout.escala();
+            batch.draw(estilo.icone(IconeDaInterface.CHECK), ficha.x() + 38f * s, ficha.y() + 6f * s,
+                    14f * s, 14f * s);
+        }
+    }
+
+    private void textoDaFicha(String nome, String estado, RetanguloDeTela ficha, IconeDaInterface icone,
+            Color corDoEstado) {
+        float s = layout.escala();
+        float x = ficha.x() + 12f * s;
+        batch.draw(estilo.icone(icone), x, ficha.centroY() - 12f * s, 24f * s, 24f * s);
+        x += 32f * s;
+        BitmapFont texto = fontes.obter(FonteDoJogo.TEXTO);
+        texto.setColor(TEXTO);
+        BitmapFont pequena = fontes.obter(FonteDoJogo.PEQUENO);
+        pequena.setColor(corDoEstado == null ? SECUNDARIO : corDoEstado);
+        float largura = ficha.direita() - x - 12f * s;
+        nomeDaFicha.setText(texto, limitar(nome, texto, largura));
+        estadoDaFicha.setText(pequena, limitar(estado, pequena, largura));
+        float espaco = 3f * s;
+        float altura = nomeDaFicha.height + espaco + estadoDaFicha.height;
+        float yDoNome = ficha.centroY() + altura / 2f;
+        texto.draw(batch, nomeDaFicha, x, yDoNome);
+        pequena.draw(batch, estadoDaFicha, x, yDoNome - nomeDaFicha.height - espaco);
+    }
+
+    private EstadoVisual estadoDoFundador(GameSession session, Fundador fundador) {
+        int numero = fundador.ordinal() + 1;
+        if (campanha.progresso().etapaAtual() > numero) {
+            return new EstadoVisual("Resgatado", true);
+        }
+        if (etapa == null || etapa.fundador() != fundador) {
+            return new EstadoVisual("Sem contato", false);
+        }
+        Passageiro noMapa = fundadorEm(session.getMissao().getPassageiros());
+        Passageiro aBordo = fundadorEm(session.getMissao().getNave().getPassageiros());
+        if (aBordo != null) {
+            return new EstadoVisual("A bordo", true);
+        }
+        if (noMapa == null) {
+            return new EstadoVisual("Resgatado", true);
+        }
+        Posicao nave = session.getMissao().getNave().getPosicao();
+        int distancia = Math.abs(nave.getX() - noMapa.getX()) + Math.abs(nave.getY() - noMapa.getY());
+        return new EstadoVisual("Sinal a " + distancia + " casas", false);
+    }
+
+    private static Passageiro fundadorEm(List<Passageiro> passageiros) {
+        return passageiros.stream().filter(p -> p.getNome().startsWith("Fundador ")).findFirst().orElse(null);
+    }
+
+    private Color corDaBordaDoFundador(GameSession session, Fundador fundador) {
+        return estadoDoFundador(session, fundador).marcado() ? cor(fundador) : null;
+    }
+
+    private void desenharRodape(GameSession session, boolean mudo, long segundos, RetanguloDeTela esquerdo) {
+        float s = layout.escala();
+        BitmapFont rotulo = fontes.obter(FonteDoJogo.ROTULO);
+        rotulo.setColor(SECUNDARIO);
+        String informacoes = informacoesDaPartida(session, segundos);
+        if (mudo) {
+            informacoes += " · SOM DESLIGADO";
+        }
+        String limitado = limitar(informacoes, rotulo, esquerdo.largura() - 32f * s);
+        medidor.setText(rotulo, limitado);
+        rotulo.draw(batch, medidor, esquerdo.x() + 16f * s, esquerdo.centroY() + medidor.height / 2f);
+        if (!layout.exibeAtalhos()) {
+            return;
+        }
+        RetanguloDeTela direito = layout.rodapeDireito();
+        float x = direito.x() + 12f * s;
+        float y = direito.centroY() - EstiloDaInterface.ALTURA_DA_TECLA * s / 2f;
+        x = atalho("WASD", "Mover", x, y);
         if (session.getModo() == ModoDeJogo.DINAMICO) {
-            corpo.draw(batch, limitar(formatarMunicaoEMira(session.getMunicao(), session.getMira()), corpo, largura), x, y);
+            x = atalho("F", "Atirar", x, y);
+            x = atalho("P", "Pausa", x, y);
         } else {
-            corpo.draw(batch, limitar("Mov.: " + session.getMovimentos(), corpo, largura), x, y);
+            x = atalho("E", "Embarcar", x, y);
         }
-
-        if (!mensagens.isEmpty()) {
-            y = linhaAbaixo(y, corpo, 8f);
-            corpo.setColor(DESTAQUE);
-            corpo.draw(batch, String.join("\n", mensagens), x, y, largura, Align.left, true);
-            corpo.setColor(Color.WHITE);
-        }
+        x = atalho("M", "Som", x, y);
+        atalho("Esc", "Abortar", x, y);
     }
 
-    // Faixa do modo retrato: tres linhas de texto e a barra de progresso no pe.
-    private void desenharFaixa(GameSession session, Nave nave, List<String> mensagens) {
-        RetanguloDeTela faixa = layout.painel();
-        float x = faixa.x() + 8f;
-        float y = faixa.topo() - 8f;
-
+    private float atalho(String tecla, String acao, float x, float y) {
+        float s = layout.escala();
+        float largura = estilo.tecla(batch, tecla, x, y, s);
         BitmapFont fonte = fontes.obter(FonteDoJogo.PEQUENO);
-        float linha = fonte.getLineHeight() + 4f * fator;
-        fonte.setColor(Color.WHITE);
-        float larguraDaLinha = faixa.largura() - 16f;
-        fonte.draw(batch, limitar(formatarDificuldade(session.getDificuldade()) + "   Piloto: " + session.getPiloto(), fonte,
-                larguraDaLinha), x, y);
-        y -= linha;
-        fonte.draw(batch, limitar("Entregues: " + session.getResgatados() + "/" + session.getTotalPassageiros()
-                + "   A bordo: " + nave.getPassageiros().size() + "/" + nave.getCapacidade(), fonte, larguraDaLinha), x, y);
-        y -= linha;
-        if (session.getModo() == ModoDeJogo.DINAMICO) {
-            fonte.draw(batch, formatarMunicaoEMira(session.getMunicao(), session.getMira()), x, y);
-        } else {
-            fonte.draw(batch, "Mov.: " + session.getMovimentos(), x, y);
-        }
-
-        if (!mensagens.isEmpty()) {
-            fonte.setColor(DESTAQUE);
-            float xMensagem = faixa.x() + faixa.largura() * 0.56f;
-            fonte.draw(batch, String.join(" ", mensagens), xMensagem, faixa.topo() - 8f, faixa.largura() * 0.42f, Align.left, true);
-            fonte.setColor(Color.WHITE);
-        }
+        fonte.setColor(TEXTO);
+        medidor.setText(fonte, acao);
+        fonte.draw(batch, medidor, x + largura + 8f * s, y + (24f * s + medidor.height) / 2f);
+        return x + largura + medidor.width + 22f * s;
     }
 
-    private void desenharRodape(GameSession session) {
-        RetanguloDeTela barra = layout.barraInferior();
-        BitmapFont fonte = fontes.obter(FonteDoJogo.PEQUENO);
-        fonte.setColor(CINZA);
-        String texto;
-        if (modoToque) {
-            texto = session.getModo() == ModoDeJogo.DINAMICO
-                    ? "Segure as setas para mover. Atirar usa munição."
-                    : "Toque nas setas para mover e em Embarcar para pegar ou entregar passageiros";
-        } else {
-            texto = session.getModo() == ModoDeJogo.DINAMICO
-                    ? "W/A/S/D ou setas (segure): mover   F ou Espaço: atirar   P: pausa   M: som   Q ou Esc: abortar"
-                    : "W/A/S/D ou setas: mover   E: embarcar   M: som   Q ou Esc: abortar";
+    private String informacoesDaPartida(GameSession session, long segundos) {
+        String inicio = session.getModo() == ModoDeJogo.DINAMICO
+                ? "MUNIÇÃO " + session.getMunicao() + " · MIRA " + nomeDaMira(session.getMira())
+                : "MOVIMENTOS " + session.getMovimentos();
+        String texto = inicio + String.format(" · TEMPO %02d:%02d", segundos / 60, segundos % 60);
+        if (etapa != null) {
+            texto += " · SOL " + etapa.numero() * 7 + " · " + etapa.local().toUpperCase();
         }
-        fonte.draw(batch, limitar(texto, fonte, barra.largura() - 48f - margens.esquerda() - margens.direita()),
-                24f + margens.esquerda(), barra.topo() - 10f);
-        fonte.setColor(Color.WHITE);
+        return texto;
     }
 
-    private String limitar(String texto, BitmapFont fonte, float larguraMaxima) {
-        return TextoResponsivo.limitarComReticencias(texto, larguraMaxima, candidato -> {
+    private RetanguloDeTela areaDoRodapeEsquerdo(GameSession session, boolean mudo, long segundos) {
+        BitmapFont fonte = fontes.obter(FonteDoJogo.ROTULO);
+        String texto = informacoesDaPartida(session, segundos) + (mudo ? " · SOM DESLIGADO" : "");
+        medidor.setText(fonte, texto);
+        return layout.rodapeEsquerdo(medidor.width);
+    }
+
+    private void desenharAviso(List<String> mensagens) {
+        RetanguloDeTela aviso = layout.aviso();
+        estilo.painel(batch, aviso);
+        String texto = String.join(" ", mensagens);
+        BitmapFont fonte = fontes.obter(FonteDoJogo.TEXTO);
+        fonte.setColor(corDoAviso(texto));
+        medidor.setText(fonte, limitar(texto, fonte, aviso.largura() - 24f * layout.escala()));
+        fonte.draw(batch, medidor, aviso.centroX() - medidor.width / 2f, aviso.centroY() + medidor.height / 2f);
+    }
+
+    private void rotulo(String texto, float x, float y) {
+        BitmapFont fonte = fontes.obter(FonteDoJogo.ROTULO);
+        fonte.setColor(SECUNDARIO);
+        fonte.draw(batch, texto, x, y);
+    }
+
+    private String limitar(String texto, BitmapFont fonte, float largura) {
+        return TextoResponsivo.limitarComReticencias(texto, largura, candidato -> {
             medidor.setText(fonte, candidato);
             return medidor.width;
         });
     }
 
-    private float larguraDoTextoNoPainel() {
-        return Math.max(1f, layout.painel().largura() - 20f);
+    private void lote(Runnable desenho) {
+        batch.begin();
+        try {
+            desenho.run();
+        } finally {
+            batch.end();
+        }
     }
 
-    private float linhaAbaixo(float linhaAtual, BitmapFont fonte, float respiro) {
-        return linhaAtual - fonte.getLineHeight() - respiro * fator;
+    private static Color corDoPassageiro(Passageiro passageiro) {
+        if (passageiro instanceof Astronauta) {
+            return CIANO;
+        }
+        if (passageiro instanceof Engenheiro) {
+            return VERDE;
+        }
+        if (passageiro instanceof Professor) {
+            return AMBAR;
+        }
+        return TEXTO;
     }
 
-    static String formatarDificuldade(Dificuldade dificuldade) {
+    private static Color cor(Fundador fundador) {
+        return fundador == Fundador.ASTRONAUTA ? CIANO : fundador == Fundador.PROFESSOR ? AMBAR : VERDE;
+    }
+
+    private static String nome(Fundador fundador) {
+        return fundador == Fundador.ASTRONAUTA ? "Astronauta"
+                : fundador == Fundador.PROFESSOR ? "Professor" : "Engenheiro";
+    }
+
+    private static String nomeDaMira(Acao mira) {
+        return mira == Acao.CIMA ? "CIMA" : mira == Acao.BAIXO ? "BAIXO"
+                : mira == Acao.ESQUERDA ? "ESQUERDA" : "DIREITA";
+    }
+
+    private static Color corDoAviso(String texto) {
+        String minusculo = texto.toLowerCase();
+        if (minusculo.contains("colis") || minusculo.contains("falhou") || minusculo.contains("fatal")) {
+            return VERMELHO;
+        }
+        if (minusculo.contains("base") || minusculo.contains("entreg")) {
+            return VERDE;
+        }
+        return CIANO;
+    }
+
+    static String formatarDificuldade(br.edu.unifor.missaomarte.domain.Dificuldade dificuldade) {
         return "Dif.: " + dificuldade;
     }
 
     static String formatarMunicaoEMira(int municao, Acao mira) {
-        return "Mun. " + municao + "   Mira " + simboloDaMira(mira);
+        String simbolo = mira == Acao.ESQUERDA ? "<" : mira == Acao.CIMA ? "^" : mira == Acao.BAIXO ? "v" : ">";
+        return "Mun. " + municao + "   Mira " + simbolo;
     }
 
-    private static String simboloDaMira(Acao mira) {
-        switch (mira) {
-            case ESQUERDA:
-                return "<";
-            case CIMA:
-                return "^";
-            case BAIXO:
-                return "v";
+    static IconeDaInterface iconeDaPartidaRapida(int indice) {
+        switch (indice) {
+            case 0:
+                return IconeDaInterface.ASTRONAUTA;
+            case 1:
+                return IconeDaInterface.CHECK;
+            case 2:
+                return IconeDaInterface.SETA;
             default:
-                return ">";
+                throw new IllegalArgumentException("Ficha de objetivo inválida: " + indice);
         }
+    }
+
+    private record EstadoVisual(String texto, boolean marcado) {
     }
 }

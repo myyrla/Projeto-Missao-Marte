@@ -3,6 +3,10 @@ package br.edu.unifor.missaomarte.gdx.ui;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import java.awt.image.BufferedImage;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,6 +74,19 @@ class ContratoDaInterfaceTest {
         assertEquals(32f, EstiloDaInterface.larguraDaTecla(0f), 0f);
         assertEquals(36f, EstiloDaInterface.larguraDaTecla(20f), 0f);
         assertEquals(80f, EstiloDaInterface.larguraDaTecla(64f), 0f);
+    }
+
+    @Test
+    void textoDaTeclaERegistradoNoGlyphLayoutComACorEscura() {
+        BitmapFont.BitmapFontData dados = new BitmapFont.BitmapFontData();
+        BitmapFont fonte = new BitmapFont(dados, new TextureRegion(), false);
+        GlyphLayout texto = new GlyphLayout();
+
+        EstiloDaInterface.prepararTextoDaTecla(texto, fonte, "WASD");
+
+        Color esperado = Color.valueOf("0A0612");
+        assertEquals(Color.toIntBits(10, 6, 18, 255), texto.colors.get(1));
+        assertEquals(Color.WHITE, fonte.getColor());
     }
 
     private record DadosDaPeca(String arquivo, int largura, int altura, int corte) {

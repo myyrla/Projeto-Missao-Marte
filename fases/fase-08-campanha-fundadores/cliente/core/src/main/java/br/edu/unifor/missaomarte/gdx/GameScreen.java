@@ -4,10 +4,12 @@ import br.edu.unifor.missaomarte.application.Acao;
 import br.edu.unifor.missaomarte.application.EstadoPartida;
 import br.edu.unifor.missaomarte.application.EventoJogo;
 import br.edu.unifor.missaomarte.application.GameSession;
+import br.edu.unifor.missaomarte.application.MissaoFactory;
 import br.edu.unifor.missaomarte.application.ModoDeJogo;
 import br.edu.unifor.missaomarte.application.ResultadoTurno;
 import br.edu.unifor.missaomarte.application.campanha.Campanha;
 import br.edu.unifor.missaomarte.application.campanha.EtapaDaCampanha;
+import br.edu.unifor.missaomarte.application.campanha.PreparacaoDaEtapa;
 import br.edu.unifor.missaomarte.application.servidor.PartidaConcluida;
 import br.edu.unifor.missaomarte.application.servidor.Resposta;
 import br.edu.unifor.missaomarte.domain.Missao;
@@ -16,8 +18,12 @@ import br.edu.unifor.missaomarte.domain.Posicao;
 import br.edu.unifor.missaomarte.domain.ResultadoDoTiro;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
 import br.edu.unifor.missaomarte.gdx.entrada.ControleDeToque;
+import br.edu.unifor.missaomarte.gdx.camera.AreaVisivelDaCamera;
+import br.edu.unifor.missaomarte.gdx.camera.CameraDaPartida;
+import br.edu.unifor.missaomarte.gdx.camera.EscalaDaCelula;
 import br.edu.unifor.missaomarte.gdx.hud.HudRenderer;
-import br.edu.unifor.missaomarte.gdx.layout.LayoutDaPartida;
+import br.edu.unifor.missaomarte.gdx.hud.JanelaDoRadar;
+import br.edu.unifor.missaomarte.gdx.hud.LayoutDoHud;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
@@ -26,12 +32,15 @@ import br.edu.unifor.missaomarte.gdx.visual.EfeitosVisuais;
 import br.edu.unifor.missaomarte.gdx.visual.MensagensFlutuantes;
 import br.edu.unifor.missaomarte.gdx.visual.MundoRenderer;
 import br.edu.unifor.missaomarte.gdx.visual.PosicoesVisuais;
+import br.edu.unifor.missaomarte.gdx.visual.PosicaoVisual;
 import br.edu.unifor.missaomarte.gdx.visual.Tremor;
+import br.edu.unifor.missaomarte.gdx.ui.ControleDoFimDaPartida;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -48,7 +57,7 @@ import java.util.Map;
  * <p>Fase 6: botoes virtuais ({@link ControleDeToque}); Voltar do Android e Esc abortam.
  * <p>Fase 7: dois modos. No <b>classico</b> cada acao e um turno (a tecla segurada repete). No <b>dinamico</b> o jogo corre sozinho:
  * a tela so repassa o tempo de cada quadro a {@link GameSession#avancar(float)} e avisa quando uma direcao e pressionada ou solta.
- * O layout (mapa, painel e controles) vem de {@link LayoutDaPartida} e se adapta a paisagem, retrato e tamanhos de tela.
+ * O HUD e os controles usam {@link LayoutDoHud}; uma câmera independente acompanha o mundo em tela cheia.
  */
 public class GameScreen extends TelaBase {
     private enum Envio { NAO_ENVIA, ENVIANDO, ENVIADO, FALHOU }
@@ -56,11 +65,11 @@ public class GameScreen extends TelaBase {
     private static final int CELULAS = MissaoMarteGame.MAX - MissaoMarteGame.MIN + 1;
     private static final float VELOCIDADE_VISUAL = 12f;
     private static final float DURACAO_DO_RAIO = 0.18f;
-    private static final float DURACAO_DA_MENSAGEM = 3f;
+    private static final float DURACAO_DA_MENSAGEM = 2f;
 
     private static final Color DESTAQUE = new Color(1f, 0.85f, 0.3f, 1f);
-    private static final Color VITORIA = new Color(0.45f, 0.9f, 0.55f, 1f);
-    private static final Color DERROTA = new Color(1f, 0.4f, 0.4f, 1f);
+    private static final Color VITORIA = Color.valueOf("9EF01A");
+    private static final Color DERROTA = Color.valueOf("FF3B5C");
     private static final Color CAIXA = new Color(0.05f, 0.05f, 0.12f, 1f);
 
     private final GameSession session;
@@ -72,12 +81,17 @@ public class GameScreen extends TelaBase {
     private final MensagensFlutuantes flutuantes = new MensagensFlutuantes();
     private final Tremor tremor = new Tremor();
     private final RepetidorDeTecla repetidor = new RepetidorDeTecla(0.28f, 0.14f);
+    private final ControleDoFimDaPartida controleDoFim = new ControleDoFimDaPartida();
+    private final CameraDaPartida acompanhamentoDaCamera = new CameraDaPartida();
+    private final OrthographicCamera cameraDoMundo = new OrthographicCamera();
     private final MundoRenderer mundo;
     private final HudRenderer hud;
     private final Map<Integer, Acao> setasPorDedo = new HashMap<>();
 
-    private LayoutDaPartida layout;
+    private LayoutDoHud layout;
     private MapaGeometria mapa;
+    private RetanguloDeTela areaVisivelDoMundo;
+    private RetanguloDeTela janelaDoRadar;
     private ControleDeToque controles;
     private RetanguloDeTela areaDosControles;
     private float alvoDosControles = -1f;
@@ -85,7 +99,6 @@ public class GameScreen extends TelaBase {
 
     private List<String> mensagens = new ArrayList<>();
     private float tempoDaMensagem;
-    private boolean novoRegistro;
     private Envio envio = Envio.NAO_ENVIA;
     private String erroDeEnvio = "";
     private float anguloNave;
@@ -110,18 +123,35 @@ public class GameScreen extends TelaBase {
         this.etapaDaCampanha = etapaDaCampanha;
         Viewport viewport = jogo.viewport();
         this.layout = layoutAtual(viewport);
-        this.mapa = geometriaDe(layout);
-        this.mundo = new MundoRenderer(jogo.recursos(), jogo.batch(), jogo.fonte(FonteDoJogo.TEXTO), mapa);
-        this.hud = new HudRenderer(jogo.recursos(), jogo.batch(), jogo.shapes(), jogo.fontes());
+        this.mapa = geometriaAtual();
+        this.mundo = new MundoRenderer(jogo.recursos(), jogo.batch(), jogo.shapes(),
+                jogo.fonte(FonteDoJogo.TEXTO), mapa);
+        this.hud = new HudRenderer(jogo.batch(), jogo.shapes(), jogo.fontes(), jogo.estilo(),
+                campanha, etapaDaCampanha);
     }
 
-    private LayoutDaPartida layoutAtual(Viewport viewport) {
-        return LayoutDaPartida.calcular(viewport.getWorldWidth(), viewport.getWorldHeight(), CELULAS, jogo.modoToque(),
+    private LayoutDoHud layoutAtual(Viewport viewport) {
+        return LayoutDoHud.calcular(viewport.getWorldWidth(), viewport.getWorldHeight(), CELULAS, jogo.modoToque(),
                 jogo.margensSeguras());
     }
 
-    private static MapaGeometria geometriaDe(LayoutDaPartida l) {
-        return new MapaGeometria(MissaoMarteGame.MIN, MissaoMarteGame.MAX, l.celula(), l.origemX(), l.origemY());
+    private MapaGeometria geometriaAtual() {
+        RetanguloDeTela area = areaLogicaDaCamera();
+        float celula = EscalaDaCelula.calcular(area.largura(), area.altura(), CELULAS, CELULAS);
+        return new MapaGeometria(MissaoMarteGame.MIN, MissaoMarteGame.MAX, celula, 0f, 0f);
+    }
+
+    private RetanguloDeTela areaLogicaDaCamera() {
+        float largura = Math.max(1f, Gdx.graphics.getWidth());
+        float altura = Math.max(1f, Gdx.graphics.getHeight());
+        if (!jogo.modoToque() || !layout.emRetrato()) {
+            return new RetanguloDeTela(0f, 0f, largura, altura);
+        }
+        Viewport viewport = jogo.viewport();
+        return AreaVisivelDaCamera.converter(layout.mapa(),
+                viewport.getWorldWidth(), viewport.getWorldHeight(),
+                viewport.getScreenX(), viewport.getScreenY(),
+                viewport.getScreenWidth(), viewport.getScreenHeight());
     }
 
     @Override
@@ -162,6 +192,12 @@ public class GameScreen extends TelaBase {
         return true;
     }
 
+    /** O fim usa os botoes do estilo Switch; durante a partida os controles virtuais antigos continuam iguais. */
+    @Override
+    protected boolean desenhaBotoesVirtuais() {
+        return session.getEstado() == EstadoPartida.EM_ANDAMENTO;
+    }
+
     // ---------------------------------------------------------------- entrada: modo classico
 
     private boolean tratarTecla(int keycode) {
@@ -188,11 +224,21 @@ public class GameScreen extends TelaBase {
             enviarResultado();
             return true;
         }
-        if (keycode == Keys.ENTER || keycode == Keys.NUMPAD_ENTER || keycode == Keys.BACK
-                || keycode == Keys.BUTTON_A || keycode == Keys.DPAD_CENTER) {
-            if (envio != Envio.ENVIANDO) {
-                encerrar();
-            }
+        if (keycode == Keys.LEFT || keycode == Keys.A) {
+            controleDoFim.esquerda();
+            return true;
+        }
+        if (keycode == Keys.RIGHT || keycode == Keys.D) {
+            controleDoFim.direita();
+            return true;
+        }
+        if (keycode == Keys.ENTER || keycode == Keys.NUMPAD_ENTER || keycode == Keys.BUTTON_A
+                || keycode == Keys.DPAD_CENTER) {
+            executarAcaoDoFim(controleDoFim.acaoEmFoco());
+            return true;
+        }
+        if (keycode == Keys.BACK || keycode == Keys.ESCAPE) {
+            executarAcaoDoFim(ControleDoFimDaPartida.Acao.SAIR);
             return true;
         }
         return false;
@@ -255,14 +301,14 @@ public class GameScreen extends TelaBase {
     @Override
     protected boolean aoTocar(String id, int ponteiro) {
         if (session.getEstado() != EstadoPartida.EM_ANDAMENTO) {
-            if ("reenviar".equals(id) && envio == Envio.FALHOU && jogo.sessao() != null) {
-                enviarResultado();
+            if ("tentar_novamente".equals(id)) {
+                controleDoFim.focar(ControleDoFimDaPartida.Acao.TENTAR_DE_NOVO);
+                executarAcaoDoFim(controleDoFim.acaoEmFoco());
                 return true;
             }
-            if ("continuar".equals(id)) {
-                if (envio != Envio.ENVIANDO) {
-                    encerrar();
-                }
+            if ("sair_fim".equals(id)) {
+                controleDoFim.focar(ControleDoFimDaPartida.Acao.SAIR);
+                executarAcaoDoFim(controleDoFim.acaoEmFoco());
                 return true;
             }
             return false;
@@ -328,7 +374,7 @@ public class GameScreen extends TelaBase {
         }
     }
 
-    /** Monta os botoes do momento: controles na partida; Continuar e Sair na pausa; Continuar (e Tentar de novo) no fim. */
+    /** Monta os controles da partida, os botoes da pausa ou as duas areas do modal de encerramento. */
     private void atualizarBotoes() {
         if (!jogo.modoToque()) {
             return;
@@ -357,12 +403,10 @@ public class GameScreen extends TelaBase {
             botoes.add(new BotaoVirtual("sair", "Abortar", x, yBase - 10f - altura, largura, altura));
             return;
         }
-        boolean vitoria = session.getEstado() == EstadoPartida.VITORIA;
-        String rotulo = emCampanha() ? "Voltar ao campus" : vitoria ? "Ver ranking" : "Voltar ao menu";
-        botoes.add(new BotaoVirtual("continuar", rotulo, x, yBase, largura, altura));
-        if (envio == Envio.FALHOU && jogo.sessao() != null) {
-            botoes.add(new BotaoVirtual("reenviar", "Tentar de novo", x, yBase - 10f - altura, largura, altura));
-        }
+        RetanguloDeTela tentar = layout.botaoDoFim(0);
+        RetanguloDeTela sair = layout.botaoDoFim(1);
+        botoes.add(new BotaoVirtual("tentar_novamente", "", tentar.x(), tentar.y(), tentar.largura(), tentar.altura()));
+        botoes.add(new BotaoVirtual("sair_fim", "", sair.x(), sair.y(), sair.largura(), sair.altura()));
     }
 
     private static boolean mesmoRetangulo(RetanguloDeTela a, RetanguloDeTela b) {
@@ -480,7 +524,7 @@ public class GameScreen extends TelaBase {
             pararRepeticao();
             session.soltarTudo();
             if (jogo.sessao() == null) {
-                novoRegistro = jogo.rankingService().registrarVitoria(session);
+                jogo.rankingService().registrarVitoria(session);
             } else {
                 enviarResultado();
             }
@@ -516,11 +560,42 @@ public class GameScreen extends TelaBase {
     private void encerrar() {
         if (emCampanha()) {
             jogo.setScreen(new CampusScreen(jogo));
-        } else if (session.getEstado() == EstadoPartida.VITORIA) {
-            jogo.setScreen(new RankingScreen(jogo, session, novoRegistro));
         } else {
             jogo.setScreen(new MenuScreen(jogo));
         }
+    }
+
+    private void executarAcaoDoFim(ControleDoFimDaPartida.Acao acao) {
+        if (envio == Envio.ENVIANDO) {
+            return;
+        }
+        jogo.sons().tocar(Som.SELECIONAR);
+        if (acao == ControleDoFimDaPartida.Acao.TENTAR_DE_NOVO) {
+            reiniciarPartida();
+        } else {
+            encerrar();
+        }
+    }
+
+    /** Recria a mesma configuracao pelas fabricas existentes, sem reutilizar o estado encerrado. */
+    private void reiniciarPartida() {
+        MissaoFactory fabrica = jogo.missaoFactory();
+        GameSession nova;
+        if (emCampanha()) {
+            PreparacaoDaEtapa preparacao = fabrica.criarEtapaDaCampanha(
+                    etapaDaCampanha, MissaoMarteGame.MIN, MissaoMarteGame.MAX, jogo.random());
+            nova = new GameSession(session.getPiloto(), etapaDaCampanha.dificuldade(), preparacao.missao(),
+                    fabrica.pontuacaoInicial(etapaDaCampanha.dificuldade()), MissaoMarteGame.MIN, MissaoMarteGame.MAX,
+                    jogo.random(), etapaDaCampanha.modo(), preparacao.mecanicas());
+        } else {
+            Missao missao = fabrica.criarMissao(session.getDificuldade(), MissaoMarteGame.MIN, MissaoMarteGame.MAX,
+                    jogo.random(), session.getModo());
+            nova = new GameSession(session.getPiloto(), session.getDificuldade(), missao,
+                    fabrica.pontuacaoInicial(session.getDificuldade()), MissaoMarteGame.MIN, MissaoMarteGame.MAX,
+                    jogo.random(), session.getModo());
+        }
+        jogo.sons().retomarMusica();
+        jogo.setScreen(new GameScreen(jogo, nova, campanha, etapaDaCampanha));
     }
 
     private boolean emCampanha() {
@@ -540,8 +615,6 @@ public class GameScreen extends TelaBase {
     @Override
     protected void desenhar(float delta) {
         layout = layoutAtual(jogo.viewport());
-        mapa = geometriaDe(layout);
-        mundo.definirMapa(mapa);
         atualizarBotoes();
 
         if (dinamico) {
@@ -555,12 +628,13 @@ public class GameScreen extends TelaBase {
 
         Missao missao = session.getMissao();
         posicoes.sincronizar(todosOsObjetos(missao), delta);
+        atualizarCameraDoMundo(missao);
         efeitos.atualizar(delta);
         flutuantes.atualizar(delta);
         tremor.atualizar(delta);
         tempoPiscando = Math.max(0f, tempoPiscando - delta);
         tempoDoRaio = Math.max(0f, tempoDoRaio - delta);
-        if (dinamico && tempoDaMensagem > 0f) {
+        if (tempoDaMensagem > 0f) {
             tempoDaMensagem -= delta;
             if (tempoDaMensagem <= 0f) {
                 mensagens = new ArrayList<>();
@@ -568,15 +642,18 @@ public class GameScreen extends TelaBase {
         }
 
         boolean naveVisivel = tempoPiscando <= 0f || ((int) (tempoPiscando * 14f)) % 2 == 0;
-        mundo.desenhar(missao, posicoes, efeitos, flutuantes, tempo, anguloNave, naveVisivel,
-                tremor.deslocamentoX(), tremor.deslocamentoY());
-
-        desenharRaio();
-        desenharFlashDeColisao();
+        try {
+            mundo.desenhar(missao, posicoes, efeitos, flutuantes, tempo, anguloNave, naveVisivel,
+                    tremor.deslocamentoX(), tremor.deslocamentoY(), areaVisivelDoMundo);
+            desenharRaio();
+            desenharFlashDeColisao();
+        } finally {
+            restaurarCameraDaInterface();
+        }
 
         boolean fim = session.getEstado() != EstadoPartida.EM_ANDAMENTO;
-        hud.definirLayout(layout, jogo.margensSeguras(), jogo.modoToque(), jogo.fatorDeTexto());
-        hud.desenhar(session, mensagens, jogo.sons().mudo(), session.getDuracaoSegundos());
+        hud.definirLayout(layout);
+        hud.desenhar(session, mensagens, jogo.sons().mudo(), session.getDuracaoSegundos(), janelaDoRadar);
 
         if (fim) {
             desenharFimDePartida();
@@ -585,6 +662,36 @@ public class GameScreen extends TelaBase {
         } else if (dinamico && session.getContagemRestante() > 0f) {
             desenharContagem();
         }
+    }
+
+    private void atualizarCameraDoMundo(Missao missao) {
+        mapa = geometriaAtual();
+        mundo.definirMapa(mapa);
+        float larguraDaTela = Math.max(1f, Gdx.graphics.getWidth());
+        float alturaDaTela = Math.max(1f, Gdx.graphics.getHeight());
+        RetanguloDeTela areaLogica = areaLogicaDaCamera();
+        PosicaoVisual nave = posicoes.de(missao.getNave());
+        CameraDaPartida.Centro centro = acompanhamentoDaCamera.atualizar(
+                mapa.largura(), mapa.altura(), areaLogica.largura(), areaLogica.altura(),
+                mapa.xCentro(nave.x()), mapa.yCentro(nave.y()));
+
+        float cameraX = centro.x() + larguraDaTela / 2f - areaLogica.centroX();
+        float cameraY = centro.y() + alturaDaTela / 2f - areaLogica.centroY();
+        cameraDoMundo.setToOrtho(false, larguraDaTela, alturaDaTela);
+        cameraDoMundo.position.set(cameraX, cameraY, 0f);
+        cameraDoMundo.update();
+        jogo.batch().setProjectionMatrix(cameraDoMundo.combined);
+        jogo.shapes().setProjectionMatrix(cameraDoMundo.combined);
+
+        areaVisivelDoMundo = new RetanguloDeTela(cameraX - larguraDaTela / 2f,
+                cameraY - alturaDaTela / 2f, larguraDaTela, alturaDaTela);
+        janelaDoRadar = JanelaDoRadar.projetar(layout.radarInterno(), mapa.largura(), mapa.altura(),
+                centro.x(), centro.y(), areaLogica.largura(), areaLogica.altura());
+    }
+
+    private void restaurarCameraDaInterface() {
+        jogo.batch().setProjectionMatrix(jogo.camera().combined);
+        jogo.shapes().setProjectionMatrix(jogo.camera().combined);
     }
 
     private void avancarTempoReal(float delta) {
@@ -641,7 +748,7 @@ public class GameScreen extends TelaBase {
             return;
         }
         ShapeRenderer formas = jogo.shapes();
-        RetanguloDeTela m = layout.mapa();
+        RetanguloDeTela m = areaVisivelDoMundo;
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         formas.begin(ShapeType.Filled);
@@ -709,45 +816,85 @@ public class GameScreen extends TelaBase {
     }
 
     private void desenharFimDePartida() {
-        RetanguloDeTela caixa = desenharCaixa(460f, 150f);
-        float cx = caixa.centroX();
-        float cy = caixa.centroY();
-
+        RetanguloDeTela caixa = layout.painelDoFim();
+        float s = layout.escala();
         boolean vitoria = session.getEstado() == EstadoPartida.VITORIA;
-        jogo.batch().begin();
-        fonte(fonteDoTitulo(caixa));
-        cor(vitoria ? VITORIA : DERROTA);
-        textoCentralizado(vitoria ? "MISSÃO CUMPRIDA!" : "GAME OVER", cx, cy + 45f);
-        fonte(FonteDoJogo.TEXTO);
-        cor(Color.WHITE);
-        textoCentralizado("Pontuação: " + session.getPontuacao(), cx, cy + 12f);
-        fonte(FonteDoJogo.PEQUENO);
-        desenharSituacaoDoEnvio(cx, cy);
-        cor(Color.WHITE);
-        if (!jogo.modoToque()) {
-            String instrucao = emCampanha() ? "Enter para voltar ao campus"
-                    : vitoria ? "Enter para ver o ranking" : "Enter para voltar ao menu";
-            textoCentralizado(instrucao, cx, cy - 52f);
-        }
-        jogo.batch().end();
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        jogo.shapes().begin(ShapeType.Filled);
+        jogo.shapes().setColor(0.02f, 0.01f, 0.05f, 0.78f);
+        jogo.shapes().rect(0f, 0f, layout.largura(), layout.altura());
+        jogo.shapes().end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        jogo.fontes().comEscalaTemporaria(s, () -> {
+            jogo.batch().begin();
+            try {
+                jogo.estilo().painel(jogo.batch(), caixa);
+                jogo.estilo().botao(jogo.batch(), layout.botaoDoFim(0),
+                        controleDoFim.emFoco(ControleDoFimDaPartida.Acao.TENTAR_DE_NOVO));
+                jogo.estilo().botao(jogo.batch(), layout.botaoDoFim(1),
+                        controleDoFim.emFoco(ControleDoFimDaPartida.Acao.SAIR));
+
+                fonte(FonteDoJogo.TITULO);
+                cor(vitoria ? VITORIA : DERROTA);
+                textoCentralizado(vitoria ? "MISSÃO CUMPRIDA" : "MISSÃO FALHOU",
+                        caixa.centroX(), caixa.topo() - 48f * s);
+                fonte(FonteDoJogo.TEXTO);
+                cor(Color.valueOf("F2EEF7"));
+                textoCentralizado(textoLimitado(motivoDoFim(vitoria), caixa.largura() - 60f * s),
+                        caixa.centroX(), caixa.topo() - 91f * s);
+                fonte(FonteDoJogo.ROTULO);
+                cor(Color.valueOf("B9B2C6"));
+                textoCentralizado("PONTOS", caixa.centroX(), caixa.topo() - 132f * s);
+                fonte(FonteDoJogo.TITULO);
+                cor(Color.valueOf("F2EEF7"));
+                textoCentralizado(String.format("%,d", session.getPontuacao()).replace(',', '.'),
+                        caixa.centroX(), caixa.topo() - 164f * s);
+                fonte(FonteDoJogo.PEQUENO);
+                desenharSituacaoDoEnvio(caixa.centroX(), caixa.y() + 92f * s);
+                desenharRotuloDoBotao("Tentar de novo", layout.botaoDoFim(0),
+                        controleDoFim.emFoco(ControleDoFimDaPartida.Acao.TENTAR_DE_NOVO));
+                desenharRotuloDoBotao(emCampanha() ? "Campus" : "Menu", layout.botaoDoFim(1),
+                        controleDoFim.emFoco(ControleDoFimDaPartida.Acao.SAIR));
+            } finally {
+                jogo.batch().end();
+                for (FonteDoJogo tipo : FonteDoJogo.values()) {
+                    jogo.fonte(tipo).setColor(Color.WHITE);
+                }
+            }
+        });
     }
 
-    private void desenharSituacaoDoEnvio(float cx, float cy) {
+    private void desenharRotuloDoBotao(String rotulo, RetanguloDeTela botao, boolean foco) {
+        fonte(FonteDoJogo.SUBTITULO);
+        cor(foco ? Color.valueOf("0A0612") : Color.valueOf("F2EEF7"));
+        textoCentralizado(rotulo, botao.centroX(), botao.centroY());
+    }
+
+    private String motivoDoFim(boolean vitoria) {
+        if (!mensagens.isEmpty()) {
+            return String.join(" ", mensagens);
+        }
+        return vitoria ? "Todos os passageiros retornaram à base." : "A missão foi encerrada.";
+    }
+
+    private void desenharSituacaoDoEnvio(float cx, float y) {
         switch (envio) {
             case ENVIANDO:
                 cor(Color.LIGHT_GRAY);
-                textoCentralizado("Enviando o resultado ao servidor...", cx, cy - 20f);
+                textoCentralizado("Enviando o resultado ao servidor...", cx, y);
                 break;
             case ENVIADO:
                 cor(VITORIA);
-                textoCentralizado("Resultado enviado ao servidor.", cx, cy - 20f);
+                textoCentralizado("Resultado enviado ao servidor.", cx, y);
                 break;
             case FALHOU:
                 cor(DERROTA);
                 String resumo = erroDeEnvio.length() > 52 ? erroDeEnvio.substring(0, 49) + "..." : erroDeEnvio;
-                textoCentralizado(resumo, cx, cy - 12f);
+                textoCentralizado(resumo, cx, y);
                 if (jogo.sessao() != null && !jogo.modoToque()) {
-                    textoCentralizado("R: tentar de novo", cx, cy - 32f);
+                    textoCentralizado("R: reenviar resultado", cx, y - 16f * layout.escala());
                 }
                 break;
             default:

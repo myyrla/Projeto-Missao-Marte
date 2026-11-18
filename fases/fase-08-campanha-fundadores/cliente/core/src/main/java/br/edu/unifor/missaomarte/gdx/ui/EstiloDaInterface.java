@@ -64,17 +64,21 @@ public final class EstiloDaInterface {
     }
 
     public float tecla(SpriteBatch batch, String rotulo, float x, float y) {
-        BitmapFont fonte = fonte(FonteDoJogo.ROTULO);
-        medidor.setText(fonte, rotulo);
-        float largura = larguraDaTecla(medidor.width);
-        desenhar(PecaDaInterface.TECLA, batch,
-                new RetanguloDeTela(x, y, largura, ALTURA_DA_TECLA), Color.WHITE);
+        return tecla(batch, rotulo, x, y, 1f);
+    }
 
-        Color corAnterior = new Color(fonte.getColor());
-        fonte.setColor(TEXTO_DA_TECLA);
+    /** Desenha uma tecla na escala do layout atual, sem alterar o comportamento das telas que usam a escala padrão. */
+    public float tecla(SpriteBatch batch, String rotulo, float x, float y, float escala) {
+        BitmapFont fonte = fonte(FonteDoJogo.ROTULO);
+        prepararTextoDaTecla(medidor, fonte, rotulo);
+        float largura = Math.max(LARGURA_MINIMA_DA_TECLA * escala,
+                medidor.width + MARGEM_HORIZONTAL_DA_TECLA * 2f * escala);
+        float altura = ALTURA_DA_TECLA * escala;
+        desenhar(PecaDaInterface.TECLA, batch,
+                new RetanguloDeTela(x, y, largura, altura), Color.WHITE);
+
         fonte.draw(batch, medidor, x + (largura - medidor.width) / 2f,
-                y + (ALTURA_DA_TECLA + medidor.height) / 2f);
-        fonte.setColor(corAnterior);
+                y + (altura + medidor.height) / 2f);
         return largura;
     }
 
@@ -88,6 +92,17 @@ public final class EstiloDaInterface {
 
     static float larguraDaTecla(float larguraDoTexto) {
         return Math.max(LARGURA_MINIMA_DA_TECLA, larguraDoTexto + MARGEM_HORIZONTAL_DA_TECLA * 2f);
+    }
+
+    /** Registra a cor no GlyphLayout antes do desenho e restaura a fonte compartilhada. */
+    static void prepararTextoDaTecla(GlyphLayout texto, BitmapFont fonte, String rotulo) {
+        Color corAnterior = new Color(fonte.getColor());
+        try {
+            fonte.setColor(TEXTO_DA_TECLA);
+            texto.setText(fonte, rotulo);
+        } finally {
+            fonte.setColor(corAnterior);
+        }
     }
 
     private void desenhar(PecaDaInterface peca, SpriteBatch batch, RetanguloDeTela area, Color cor) {

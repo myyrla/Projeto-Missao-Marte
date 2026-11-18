@@ -37,4 +37,12 @@ class MapaGeometriaTest {
         assertEquals(300f, mapa.yCentro(0));
         assertEquals(40f, mapa.celula());
     }
+
+    @Test
+    void informaAsDimensoesDoMapaCompleto() {
+        MapaGeometria mapaGrande = new MapaGeometria(-5, 5, 96f, 0f, 0f);
+
+        assertEquals(1056f, mapaGrande.largura(), 0.001f);
+        assertEquals(1056f, mapaGrande.altura(), 0.001f);
+    }
 }

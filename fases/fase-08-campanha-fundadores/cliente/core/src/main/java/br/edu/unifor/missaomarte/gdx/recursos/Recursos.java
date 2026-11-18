@@ -32,6 +32,9 @@ public class Recursos implements Disposable {
         for (Imagem imagem : Imagem.values()) {
             gerenciador.load(imagem.caminho(), Texture.class, parametrosDaTextura);
         }
+        for (ImagemDoMapa imagem : ImagemDoMapa.values()) {
+            gerenciador.load(imagem.caminho(), Texture.class, criarParametrosDoMapa(imagem));
+        }
         for (PecaDaInterface peca : PecaDaInterface.values()) {
             gerenciador.load(peca.caminho(), Texture.class, parametrosDaTextura);
         }
@@ -60,12 +63,17 @@ public class Recursos implements Disposable {
         for (IconeDaInterface icone : IconeDaInterface.values()) {
             iconesDaInterface.put(icone, new TextureRegion(textura(icone)));
         }
-        int totalDeImagens = Imagem.values().length + PecaDaInterface.values().length + IconeDaInterface.values().length
+        int totalDeImagens = Imagem.values().length + ImagemDoMapa.values().length
+                + PecaDaInterface.values().length + IconeDaInterface.values().length
                 + 1 + CamadaDoCampus.values().length * 2;
         Gdx.app.log("Recursos", totalDeImagens + " imagens e " + Som.values().length + " sons carregados");
     }
 
     public Texture textura(Imagem imagem) {
+        return gerenciador.get(imagem.caminho(), Texture.class);
+    }
+
+    public Texture textura(ImagemDoMapa imagem) {
         return gerenciador.get(imagem.caminho(), Texture.class);
     }
 
@@ -117,6 +125,15 @@ public class Recursos implements Disposable {
         parametros.genMipMaps = true;
         parametros.minFilter = Texture.TextureFilter.MipMapLinearLinear;
         parametros.magFilter = Texture.TextureFilter.Linear;
+        return parametros;
+    }
+
+    static TextureLoader.TextureParameter criarParametrosDoMapa(ImagemDoMapa imagem) {
+        TextureLoader.TextureParameter parametros = criarParametrosDaTextura();
+        if (imagem.repetivel()) {
+            parametros.wrapU = Texture.TextureWrap.Repeat;
+            parametros.wrapV = Texture.TextureWrap.Repeat;
+        }
         return parametros;
     }
 

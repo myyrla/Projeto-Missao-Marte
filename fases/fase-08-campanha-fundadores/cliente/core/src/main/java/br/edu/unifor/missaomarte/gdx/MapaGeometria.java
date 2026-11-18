@@ -41,4 +41,20 @@ public final class MapaGeometria {
     public float celula() {
         return celula;
     }
+
+    public float largura() {
+        return (max - min + 1) * celula;
+    }
+
+    public float altura() {
+        return largura();
+    }
+
+    public float origemX() {
+        return origemX;
+    }
+
+    public float origemY() {
+        return origemY;
+    }
 }
