@@ -11,7 +11,6 @@
     "biblioteca",
     "prefeitura",
     "nami",
-    "rede_do_rover",
     "reitoria"
   ],
   "construcoes": {
@@ -44,11 +43,6 @@
       "fundador": "ENGENHEIRO",
       "planta": "campus/nami_planta.png",
       "construido": "campus/nami_construido.png"
-    },
-    "rede_do_rover": {
-      "fundador": "ENGENHEIRO",
-      "planta": "campus/rede_do_rover_planta.png",
-      "construido": "campus/rede_do_rover_construido.png"
     },
     "reitoria": {
       "fundador": "INAUGURACAO",

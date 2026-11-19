@@ -46,7 +46,7 @@ class MissaoFactoryCampanhaTest {
         assertFundador(etapa3.missao(), Engenheiro.class, "Fundador Engenheiro", Dificuldade.DIFICIL);
         assertEquals(2, perseguidores(etapa3.missao()));
         assertEquals(1, etapa3.missao().getEstacoesNami().size());
-        assertEquals(4, etapa3.missao().getParadasDoRover().size());
+        assertFalse(todosOsObjetos(etapa3.missao()).stream().anyMatch(objeto -> objeto.getSimbolo() == 'R'));
         assertTrue(etapa3.mecanicas().temTempestade());
     }
 
@@ -54,7 +54,7 @@ class MissaoFactoryCampanhaTest {
     void quantidadeDePerseguidoresVemDaConfiguracaoDaEtapa() {
         EtapaDaCampanha etapa = new EtapaDaCampanha(
                 1, "Teste", Fundador.ASTRONAUTA, Dificuldade.FACIL, ModoDeJogo.DINAMICO,
-                new MecanicasDaEtapa(false, 0, false, 3));
+                new MecanicasDaEtapa(false, false, 3));
 
         Missao missao = new MissaoFactory()
                 .criarEtapaDaCampanha(etapa, MIN, MAX, new Random(91)).missao();
@@ -74,7 +74,6 @@ class MissaoFactoryCampanhaTest {
             assertTrue(posicoes.add(objeto.getPosicao()), "posição repetida: " + objeto.getPosicao());
         }
         missao.getEstacoesNami().forEach(nami -> assertTrue(alcancavel(missao, nami.getPosicao())));
-        missao.getParadasDoRover().forEach(parada -> assertTrue(alcancavel(missao, parada.getPosicao())));
     }
 
     @Test
@@ -94,7 +93,6 @@ class MissaoFactoryCampanhaTest {
         assertEquals("*-5,-5;*-3,-3;*-3,4;*-1,2;*0,-3;*0,4;*2,-3;*2,3;A-3,3;A-2,1;"
                 + "B0,0;C5,4;N0,0;P-2,-2;P2,-5;P2,-4;P4,-3;X-5,3;X-3,-5;X-2,5;", assinatura(missao));
         assertTrue(missao.getEstacoesNami().isEmpty());
-        assertTrue(missao.getParadasDoRover().isEmpty());
     }
 
     private static long perseguidores(Missao missao) {
@@ -118,7 +116,6 @@ class MissaoFactoryCampanhaTest {
         objetos.addAll(missao.getAsteroides());
         objetos.addAll(missao.getInimigos());
         objetos.addAll(missao.getEstacoesNami());
-        objetos.addAll(missao.getParadasDoRover());
         return objetos;
     }
 

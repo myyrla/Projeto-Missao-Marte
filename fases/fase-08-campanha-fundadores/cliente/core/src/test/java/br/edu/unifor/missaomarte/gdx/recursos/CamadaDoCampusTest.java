@@ -18,7 +18,6 @@ class CamadaDoCampusTest {
             Construcao.BIBLIOTECA, "biblioteca",
             Construcao.PREFEITURA, "prefeitura",
             Construcao.NAMI, "nami",
-            Construcao.REDE_DO_ROVER, "rede_do_rover",
             Construcao.REITORIA, "reitoria");
 
     @Test
@@ -30,7 +29,6 @@ class CamadaDoCampusTest {
                 Construcao.BIBLIOTECA,
                 Construcao.PREFEITURA,
                 Construcao.NAMI,
-                Construcao.REDE_DO_ROVER,
                 Construcao.REITORIA);
 
         assertEquals(ordemEsperada,

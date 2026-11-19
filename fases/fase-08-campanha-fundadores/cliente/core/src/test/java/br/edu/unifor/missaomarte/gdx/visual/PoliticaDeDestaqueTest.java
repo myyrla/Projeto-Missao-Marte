@@ -25,7 +25,7 @@ class PoliticaDeDestaqueTest {
         Astronauta astronauta = new Astronauta("Bia", 0, 1);
 
         PoliticaDeDestaque.Resultado resultado = decidir(
-                List.of(professor, astronauta), null, Set.of(), List.of(), List.of());
+                List.of(professor, astronauta), null, Set.of(), List.of());
 
         assertSame(astronauta, resultado.alvo().orElseThrow());
         assertEquals("ASTRONAUTA · 1 CASA", resultado.textoDaEtiqueta());
@@ -39,10 +39,10 @@ class PoliticaDeDestaqueTest {
 
         PoliticaDeDestaque.Resultado comFundador = decidir(
                 List.of(astronauta, professorDistante, professor), PoliticaDeDestaque.Tipo.PROFESSOR,
-                Set.of(), List.of(), List.of());
+                Set.of(), List.of());
         PoliticaDeDestaque.Resultado semFundador = decidir(
                 List.of(astronauta), PoliticaDeDestaque.Tipo.PROFESSOR,
-                Set.of(), List.of(), List.of());
+                Set.of(), List.of());
 
         assertSame(professor, comFundador.alvo().orElseThrow());
         assertSame(astronauta, semFundador.alvo().orElseThrow());
@@ -55,7 +55,7 @@ class PoliticaDeDestaqueTest {
 
         PoliticaDeDestaque.Resultado resultado = decidir(
                 List.of(resgatado, pendente), null, Set.of(PoliticaDeDestaque.Tipo.ASTRONAUTA),
-                List.of(), List.of());
+                List.of());
 
         assertSame(pendente, resultado.alvo().orElseThrow());
         assertEquals(0.60f, resultado.opacidade(resgatado), 0.001f);
@@ -63,7 +63,7 @@ class PoliticaDeDestaqueTest {
 
         PoliticaDeDestaque.Resultado somenteResgatado = decidir(
                 List.of(resgatado), null, Set.of(PoliticaDeDestaque.Tipo.ASTRONAUTA),
-                List.of(), List.of());
+                List.of());
         assertTrue(somenteResgatado.alvo().isEmpty());
         assertTrue(somenteResgatado.textoDaEtiqueta().isEmpty());
     }
@@ -72,16 +72,14 @@ class PoliticaDeDestaqueTest {
     void alvoInvisivelPodePerderEtiquetaEPulsoSemApagarOsOutrosDestaques() {
         Astronauta astronauta = new Astronauta("Bia", 0, 1);
         Inimigo inimigo = new Inimigo(2, 0);
-        RotasDoRover.Rota rota = new RotasDoRover.Rota("A", new Posicao(1, 0), new Posicao(4, 0));
         PoliticaDeDestaque.Resultado resultado = decidir(
-                List.of(astronauta), null, Set.of(), List.of(inimigo), List.of(rota));
+                List.of(astronauta), null, Set.of(), List.of(inimigo));
 
         PoliticaDeDestaque.Resultado semAlvo = resultado.semAlvoDestacado();
 
         assertTrue(semAlvo.alvo().isEmpty());
         assertTrue(semAlvo.textoDaEtiqueta().isEmpty());
         assertEquals(0.5f, semAlvo.opacidadeDaZona(inimigo), 0.001f);
-        assertEquals("A", semAlvo.rota().orElseThrow().par());
     }
 
     @Test
@@ -91,28 +89,11 @@ class PoliticaDeDestaqueTest {
         Inimigo aQuatroCasas = new Inimigo(4, 0);
 
         PoliticaDeDestaque.Resultado resultado = decidir(List.of(), null, Set.of(),
-                List.of(naMesmaCasa, aTresCasas, aQuatroCasas), List.of());
+                List.of(naMesmaCasa, aTresCasas, aQuatroCasas));
 
         assertEquals(1f, resultado.opacidadeDaZona(naMesmaCasa), 0.001f);
         assertEquals(0.25f, resultado.opacidadeDaZona(aTresCasas), 0.001f);
         assertEquals(0f, resultado.opacidadeDaZona(aQuatroCasas), 0.001f);
-    }
-
-    @Test
-    void mostraSomenteRotaDaParadaEmQueANaveEstaOuDaVizinha() {
-        RotasDoRover.Rota rotaA = new RotasDoRover.Rota("A", new Posicao(1, 0), new Posicao(4, 0));
-        RotasDoRover.Rota rotaB = new RotasDoRover.Rota("B", new Posicao(-4, -4), new Posicao(-3, -4));
-
-        PoliticaDeDestaque.Resultado vizinha = PoliticaDeDestaque.decidir(
-                NAVE, List.of(), null, Set.of(), List.of(), List.of(rotaA, rotaB));
-        PoliticaDeDestaque.Resultado sobre = PoliticaDeDestaque.decidir(
-                new Posicao(4, 0), List.of(), null, Set.of(), List.of(), List.of(rotaA, rotaB));
-        PoliticaDeDestaque.Resultado longe = PoliticaDeDestaque.decidir(
-                new Posicao(0, 3), List.of(), null, Set.of(), List.of(), List.of(rotaA, rotaB));
-
-        assertEquals("A", vizinha.rota().orElseThrow().par());
-        assertEquals("A", sobre.rota().orElseThrow().par());
-        assertTrue(longe.rota().isEmpty());
     }
 
     @Test
@@ -149,15 +130,15 @@ class PoliticaDeDestaqueTest {
         Professor professor = new Professor("Ada", 2, 3);
 
         PoliticaDeDestaque.Resultado resultado = decidir(
-                List.of(professor), null, Set.of(), List.of(), List.of());
+                List.of(professor), null, Set.of(), List.of());
 
         assertEquals("PROFESSOR · 5 CASAS", resultado.textoDaEtiqueta());
     }
 
     private static PoliticaDeDestaque.Resultado decidir(List<? extends Passageiro> passageiros,
             PoliticaDeDestaque.Tipo tipoDoFundador, Set<PoliticaDeDestaque.Tipo> tiposResgatados,
-            List<Inimigo> inimigos, List<RotasDoRover.Rota> rotas) {
-        return PoliticaDeDestaque.decidir(NAVE, passageiros, tipoDoFundador, tiposResgatados, inimigos, rotas);
+            List<Inimigo> inimigos) {
+        return PoliticaDeDestaque.decidir(NAVE, passageiros, tipoDoFundador, tiposResgatados, inimigos);
     }
 
     private static void assertRetangulo(RetanguloDeTela esperado, RetanguloDeTela atual) {

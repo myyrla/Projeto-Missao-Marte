@@ -17,7 +17,6 @@ public class Missao {
     private final List<Asteroide> asteroides;
     private final List<Inimigo> inimigos;
     private final List<EstacaoNami> estacoesNami;
-    private final List<ParadaDoRover> paradasDoRover;
 
     public Missao(Nave nave) {
         this.base = new Base(0, 0);
@@ -26,7 +25,6 @@ public class Missao {
         this.asteroides = new ArrayList<>();
         this.inimigos = new ArrayList<>();
         this.estacoesNami = new ArrayList<>();
-        this.paradasDoRover = new ArrayList<>();
     }
 
     public Base getBase() {
@@ -53,10 +51,6 @@ public class Missao {
         return Collections.unmodifiableList(estacoesNami);
     }
 
-    public List<ParadaDoRover> getParadasDoRover() {
-        return Collections.unmodifiableList(paradasDoRover);
-    }
-
     public void adicionarPassageiro(Passageiro passageiro) {
         passageiros.add(passageiro);
     }
@@ -71,10 +65,6 @@ public class Missao {
 
     public void adicionarEstacaoNami(EstacaoNami estacao) {
         estacoesNami.add(estacao);
-    }
-
-    public void adicionarParadaDoRover(ParadaDoRover parada) {
-        paradasDoRover.add(parada);
     }
 
     public Passageiro passageiroNaPosicaoDaNave() {

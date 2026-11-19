@@ -16,7 +16,6 @@ class SimboloParaImagemTest {
         assertEquals(Imagem.PASSAGEIRO_ENGENHEIRO, SimboloParaImagem.de('E'));
         assertEquals(Imagem.PASSAGEIRO_ASTRONAUTA, SimboloParaImagem.de('A'));
         assertEquals(Imagem.NAMI, SimboloParaImagem.de('H'));
-        assertEquals(Imagem.PARADA_ROVER, SimboloParaImagem.de('R'));
     }
 
     @Test

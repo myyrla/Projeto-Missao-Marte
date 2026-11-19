@@ -7,7 +7,6 @@ public enum Construcao {
     BIBLIOTECA(Fundador.PROFESSOR),
     PREFEITURA(Fundador.ENGENHEIRO),
     NAMI(Fundador.ENGENHEIRO),
-    REDE_DO_ROVER(Fundador.ENGENHEIRO),
     REITORIA(null);
 
     private final Fundador responsavel;

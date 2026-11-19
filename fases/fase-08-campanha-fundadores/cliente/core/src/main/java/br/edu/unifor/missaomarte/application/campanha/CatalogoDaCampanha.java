@@ -7,11 +7,11 @@ import java.util.List;
 public final class CatalogoDaCampanha {
     private static final List<EtapaDaCampanha> ETAPAS = List.of(
             new EtapaDaCampanha(1, "Planície Utopia", Fundador.ASTRONAUTA, Dificuldade.FACIL, ModoDeJogo.DINAMICO,
-                    new MecanicasDaEtapa(false, 0, false, 0)),
+                    new MecanicasDaEtapa(false, false, 0)),
             new EtapaDaCampanha(2, "Cratera Jezero", Fundador.PROFESSOR, Dificuldade.MEDIO, ModoDeJogo.DINAMICO,
-                    new MecanicasDaEtapa(true, 0, false, 1)),
+                    new MecanicasDaEtapa(true, false, 1)),
             new EtapaDaCampanha(3, "Valles Marineris", Fundador.ENGENHEIRO, Dificuldade.DIFICIL, ModoDeJogo.DINAMICO,
-                    new MecanicasDaEtapa(true, 2, true, 2)));
+                    new MecanicasDaEtapa(true, true, 2)));
 
     private CatalogoDaCampanha() {
     }

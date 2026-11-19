@@ -214,7 +214,7 @@ A partida continua com **as mesmas regras** (resgatar os passageiros e voltar à
 |---|---|---|---|---|
 | 1 | Planície Utopia | Astronauta | Fácil, modo dinâmico, sem perseguidor (missão de aprendizado) | Torre de Comunicação, Zonas de pouso (acessos A1 a A7) |
 | 2 | Cratera Jezero | Professor | Médio, 1 Estação NAMI no mapa | Blocos de aula, Biblioteca |
-| 3 | Valles Marineris | Engenheiro | Difícil, 1 Estação NAMI, 2 pares de paradas do rover, tempestade de areia | Prefeitura, NAMI, Rede do rover |
+| 3 | Valles Marineris | Engenheiro | Difícil, 1 Estação NAMI, tempestade de areia | Prefeitura, NAMI |
 | Final | Inauguração | Os 3 | Tela de encerramento, sem partida | Reitoria |
 
 Regras da campanha:
@@ -226,8 +226,7 @@ Regras da campanha:
 #### 3.2 Novas mecânicas (domínio, sem libGDX)
 
 1. **Estação NAMI:** casa especial que recupera 1 vida da nave. Uso único por partida. Não ultrapassa o máximo de vidas. Não é obstáculo nem perigo.
-2. **Paradas do rover elétrico:** casas em pares. Ao entrar em uma parada, a nave vai para a parada par. Não teleporta de volta no mesmo turno/passo (evitar loop). Inimigos ignoram as paradas.
-3. **Tempestade de areia:** evento de etapa que reduz o raio de visão do jogador por um tempo. O domínio/aplicação expõe algo como `estaVisivel(Posicao)`; a tela só escurece o que não é visível. O tempo entra como parâmetro (`Temporizador`), para testar sem relógio real.
+2. **Tempestade de areia:** evento de etapa que reduz o raio de visão do jogador por um tempo. O domínio/aplicação expõe algo como `estaVisivel(Posicao)`; a tela só escurece o que não é visível. O tempo entra como parâmetro (`Temporizador`), para testar sem relógio real.
 
 Sugestão de classes (ajuste aos nomes e interfaces reais da base depois de lê-las):
 
@@ -238,7 +237,7 @@ public enum Fundador { ASTRONAUTA, PROFESSOR, ENGENHEIRO }
 public enum Construcao {
     TORRE_DE_COMUNICACAO(Fundador.ASTRONAUTA), ZONAS_DE_POUSO(Fundador.ASTRONAUTA),
     BLOCOS_DE_AULA(Fundador.PROFESSOR), BIBLIOTECA(Fundador.PROFESSOR),
-    PREFEITURA(Fundador.ENGENHEIRO), NAMI(Fundador.ENGENHEIRO), REDE_DO_ROVER(Fundador.ENGENHEIRO),
+    PREFEITURA(Fundador.ENGENHEIRO), NAMI(Fundador.ENGENHEIRO),
     REITORIA(null); // inaugurada quando os 3 fundadores forem resgatados
 
     private final Fundador responsavel;
@@ -262,14 +261,14 @@ public interface RepositorioDeProgresso {   // porta (DIP); implementação em i
 }
 ```
 
-- `MissaoFactory`: adicionar a criação a partir de uma `EtapaDaCampanha` **sem mudar** os sorteios dos modos clássico e dinâmico existentes (os testes da Fase 7 provam isso). Estações e paradas só em casas livres e alcançáveis a partir da `L`.
-- `GameSession`: integrar NAMI, rover e tempestade como regras plugáveis (Strategy ou lista de regras de etapa), sem `if` por número de etapa.
+- `MissaoFactory`: adicionar a criação a partir de uma `EtapaDaCampanha` **sem mudar** os sorteios dos modos clássico e dinâmico existentes (os testes da Fase 7 provam isso). Estações só em casas livres e alcançáveis a partir da `L`.
+- `GameSession`: integrar NAMI e tempestade como regras plugáveis (Strategy ou lista de regras de etapa), sem `if` por número de etapa.
 
 #### 3.3 Telas e visual (gdx)
 
 - `MenuScreen`: nova opção **Campanha** (a Partida rápida continua como antes).
 - `CampusScreen`: mapa visto de cima do Campus UNIFOR Marte, inspirado na disposição real do campus de Fortaleza (avenidas nas bordas, Blocos A a E e Reitoria à direita, Biblioteca ao lado, blocos centrais, Blocos N a R embaixo, Estádio e Ginásio à esquerda, lago virando "gelo de água"). Estados: **construído** (cores acesas), **planta** (contorno tracejado na cor do fundador), **inauguração** (Reitoria). Mostra a lista das etapas, o progresso (x de 3 fundadores) e o botão para iniciar a próxima missão. Não usar a imagem do mapa oficial nem o logo da UNIFOR: redesenhar no estilo Marte.
-- `GameScreen`/`MundoRenderer`: desenhar Estação NAMI, paradas do rover (com a rota pontilhada) e a tempestade (escurecer fora do raio de visão). HUD com o objetivo da etapa e os 3 fundadores (resgatado / pendente).
+- `GameScreen`/`MundoRenderer`: desenhar Estação NAMI e a tempestade (escurecer fora do raio de visão). HUD com o objetivo da etapa e os 3 fundadores (resgatado / pendente).
 - Direção de arte (mockups no canvas da equipe): terreno marciano com sombras, sinais pulsantes nos passageiros, raio de alcance dos inimigos.
   - Paleta: fundo `#0A0612`, painel `#0C0814` (82% opacidade), terreno `#C25A2E` a `#7A2F16`, destaque âmbar `#FFB000`, ciano `#4CC9F0`, verde `#9EF01A`, vermelho inimigo `#FF3B5C`, lilás inauguração `#B388FF`, texto `#F2EEF7`, texto secundário `#B9B2C6`.
   - Cores por fundador: Astronauta ciano, Professor âmbar, Engenheiro verde.
@@ -282,9 +281,8 @@ public interface RepositorioDeProgresso {   // porta (DIP); implementação em i
 - `CampanhaTest`: começa na etapa 1; vitória avança; derrota não avança; não pula etapa; após vencer a etapa 3 a campanha fica concluída e a Reitoria é inaugurada; pontuação total soma as melhores de cada etapa.
 - `CampusTest`: todas as construções começam em planta; vencer a etapa do Astronauta constrói só as dele.
 - `EstacaoNamiTest`: recupera 1 vida; não passa do máximo; uso único; não conta como colisão.
-- `ParadaDoRoverTest`: entra em uma parada e sai no par; não volta no mesmo passo; inimigos não teleportam.
 - `TempestadeTest`: casa dentro do raio é visível, fora não; a tempestade termina após a duração (tempo como parâmetro).
-- `MissaoFactoryCampanhaTest`: mesma semente gera o mesmo mapa; estações e paradas em casas livres e alcançáveis.
+- `MissaoFactoryCampanhaTest`: mesma semente gera o mesmo mapa; estações em casas livres e alcançáveis.
 - `RepositorioDeProgressoTest`: salva e carrega o progresso.
 - **Regressão:** todos os testes herdados da Fase 7 continuam passando.
 

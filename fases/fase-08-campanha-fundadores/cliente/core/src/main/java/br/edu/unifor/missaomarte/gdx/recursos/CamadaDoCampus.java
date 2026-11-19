@@ -13,7 +13,6 @@ public enum CamadaDoCampus {
     BIBLIOTECA(Construcao.BIBLIOTECA, "biblioteca"),
     PREFEITURA(Construcao.PREFEITURA, "prefeitura"),
     NAMI(Construcao.NAMI, "nami"),
-    REDE_DO_ROVER(Construcao.REDE_DO_ROVER, "rede_do_rover"),
     REITORIA(Construcao.REITORIA, "reitoria");
 
     private static final String PASTA = "imagens/campus/";

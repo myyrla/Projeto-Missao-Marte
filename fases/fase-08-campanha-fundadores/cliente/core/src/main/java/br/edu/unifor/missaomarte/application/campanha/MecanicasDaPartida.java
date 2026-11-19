@@ -9,29 +9,23 @@ import java.util.List;
 
 public final class MecanicasDaPartida {
     private final Missao missao;
-    private final RedeDoRover redeDoRover;
     private final TempestadeDeAreia tempestade;
 
-    private MecanicasDaPartida(Missao missao, RedeDoRover redeDoRover, TempestadeDeAreia tempestade) {
+    private MecanicasDaPartida(Missao missao, TempestadeDeAreia tempestade) {
         this.missao = missao;
-        this.redeDoRover = redeDoRover;
         this.tempestade = tempestade;
     }
 
     public static MecanicasDaPartida nenhuma(Missao missao) {
-        return new MecanicasDaPartida(missao, new RedeDoRover(List.of()), null);
+        return new MecanicasDaPartida(missao, null);
     }
 
     public static MecanicasDaPartida para(Missao missao, boolean comTempestade) {
-        return new MecanicasDaPartida(missao, new RedeDoRover(missao.getParadasDoRover()),
-                comTempestade ? TempestadeDeAreia.padrao() : null);
+        return new MecanicasDaPartida(missao, comTempestade ? TempestadeDeAreia.padrao() : null);
     }
 
     public List<EventoJogo> aposMovimentoDaNave() {
         List<EventoJogo> eventos = new ArrayList<>();
-        if (redeDoRover.transportar(missao.getNave())) {
-            eventos.add(EventoJogo.ROVER_UTILIZADO);
-        }
         for (EstacaoNami nami : missao.getEstacoesNami()) {
             if (nami.ativar(missao.getNave())) {
                 eventos.add(EventoJogo.NAMI_ATIVADA);

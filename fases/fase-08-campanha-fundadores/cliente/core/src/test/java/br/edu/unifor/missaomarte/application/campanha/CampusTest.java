@@ -36,4 +36,16 @@ class CampusTest {
 
         assertEquals(EstadoDaConstrucao.INAUGURADA, campanha.campus().estado(Construcao.REITORIA));
     }
+
+    @Test
+    void vitoriaDoEngenheiroConstroiPrefeituraENami() {
+        Campanha campanha = Campanha.nova();
+        campanha.registrarResultado(1, EstadoPartida.VITORIA, 30);
+        campanha.registrarResultado(2, EstadoPartida.VITORIA, 40);
+        campanha.registrarResultado(3, EstadoPartida.VITORIA, 50);
+
+        Campus campus = campanha.campus();
+        assertEquals(EstadoDaConstrucao.CONSTRUIDA, campus.estado(Construcao.PREFEITURA));
+        assertEquals(EstadoDaConstrucao.CONSTRUIDA, campus.estado(Construcao.NAMI));
+    }
 }

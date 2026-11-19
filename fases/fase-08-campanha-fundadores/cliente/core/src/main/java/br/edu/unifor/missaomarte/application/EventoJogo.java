@@ -13,6 +13,5 @@ public enum EventoJogo {
     DERROTA,
     TIRO,
     PERIGO_DESTRUIDO,
-    NAMI_ATIVADA,
-    ROVER_UTILIZADO
+    NAMI_ATIVADA
 }

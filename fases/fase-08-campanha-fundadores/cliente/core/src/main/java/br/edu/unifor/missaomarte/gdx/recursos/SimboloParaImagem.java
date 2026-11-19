@@ -28,8 +28,6 @@ public final class SimboloParaImagem {
                 return Imagem.PASSAGEIRO_ASTRONAUTA;
             case 'H':
                 return Imagem.NAMI;
-            case 'R':
-                return Imagem.PARADA_ROVER;
             default:
                 return Imagem.DESCONHECIDO;
         }

@@ -40,6 +40,18 @@ class RepositorioDeProgressoTest {
     }
 
     @Test
+    void ignoraConstrucoesAntigasOuDesconhecidasAoCarregar() {
+        ArmazemEmMemoria armazem = new ArmazemEmMemoria();
+        armazem.gravar("campanha.progresso", "1|3|32|41|0|REDE_DO_ROVER|CONSTRUCAO_FUTURA");
+        RepositorioDeProgressoEmTexto repositorio = new RepositorioDeProgressoEmTexto(armazem);
+
+        Campanha recarregada = Campanha.carregar(repositorio);
+
+        assertEquals(3, recarregada.etapaAtual().orElseThrow().numero());
+        assertEquals(73, recarregada.pontuacaoTotal());
+    }
+
+    @Test
     void novaCampanhaApagaOValorPersistido() {
         ArmazemEmMemoria armazem = new ArmazemEmMemoria();
         RepositorioDeProgressoEmTexto repositorio = new RepositorioDeProgressoEmTexto(armazem);

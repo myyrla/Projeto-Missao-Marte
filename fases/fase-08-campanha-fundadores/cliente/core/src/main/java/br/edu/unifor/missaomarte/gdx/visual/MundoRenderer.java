@@ -63,7 +63,6 @@ public class MundoRenderer {
     private final Animation<TextureRegion> animacaoPerseguidor;
     private final Animation<TextureRegion> animacaoPropulsor;
     private final Animation<TextureRegion> animacaoNami;
-    private final Animation<TextureRegion> animacaoParadaDoRover;
 
     public MundoRenderer(Recursos recursos, SpriteBatch batch, ShapeRenderer formas, BitmapFont fonte,
             BitmapFont fonteRotulo, EstiloDaInterface estilo, MapaGeometria mapa) {
@@ -79,7 +78,6 @@ public class MundoRenderer {
         this.animacaoPerseguidor = recursos.animacao(Imagem.PERSEGUIDOR, 0.2f, PlayMode.LOOP);
         this.animacaoPropulsor = recursos.animacao(Imagem.PROPULSOR, 0.08f, PlayMode.LOOP);
         this.animacaoNami = recursos.animacao(Imagem.NAMI, duracaoDoQuadroEspecial(), PlayMode.LOOP);
-        this.animacaoParadaDoRover = recursos.animacao(Imagem.PARADA_ROVER, duracaoDoQuadroEspecial(), PlayMode.LOOP);
     }
 
     /** A geometria muda quando a tela muda de tamanho ou de orientacao; o desenho passa a usar a nova no proximo quadro. */
@@ -105,10 +103,8 @@ public class MundoRenderer {
         try {
             desenharRastro(rastro, deslocX, deslocY);
             desenharAlcances(missao.getInimigos(), posicoes, deslocX, deslocY, destaques);
-            desenharRotaDoRover(destaques, deslocX, deslocY);
             desenharObjetos(Collections.singletonList(missao.getBase()), posicoes, tempo, deslocX, deslocY);
             desenharObjetos(missao.getEstacoesNami(), posicoes, tempo, deslocX, deslocY);
-            desenharObjetos(missao.getParadasDoRover(), posicoes, tempo, deslocX, deslocY);
             desenharPassageiros(missao.getPassageiros(), posicoes, tempo, deslocX, deslocY, destaques);
             desenharObjetos(missao.getAsteroides(), posicoes, tempo, deslocX, deslocY);
             desenharObjetos(missao.getInimigos(), posicoes, tempo, deslocX, deslocY);
@@ -134,25 +130,6 @@ public class MundoRenderer {
             batch.setColor(corAnterior);
             batch.end();
         }
-    }
-
-    private void desenharRotaDoRover(PoliticaDeDestaque.Resultado destaques, float dx, float dy) {
-        if (destaques.rota().isEmpty()) {
-            return;
-        }
-        Texture ponto = recursos.textura(ImagemDoMapa.RASTRO_PONTO);
-        float tamanho = 6f;
-        batch.setColor(VERDE_PASSAGEIRO.r, VERDE_PASSAGEIRO.g, VERDE_PASSAGEIRO.b, 0.65f);
-        RotasDoRover.Rota rota = destaques.rota().orElseThrow();
-        List<RastroDaNave.Casa> casas = List.of(
-                new RastroDaNave.Casa(rota.origem().getX(), rota.origem().getY()),
-                new RastroDaNave.Casa(rota.destino().getX(), rota.destino().getY()));
-        for (GeometriaDoRastro.Ponto amostra : GeometriaDoRastro.calcular(casas,
-                MissaoMarteGame.MIN, MissaoMarteGame.MAX, mapa.celula(), mapa.origemX(), mapa.origemY(), 14f)) {
-            batch.draw(ponto, amostra.x() - tamanho / 2f + dx, amostra.y() - tamanho / 2f + dy,
-                    tamanho, tamanho);
-        }
-        batch.setColor(Color.WHITE);
     }
 
     private void desenharEscuridao(Predicate<Posicao> estaVisivel) {
@@ -343,8 +320,6 @@ public class MundoRenderer {
                 return animacaoPerseguidor.getKeyFrame(tempo, true);
             case NAMI:
                 return animacaoNami.getKeyFrame(tempo, true);
-            case PARADA_ROVER:
-                return animacaoParadaDoRover.getKeyFrame(tempo, true);
             default:
                 return recursos.quadro(imagem);
         }

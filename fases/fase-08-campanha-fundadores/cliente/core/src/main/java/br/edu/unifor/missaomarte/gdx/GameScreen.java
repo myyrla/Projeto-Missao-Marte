@@ -38,7 +38,6 @@ import br.edu.unifor.missaomarte.gdx.visual.PosicoesVisuais;
 import br.edu.unifor.missaomarte.gdx.visual.PosicaoVisual;
 import br.edu.unifor.missaomarte.gdx.visual.PoliticaDeDestaque;
 import br.edu.unifor.missaomarte.gdx.visual.RastroDaNave;
-import br.edu.unifor.missaomarte.gdx.visual.RotasDoRover;
 import br.edu.unifor.missaomarte.gdx.visual.Tremor;
 import br.edu.unifor.missaomarte.gdx.visual.VisibilidadeDaTempestade;
 import br.edu.unifor.missaomarte.gdx.ui.ControleDoFimDaPartida;
@@ -494,14 +493,11 @@ public class GameScreen extends TelaBase {
                     jogo.sons().tocar(Som.COLISAO);
                     break;
                 case NAMI_ATIVADA:
-                case ROVER_UTILIZADO:
-                    String aviso = AvisosDaCampanha.texto(evento, session.getMissao());
+                    String aviso = AvisosDaCampanha.texto(evento);
                     if (aviso != null) {
                         flutuantes.adicionar(aviso, nave.getX(), nave.getY() - 0.6f, true);
                     }
-                    if (evento == EventoJogo.NAMI_ATIVADA) {
-                        efeitos.adicionar(Imagem.BRILHO, nave.getX(), nave.getY(), 0.5f);
-                    }
+                    efeitos.adicionar(Imagem.BRILHO, nave.getX(), nave.getY(), 0.5f);
                     break;
                 case VITORIA:
                     jogo.sons().pausarMusica();
@@ -713,7 +709,7 @@ public class GameScreen extends TelaBase {
             RetanguloDeTela rodapeEsquerdo) {
         PoliticaDeDestaque.Resultado resultado = PoliticaDeDestaque.decidir(
                 missao.getNave().getPosicao(), missao.getPassageiros(), tipoDoFundador(), tiposResgatados(),
-                missao.getInimigos(), RotasDoRover.agrupar(missao.getParadasDoRover()));
+                missao.getInimigos());
         if (resultado.alvo().isEmpty()) {
             return resultado;
         }
@@ -827,7 +823,6 @@ public class GameScreen extends TelaBase {
         objetos.addAll(missao.getInimigos());
         objetos.addAll(missao.getPassageiros());
         objetos.addAll(missao.getEstacoesNami());
-        objetos.addAll(missao.getParadasDoRover());
         objetos.add(missao.getNave());
         return objetos;
     }

@@ -144,8 +144,6 @@ public final class HudRenderer {
             }
             VisibilidadeDaTempestade.filtrar(session.getMissao().getEstacoesNami(), session::estaVisivel)
                     .forEach(e -> ponto(radar, e.getPosicao(), VERDE, 4f));
-            VisibilidadeDaTempestade.filtrar(session.getMissao().getParadasDoRover(), session::estaVisivel)
-                    .forEach(p -> ponto(radar, p.getPosicao(), VERDE, 3f));
             desenharJanelaVisivel(janelaVisivel);
         } finally {
             formas.end();

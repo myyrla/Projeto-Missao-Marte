@@ -11,7 +11,6 @@ import br.edu.unifor.missaomarte.domain.Nave;
 import br.edu.unifor.missaomarte.domain.Passageiro;
 import br.edu.unifor.missaomarte.domain.Professor;
 import br.edu.unifor.missaomarte.domain.EstacaoNami;
-import br.edu.unifor.missaomarte.domain.ParadaDoRover;
 import br.edu.unifor.missaomarte.domain.Posicao;
 import br.edu.unifor.missaomarte.application.campanha.EtapaDaCampanha;
 import br.edu.unifor.missaomarte.application.campanha.Fundador;
@@ -108,15 +107,6 @@ public class MissaoFactory {
             Posicao posicao = novaPosicaoEspecial(min, max, random, ocupadas, missao);
             missao.adicionarEstacaoNami(new EstacaoNami(posicao.getX(), posicao.getY()));
             ocupadas.add(chave(posicao.getX(), posicao.getY()));
-        }
-        for (int par = 0; par < etapa.mecanicas().paresDoRover(); par++) {
-            Posicao primeira = novaPosicaoEspecial(min, max, random, ocupadas, missao);
-            ocupadas.add(chave(primeira.getX(), primeira.getY()));
-            Posicao segunda = novaPosicaoEspecial(min, max, random, ocupadas, missao);
-            ocupadas.add(chave(segunda.getX(), segunda.getY()));
-            String identificador = String.valueOf((char) ('A' + par));
-            missao.adicionarParadaDoRover(new ParadaDoRover(identificador, primeira, segunda));
-            missao.adicionarParadaDoRover(new ParadaDoRover(identificador, segunda, primeira));
         }
         MecanicasDaPartida mecanicas = MecanicasDaPartida.para(missao, etapa.mecanicas().temTempestade());
         return new PreparacaoDaEtapa(missao, mecanicas);

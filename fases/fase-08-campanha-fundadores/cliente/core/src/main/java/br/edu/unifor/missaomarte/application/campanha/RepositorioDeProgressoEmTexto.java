@@ -20,7 +20,7 @@ public final class RepositorioDeProgressoEmTexto implements RepositorioDeProgres
             return Optional.empty();
         }
         String[] partes = texto.split("\\|", -1);
-        if (partes.length != 5 || !VERSAO.equals(partes[0])) {
+        if (partes.length < 5 || !VERSAO.equals(partes[0])) {
             return Optional.empty();
         }
         try {

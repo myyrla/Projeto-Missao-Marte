@@ -17,7 +17,6 @@ public enum Imagem {
     PASSAGEIRO_ENGENHEIRO("passageiro_engenheiro.png", 96, 96, 1),
     PASSAGEIRO_ASTRONAUTA("passageiro_astronauta.png", 96, 96, 1),
     NAMI("nami.png", 96, 96, 2),
-    PARADA_ROVER("parada_rover.png", 96, 96, 2),
     POEIRA("poeira.png", 512, 512, 1),
     DESCONHECIDO("desconhecido.png", 96, 96, 1),
     EXPLOSAO("explosao.png", 96, 96, 6),

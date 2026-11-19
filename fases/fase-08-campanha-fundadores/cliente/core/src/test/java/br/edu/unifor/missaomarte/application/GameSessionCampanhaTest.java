@@ -9,7 +9,6 @@ import br.edu.unifor.missaomarte.domain.EstacaoNami;
 import br.edu.unifor.missaomarte.domain.Astronauta;
 import br.edu.unifor.missaomarte.domain.Missao;
 import br.edu.unifor.missaomarte.domain.Nave;
-import br.edu.unifor.missaomarte.domain.ParadaDoRover;
 import br.edu.unifor.missaomarte.domain.Posicao;
 import java.util.List;
 import java.util.Random;
@@ -34,24 +33,6 @@ class GameSessionCampanhaTest {
 
         assertEquals(3, nave.getVidas());
         assertTrue(resultado.getEventos().contains(EventoJogo.NAMI_ATIVADA));
-    }
-
-    @Test
-    void movimentoUsaRoverUmaVezNoMesmoPasso() {
-        Nave nave = new Nave(0, 0, 3, 5);
-        Missao missao = new Missao(nave);
-        missao.adicionarParadaDoRover(new ParadaDoRover("A", new Posicao(1, 0), new Posicao(4, 0)));
-        missao.adicionarParadaDoRover(new ParadaDoRover("A", new Posicao(4, 0), new Posicao(1, 0)));
-        GameSession sessao = novaSessao(missao, MecanicasDaPartida.para(missao, false));
-
-        passarContagem(sessao);
-        sessao.pressionar(Acao.DIREITA);
-        ResultadoTurno resultado = sessao.avancar(0.1f);
-        sessao.soltar(Acao.DIREITA);
-
-        assertEquals(new Posicao(4, 0), nave.getPosicao());
-        assertEquals(1, sessao.getMovimentos());
-        assertTrue(resultado.getEventos().contains(EventoJogo.ROVER_UTILIZADO));
     }
 
     @Test

@@ -23,8 +23,7 @@ public final class PoliticaDeDestaque {
     }
 
     public static Resultado decidir(Posicao nave, List<? extends Passageiro> passageiros,
-            Tipo tipoDoFundador, Set<Tipo> tiposResgatados, List<Inimigo> inimigos,
-            List<RotasDoRover.Rota> rotas) {
+            Tipo tipoDoFundador, Set<Tipo> tiposResgatados, List<Inimigo> inimigos) {
         List<Passageiro> pendentes = new ArrayList<>();
         Map<Passageiro, Float> opacidades = new HashMap<>();
         for (Passageiro passageiro : passageiros) {
@@ -49,14 +48,8 @@ public final class PoliticaDeDestaque {
             zonas.put(inimigo, distancia > 3 ? 0f : (4f - distancia) / 4f);
         }
 
-        RotasDoRover.Rota rota = rotas.stream()
-                .filter(r -> distanciaDaRota(nave, r) <= 1)
-                .min(Comparator.comparingInt((RotasDoRover.Rota r) -> distanciaDaRota(nave, r))
-                        .thenComparing(RotasDoRover.Rota::par))
-                .orElse(null);
-
         String texto = alvo == null ? "" : textoDaEtiqueta(nave, alvo);
-        return new Resultado(alvo, texto, opacidades, zonas, rota, null);
+        return new Resultado(alvo, texto, opacidades, zonas, null);
     }
 
     public static Optional<RetanguloDeTela> posicionarEtiqueta(RetanguloDeTela alvo,
@@ -73,10 +66,6 @@ public final class PoliticaDeDestaque {
                 .filter(area -> area.estaDentroDe(areaVisivel))
                 .filter(area -> areasDoHud.stream().noneMatch(area::sobrepoe))
                 .findFirst();
-    }
-
-    private static int distanciaDaRota(Posicao nave, RotasDoRover.Rota rota) {
-        return Math.min(distancia(nave, rota.origem()), distancia(nave, rota.destino()));
     }
 
     private static String textoDaEtiqueta(Posicao nave, Passageiro passageiro) {
@@ -112,16 +101,14 @@ public final class PoliticaDeDestaque {
         private final String textoDaEtiqueta;
         private final Map<Passageiro, Float> opacidades;
         private final Map<Inimigo, Float> zonas;
-        private final RotasDoRover.Rota rota;
         private final RetanguloDeTela etiqueta;
 
         private Resultado(Passageiro alvo, String textoDaEtiqueta, Map<Passageiro, Float> opacidades,
-                Map<Inimigo, Float> zonas, RotasDoRover.Rota rota, RetanguloDeTela etiqueta) {
+                Map<Inimigo, Float> zonas, RetanguloDeTela etiqueta) {
             this.alvo = alvo;
             this.textoDaEtiqueta = textoDaEtiqueta;
             this.opacidades = Map.copyOf(opacidades);
             this.zonas = Map.copyOf(zonas);
-            this.rota = rota;
             this.etiqueta = etiqueta;
         }
 
@@ -141,20 +128,16 @@ public final class PoliticaDeDestaque {
             return zonas.getOrDefault(inimigo, 0f);
         }
 
-        public Optional<RotasDoRover.Rota> rota() {
-            return Optional.ofNullable(rota);
-        }
-
         public Optional<RetanguloDeTela> etiqueta() {
             return Optional.ofNullable(etiqueta);
         }
 
         public Resultado comEtiqueta(RetanguloDeTela novaEtiqueta) {
-            return new Resultado(alvo, textoDaEtiqueta, opacidades, zonas, rota, novaEtiqueta);
+            return new Resultado(alvo, textoDaEtiqueta, opacidades, zonas, novaEtiqueta);
         }
 
         public Resultado semAlvoDestacado() {
-            return new Resultado(null, "", opacidades, zonas, rota, null);
+            return new Resultado(null, "", opacidades, zonas, null);
         }
     }
 }

@@ -23,9 +23,6 @@ class ImagemTest {
         assertEquals(96, Imagem.NAMI.larguraQuadro());
         assertEquals(96, Imagem.NAMI.alturaQuadro());
         assertEquals(2, Imagem.NAMI.quadros());
-        assertEquals(96, Imagem.PARADA_ROVER.larguraQuadro());
-        assertEquals(96, Imagem.PARADA_ROVER.alturaQuadro());
-        assertEquals(2, Imagem.PARADA_ROVER.quadros());
         assertEquals(512, Imagem.POEIRA.larguraQuadro());
         assertEquals(512, Imagem.POEIRA.alturaQuadro());
         assertEquals(1, Imagem.POEIRA.quadros());
