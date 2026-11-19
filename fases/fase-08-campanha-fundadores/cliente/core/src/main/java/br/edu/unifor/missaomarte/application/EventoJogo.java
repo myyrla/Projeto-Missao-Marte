@@ -13,5 +13,6 @@ public enum EventoJogo {
     DERROTA,
     TIRO,
     PERIGO_DESTRUIDO,
-    NAMI_ATIVADA
+    NAMI_ATIVADA,
+    NAMI_CASCO_COMPLETO
 }

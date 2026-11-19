@@ -31,6 +31,7 @@ import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
 import br.edu.unifor.missaomarte.gdx.visual.AvisosDaCampanha;
+import br.edu.unifor.missaomarte.gdx.visual.DicaDaNami;
 import br.edu.unifor.missaomarte.gdx.visual.EfeitosVisuais;
 import br.edu.unifor.missaomarte.gdx.visual.MensagensFlutuantes;
 import br.edu.unifor.missaomarte.gdx.visual.MundoRenderer;
@@ -88,6 +89,7 @@ public class GameScreen extends TelaBase {
     private final RastroDaNave rastro = new RastroDaNave();
     private final EfeitosVisuais efeitos = new EfeitosVisuais();
     private final MensagensFlutuantes flutuantes = new MensagensFlutuantes();
+    private final DicaDaNami dicaDaNami = new DicaDaNami();
     private final Tremor tremor = new Tremor();
     private final RepetidorDeTecla repetidor = new RepetidorDeTecla(0.28f, 0.14f);
     private final ControleDoFimDaPartida controleDoFim = new ControleDoFimDaPartida();
@@ -495,9 +497,13 @@ public class GameScreen extends TelaBase {
                 case NAMI_ATIVADA:
                     String aviso = AvisosDaCampanha.texto(evento);
                     if (aviso != null) {
+                        exibirAviso(aviso);
                         flutuantes.adicionar(aviso, nave.getX(), nave.getY() - 0.6f, true);
                     }
                     efeitos.adicionar(Imagem.BRILHO, nave.getX(), nave.getY(), 0.5f);
+                    break;
+                case NAMI_CASCO_COMPLETO:
+                    exibirAviso(AvisosDaCampanha.texto(evento));
                     break;
                 case VITORIA:
                     jogo.sons().pausarMusica();
@@ -516,6 +522,14 @@ public class GameScreen extends TelaBase {
             String texto = (variacaoDePontos > 0 ? "+" : "") + variacaoDePontos;
             flutuantes.adicionar(texto, nave.getX(), nave.getY() - 0.4f, variacaoDePontos > 0);
         }
+    }
+
+    private void exibirAviso(String aviso) {
+        if (aviso == null || aviso.isBlank()) {
+            return;
+        }
+        mensagens = new ArrayList<>(List.of(aviso));
+        tempoDaMensagem = DURACAO_DA_MENSAGEM;
     }
 
     private void aplicarEstado(EstadoPartida estado) {
@@ -652,6 +666,7 @@ public class GameScreen extends TelaBase {
                 mensagens = new ArrayList<>();
             }
         }
+        tentarExibirDicaDaNami(missao);
 
         boolean naveVisivel = tempoPiscando <= 0f || ((int) (tempoPiscando * 14f)) % 2 == 0;
         boolean tempestadeAtiva = VisibilidadeDaTempestade.estaAtiva(
@@ -681,6 +696,13 @@ public class GameScreen extends TelaBase {
         } else if (dinamico && session.getContagemRestante() > 0f) {
             desenharContagem();
         }
+    }
+
+    private void tentarExibirDicaDaNami(Missao missao) {
+        if (session.getContagemRestante() > 0f || !mensagens.isEmpty()) {
+            return;
+        }
+        exibirAviso(dicaDaNami.proxima(!missao.getEstacoesNami().isEmpty()));
     }
 
     private void atualizarCameraDoMundo(Missao missao) {

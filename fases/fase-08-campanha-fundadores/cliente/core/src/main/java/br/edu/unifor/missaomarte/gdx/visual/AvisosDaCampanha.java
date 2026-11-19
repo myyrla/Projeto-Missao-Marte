@@ -8,6 +8,9 @@ public final class AvisosDaCampanha {
     }
 
     public static String texto(EventoJogo evento) {
-        return evento == EventoJogo.NAMI_ATIVADA ? "+1 casco" : null;
+        if (evento == EventoJogo.NAMI_ATIVADA) {
+            return "+1 casco";
+        }
+        return evento == EventoJogo.NAMI_CASCO_COMPLETO ? "Casco já está completo" : null;
     }
 }

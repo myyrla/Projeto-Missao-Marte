@@ -2,6 +2,7 @@ package br.edu.unifor.missaomarte.application.campanha;
 
 import br.edu.unifor.missaomarte.application.EventoJogo;
 import br.edu.unifor.missaomarte.domain.EstacaoNami;
+import br.edu.unifor.missaomarte.domain.EstacaoNami.ResultadoDaAtivacao;
 import br.edu.unifor.missaomarte.domain.Missao;
 import br.edu.unifor.missaomarte.domain.Posicao;
 import java.util.ArrayList;
@@ -27,8 +28,11 @@ public final class MecanicasDaPartida {
     public List<EventoJogo> aposMovimentoDaNave() {
         List<EventoJogo> eventos = new ArrayList<>();
         for (EstacaoNami nami : missao.getEstacoesNami()) {
-            if (nami.ativar(missao.getNave())) {
+            ResultadoDaAtivacao resultado = nami.tentarAtivar(missao.getNave());
+            if (resultado == ResultadoDaAtivacao.REPAROU) {
                 eventos.add(EventoJogo.NAMI_ATIVADA);
+            } else if (resultado == ResultadoDaAtivacao.CASCO_COMPLETO) {
+                eventos.add(EventoJogo.NAMI_CASCO_COMPLETO);
             }
         }
         return eventos;

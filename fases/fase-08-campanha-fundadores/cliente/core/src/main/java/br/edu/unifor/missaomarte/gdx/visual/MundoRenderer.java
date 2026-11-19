@@ -1,5 +1,6 @@
 package br.edu.unifor.missaomarte.gdx.visual;
 
+import br.edu.unifor.missaomarte.domain.EstacaoNami;
 import br.edu.unifor.missaomarte.domain.Missao;
 import br.edu.unifor.missaomarte.domain.Inimigo;
 import br.edu.unifor.missaomarte.domain.ObjetoRenderizavel;
@@ -104,7 +105,7 @@ public class MundoRenderer {
             desenharRastro(rastro, deslocX, deslocY);
             desenharAlcances(missao.getInimigos(), posicoes, deslocX, deslocY, destaques);
             desenharObjetos(Collections.singletonList(missao.getBase()), posicoes, tempo, deslocX, deslocY);
-            desenharObjetos(missao.getEstacoesNami(), posicoes, tempo, deslocX, deslocY);
+            desenharEstacoesNami(missao.getEstacoesNami(), posicoes, tempo, deslocX, deslocY);
             desenharPassageiros(missao.getPassageiros(), posicoes, tempo, deslocX, deslocY, destaques);
             desenharObjetos(missao.getAsteroides(), posicoes, tempo, deslocX, deslocY);
             desenharObjetos(missao.getInimigos(), posicoes, tempo, deslocX, deslocY);
@@ -306,6 +307,23 @@ public class MundoRenderer {
             PosicaoVisual visual = posicoes.de(objeto);
             batch.draw(regiao(objeto, tempo), mapa.xCentro(visual.x()) - tamanho / 2f + dx,
                     mapa.yCentro(visual.y()) - tamanho / 2f + dy, tamanho, tamanho);
+        }
+    }
+
+    private void desenharEstacoesNami(List<EstacaoNami> estacoes, PosicoesVisuais posicoes,
+            float tempo, float dx, float dy) {
+        float tamanho = tamanhoDoObjeto(mapa.celula());
+        Color corAnterior = new Color(batch.getColor());
+        try {
+            for (EstacaoNami nami : estacoes) {
+                PosicaoVisual visual = posicoes.de(nami);
+                batch.setColor(corAnterior.r, corAnterior.g, corAnterior.b,
+                        corAnterior.a * AparenciaDaNami.opacidade(nami));
+                batch.draw(regiao(nami, tempo), mapa.xCentro(visual.x()) - tamanho / 2f + dx,
+                        mapa.yCentro(visual.y()) - tamanho / 2f + dy, tamanho, tamanho);
+            }
+        } finally {
+            batch.setColor(corAnterior);
         }
     }
 

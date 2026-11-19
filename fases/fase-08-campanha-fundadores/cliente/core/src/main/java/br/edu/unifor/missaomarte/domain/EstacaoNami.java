@@ -9,11 +9,18 @@ public final class EstacaoNami implements ObjetoRenderizavel {
     }
 
     public boolean ativar(Nave nave) {
-        if (usada || !posicao.equals(nave.getPosicao()) || !nave.recuperarVida()) {
-            return false;
+        return tentarAtivar(nave) == ResultadoDaAtivacao.REPAROU;
+    }
+
+    public ResultadoDaAtivacao tentarAtivar(Nave nave) {
+        if (usada || !posicao.equals(nave.getPosicao())) {
+            return ResultadoDaAtivacao.SEM_EFEITO;
+        }
+        if (!nave.recuperarVida()) {
+            return ResultadoDaAtivacao.CASCO_COMPLETO;
         }
         usada = true;
-        return true;
+        return ResultadoDaAtivacao.REPAROU;
     }
 
     public boolean isUsada() {
@@ -28,5 +35,11 @@ public final class EstacaoNami implements ObjetoRenderizavel {
     @Override
     public char getSimbolo() {
         return 'H';
+    }
+
+    public enum ResultadoDaAtivacao {
+        REPAROU,
+        CASCO_COMPLETO,
+        SEM_EFEITO
     }
 }

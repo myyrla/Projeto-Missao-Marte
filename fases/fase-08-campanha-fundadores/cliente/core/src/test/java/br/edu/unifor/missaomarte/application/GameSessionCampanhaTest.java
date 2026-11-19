@@ -23,7 +23,8 @@ class GameSessionCampanhaTest {
         Nave nave = new Nave(0, 0, 3, 5);
         nave.perderVida();
         Missao missao = new Missao(nave);
-        missao.adicionarEstacaoNami(new EstacaoNami(1, 0));
+        EstacaoNami nami = new EstacaoNami(1, 0);
+        missao.adicionarEstacaoNami(nami);
         GameSession sessao = novaSessao(missao, MecanicasDaPartida.para(missao, false));
 
         passarContagem(sessao);
@@ -33,6 +34,30 @@ class GameSessionCampanhaTest {
 
         assertEquals(3, nave.getVidas());
         assertTrue(resultado.getEventos().contains(EventoJogo.NAMI_ATIVADA));
+        assertFalse(resultado.getEventos().contains(EventoJogo.NAMI_CASCO_COMPLETO));
+        assertTrue(nami.isUsada());
+    }
+
+    @Test
+    void cascoCompletoEmiteEventoSemConsumirANami() {
+        Nave nave = new Nave(0, 0, 3, 5);
+        Missao missao = new Missao(nave);
+        EstacaoNami nami = new EstacaoNami(1, 0);
+        missao.adicionarEstacaoNami(nami);
+        GameSession sessao = novaSessao(missao, MecanicasDaPartida.para(missao, false));
+
+        passarContagem(sessao);
+        sessao.pressionar(Acao.DIREITA);
+        ResultadoTurno resultado = sessao.avancar(0.1f);
+        sessao.soltar(Acao.DIREITA);
+
+        assertEquals(3, nave.getVidas());
+        assertTrue(resultado.getEventos().contains(EventoJogo.NAMI_CASCO_COMPLETO));
+        assertFalse(resultado.getEventos().contains(EventoJogo.NAMI_ATIVADA));
+        assertFalse(nami.isUsada());
+
+        ResultadoTurno parado = sessao.avancar(0.1f);
+        assertFalse(parado.getEventos().contains(EventoJogo.NAMI_CASCO_COMPLETO));
     }
 
     @Test
