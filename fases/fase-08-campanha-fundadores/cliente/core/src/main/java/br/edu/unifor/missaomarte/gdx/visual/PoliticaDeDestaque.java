@@ -37,7 +37,12 @@ public final class PoliticaDeDestaque {
 
         List<Passageiro> preferidos = tipoDoFundador == null ? List.of()
                 : pendentes.stream().filter(p -> Tipo.de(p) == tipoDoFundador).toList();
-        List<Passageiro> candidatos = preferidos.isEmpty() ? pendentes : preferidos;
+        Passageiro fundador = preferidos.stream()
+                .filter(p -> ehFundadorDoTipo(p, tipoDoFundador))
+                .findFirst()
+                .orElse(null);
+        List<Passageiro> candidatos = fundador != null ? List.of(fundador)
+                : preferidos.isEmpty() ? pendentes : preferidos;
         Passageiro alvo = candidatos.stream()
                 .min(Comparator.comparingInt(p -> distancia(nave, p.getPosicao())))
                 .orElse(null);
@@ -48,8 +53,10 @@ public final class PoliticaDeDestaque {
             zonas.put(inimigo, distancia > 3 ? 0f : (4f - distancia) / 4f);
         }
 
-        String texto = alvo == null ? "" : textoDaEtiqueta(nave, alvo);
-        return new Resultado(alvo, texto, opacidades, zonas, null);
+        AlvoDoObjetivo alvoDoObjetivo = alvo == null ? null
+                : new AlvoDoObjetivo(alvo, distancia(nave, alvo.getPosicao()));
+        String texto = alvoDoObjetivo == null ? "" : textoDaEtiqueta(alvoDoObjetivo);
+        return new Resultado(alvoDoObjetivo, alvo, texto, opacidades, zonas, null);
     }
 
     public static Optional<RetanguloDeTela> posicionarEtiqueta(RetanguloDeTela alvo,
@@ -68,13 +75,19 @@ public final class PoliticaDeDestaque {
                 .findFirst();
     }
 
-    private static String textoDaEtiqueta(Posicao nave, Passageiro passageiro) {
-        int distancia = distancia(nave, passageiro.getPosicao());
-        return Tipo.de(passageiro).name() + " · " + distancia + " " + (distancia == 1 ? "CASA" : "CASAS");
+    private static String textoDaEtiqueta(AlvoDoObjetivo alvo) {
+        return Tipo.de(alvo.passageiro()).name() + " · " + alvo.distancia() + " "
+                + (alvo.distancia() == 1 ? "CASA" : "CASAS");
     }
 
     private static int distancia(Posicao a, Posicao b) {
         return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY());
+    }
+
+    private static boolean ehFundadorDoTipo(Passageiro passageiro, Tipo tipo) {
+        String nome = tipo == Tipo.ASTRONAUTA ? "Astronauta"
+                : tipo == Tipo.PROFESSOR ? "Professor" : "Engenheiro";
+        return passageiro.getNome().equals("Fundador " + nome);
     }
 
     public enum Tipo {
@@ -96,15 +109,20 @@ public final class PoliticaDeDestaque {
         }
     }
 
+    public record AlvoDoObjetivo(Passageiro passageiro, int distancia) {
+    }
+
     public static final class Resultado {
+        private final AlvoDoObjetivo alvoDoObjetivo;
         private final Passageiro alvo;
         private final String textoDaEtiqueta;
         private final Map<Passageiro, Float> opacidades;
         private final Map<Inimigo, Float> zonas;
         private final RetanguloDeTela etiqueta;
 
-        private Resultado(Passageiro alvo, String textoDaEtiqueta, Map<Passageiro, Float> opacidades,
-                Map<Inimigo, Float> zonas, RetanguloDeTela etiqueta) {
+        private Resultado(AlvoDoObjetivo alvoDoObjetivo, Passageiro alvo, String textoDaEtiqueta,
+                Map<Passageiro, Float> opacidades, Map<Inimigo, Float> zonas, RetanguloDeTela etiqueta) {
+            this.alvoDoObjetivo = alvoDoObjetivo;
             this.alvo = alvo;
             this.textoDaEtiqueta = textoDaEtiqueta;
             this.opacidades = Map.copyOf(opacidades);
@@ -114,6 +132,10 @@ public final class PoliticaDeDestaque {
 
         public Optional<Passageiro> alvo() {
             return Optional.ofNullable(alvo);
+        }
+
+        public Optional<AlvoDoObjetivo> alvoDoObjetivo() {
+            return Optional.ofNullable(alvoDoObjetivo);
         }
 
         public String textoDaEtiqueta() {
@@ -133,11 +155,11 @@ public final class PoliticaDeDestaque {
         }
 
         public Resultado comEtiqueta(RetanguloDeTela novaEtiqueta) {
-            return new Resultado(alvo, textoDaEtiqueta, opacidades, zonas, novaEtiqueta);
+            return new Resultado(alvoDoObjetivo, alvo, textoDaEtiqueta, opacidades, zonas, novaEtiqueta);
         }
 
         public Resultado semAlvoDestacado() {
-            return new Resultado(null, "", opacidades, zonas, null);
+            return new Resultado(alvoDoObjetivo, null, "", opacidades, zonas, null);
         }
     }
 }

@@ -32,19 +32,22 @@ class PoliticaDeDestaqueTest {
     }
 
     @Test
-    void campanhaPrefereTipoDoFundadorEMudaParaOMaisProximoSeEleNaoExistir() {
+    void campanhaPrefereOFundadorMesmoComPassageiroDoMesmoTipoMaisProximo() {
         Astronauta astronauta = new Astronauta("Bia", 0, 1);
-        Professor professorDistante = new Professor("Ada", 5, 5);
-        Professor professor = new Professor("Fundador Professor", 4, 0);
+        Professor professorMaisProximo = new Professor("Ada", 6, 0);
+        Professor fundador = new Professor("Fundador Professor", 4, 3);
 
         PoliticaDeDestaque.Resultado comFundador = decidir(
-                List.of(astronauta, professorDistante, professor), PoliticaDeDestaque.Tipo.PROFESSOR,
+                List.of(astronauta, professorMaisProximo, fundador), PoliticaDeDestaque.Tipo.PROFESSOR,
                 Set.of(), List.of());
         PoliticaDeDestaque.Resultado semFundador = decidir(
                 List.of(astronauta), PoliticaDeDestaque.Tipo.PROFESSOR,
                 Set.of(), List.of());
 
-        assertSame(professor, comFundador.alvo().orElseThrow());
+        assertSame(fundador, comFundador.alvo().orElseThrow());
+        assertEquals("PROFESSOR · 7 CASAS", comFundador.textoDaEtiqueta());
+        assertSame(fundador, comFundador.alvoDoObjetivo().orElseThrow().passageiro());
+        assertEquals(7, comFundador.alvoDoObjetivo().orElseThrow().distancia());
         assertSame(astronauta, semFundador.alvo().orElseThrow());
     }
 
@@ -79,6 +82,8 @@ class PoliticaDeDestaqueTest {
 
         assertTrue(semAlvo.alvo().isEmpty());
         assertTrue(semAlvo.textoDaEtiqueta().isEmpty());
+        assertSame(astronauta, semAlvo.alvoDoObjetivo().orElseThrow().passageiro());
+        assertEquals(1, semAlvo.alvoDoObjetivo().orElseThrow().distancia());
         assertEquals(0.5f, semAlvo.opacidadeDaZona(inimigo), 0.001f);
     }
 

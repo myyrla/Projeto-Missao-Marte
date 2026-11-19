@@ -672,7 +672,7 @@ public class GameScreen extends TelaBase {
         }
 
         boolean fim = session.getEstado() != EstadoPartida.EM_ANDAMENTO;
-        hud.desenhar(session, mensagens, mudo, segundos, janelaDoRadar, tempestadeAtiva);
+        hud.desenhar(session, mensagens, mudo, segundos, janelaDoRadar, tempestadeAtiva, destaques);
 
         if (fim) {
             desenharFimDePartida();

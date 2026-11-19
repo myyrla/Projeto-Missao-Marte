@@ -18,6 +18,7 @@ import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.layout.TextoResponsivo;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.FontesDoJogo;
+import br.edu.unifor.missaomarte.gdx.visual.PoliticaDeDestaque;
 import br.edu.unifor.missaomarte.gdx.visual.VisibilidadeDaTempestade;
 import br.edu.unifor.missaomarte.gdx.ui.EstiloDaInterface;
 import br.edu.unifor.missaomarte.gdx.ui.IconeDaInterface;
@@ -71,15 +72,17 @@ public final class HudRenderer {
     }
 
     public void desenhar(GameSession session, List<String> mensagens, boolean mudo, long segundos,
-            RetanguloDeTela janelaVisivel, boolean tempestadeAtiva) {
+            RetanguloDeTela janelaVisivel, boolean tempestadeAtiva,
+            PoliticaDeDestaque.Resultado destaques) {
         Nave nave = session.getMissao().getNave();
         vidasMaximas = Math.max(vidasMaximas, nave.getVidas());
         RetanguloDeTela rodapeEsquerdo = areaOcupadaDoRodape(session, mudo, segundos);
         fontes.comEscalaTemporaria(layout.escala(), () -> {
             try {
-                desenharPecas(session, nave, rodapeEsquerdo, tempestadeAtiva);
+                desenharPecas(session, nave, rodapeEsquerdo, tempestadeAtiva, destaques);
                 desenharRadar(session, janelaVisivel);
-                desenharTextos(session, nave, mensagens, mudo, segundos, rodapeEsquerdo, tempestadeAtiva);
+                desenharTextos(session, nave, mensagens, mudo, segundos, rodapeEsquerdo, tempestadeAtiva,
+                        destaques);
             } finally {
                 for (FonteDoJogo tipo : FonteDoJogo.values()) {
                     fontes.obter(tipo).setColor(Color.WHITE);
@@ -89,7 +92,7 @@ public final class HudRenderer {
     }
 
     private void desenharPecas(GameSession session, Nave nave, RetanguloDeTela rodapeEsquerdo,
-            boolean tempestadeAtiva) {
+            boolean tempestadeAtiva, PoliticaDeDestaque.Resultado destaques) {
         lote(() -> {
             estilo.painel(batch, layout.piloto());
             estilo.painel(batch, layout.objetivo());
@@ -104,7 +107,8 @@ public final class HudRenderer {
                 estilo.painel(batch, layout.seloDaTempestade());
             }
             for (int i = 0; i < 3; i++) {
-                Color borda = campanha == null ? null : corDaBordaDoFundador(session, Fundador.values()[i]);
+                Color borda = campanha == null ? null
+                        : corDaBordaDoFundador(session, Fundador.values()[i], destaques);
                 estilo.ficha(batch, layout.fichaDoObjetivo(i), borda);
             }
             float s = layout.escala();
@@ -193,10 +197,11 @@ public final class HudRenderer {
     }
 
     private void desenharTextos(GameSession session, Nave nave, List<String> mensagens, boolean mudo, long segundos,
-            RetanguloDeTela rodapeEsquerdo, boolean tempestadeAtiva) {
+            RetanguloDeTela rodapeEsquerdo, boolean tempestadeAtiva,
+            PoliticaDeDestaque.Resultado destaques) {
         lote(() -> {
             desenharPiloto(session);
-            desenharObjetivo(session, nave);
+            desenharObjetivo(session, nave, destaques);
             if (layout.exibeRadar()) {
                 rotulo("RADAR", layout.radar().x() + 14f * layout.escala(),
                         layout.radar().topo() - 16f * layout.escala());
@@ -236,7 +241,7 @@ public final class HudRenderer {
                 painel.y() + 15f * s + medidor.height);
     }
 
-    private void desenharObjetivo(GameSession session, Nave nave) {
+    private void desenharObjetivo(GameSession session, Nave nave, PoliticaDeDestaque.Resultado destaques) {
         float s = layout.escala();
         RetanguloDeTela painel = layout.objetivo();
         rotulo("OBJETIVO", painel.x() + 16f * s, painel.topo() - 17f * s);
@@ -252,7 +257,7 @@ public final class HudRenderer {
             return;
         }
         for (int i = 0; i < Fundador.values().length; i++) {
-            desenharFundador(session, Fundador.values()[i], layout.fichaDoObjetivo(i));
+            desenharFundador(session, Fundador.values()[i], layout.fichaDoObjetivo(i), destaques);
         }
     }
 
@@ -266,8 +271,9 @@ public final class HudRenderer {
         }
     }
 
-    private void desenharFundador(GameSession session, Fundador fundador, RetanguloDeTela ficha) {
-        EstadoVisual estado = estadoDoFundador(session, fundador);
+    private void desenharFundador(GameSession session, Fundador fundador, RetanguloDeTela ficha,
+            PoliticaDeDestaque.Resultado destaques) {
+        EstadoVisual estado = estadoDoFundador(session, fundador, destaques);
         IconeDaInterface icone = fundador == Fundador.ASTRONAUTA ? IconeDaInterface.ASTRONAUTA
                 : fundador == Fundador.PROFESSOR ? IconeDaInterface.PROFESSOR : IconeDaInterface.ENGENHEIRO;
         textoDaFicha(nome(fundador), estado.texto(), ficha, icone, estado.marcado() ? cor(fundador) : null);
@@ -298,7 +304,8 @@ public final class HudRenderer {
         pequena.draw(batch, estadoDaFicha, x, yDoNome - nomeDaFicha.height - espaco);
     }
 
-    private EstadoVisual estadoDoFundador(GameSession session, Fundador fundador) {
+    private EstadoVisual estadoDoFundador(GameSession session, Fundador fundador,
+            PoliticaDeDestaque.Resultado destaques) {
         int numero = fundador.ordinal() + 1;
         if (campanha.progresso().etapaAtual() > numero) {
             return new EstadoVisual("Resgatado", true);
@@ -306,25 +313,30 @@ public final class HudRenderer {
         if (etapa == null || etapa.fundador() != fundador) {
             return new EstadoVisual("Sem contato", false);
         }
-        Passageiro noMapa = fundadorEm(session.getMissao().getPassageiros());
-        Passageiro aBordo = fundadorEm(session.getMissao().getNave().getPassageiros());
+        Passageiro aBordo = fundadorEm(session.getMissao().getNave().getPassageiros(), fundador);
         if (aBordo != null) {
             return new EstadoVisual("A bordo", true);
         }
-        if (noMapa == null) {
+        PoliticaDeDestaque.AlvoDoObjetivo alvo = destaques.alvoDoObjetivo()
+                .filter(candidato -> ehFundador(candidato.passageiro(), fundador))
+                .orElse(null);
+        if (alvo == null) {
             return new EstadoVisual("Resgatado", true);
         }
-        Posicao nave = session.getMissao().getNave().getPosicao();
-        int distancia = Math.abs(nave.getX() - noMapa.getX()) + Math.abs(nave.getY() - noMapa.getY());
-        return new EstadoVisual("Sinal a " + distancia + " casas", false);
+        return new EstadoVisual(textoDoSinal(alvo), false);
     }
 
-    private static Passageiro fundadorEm(List<Passageiro> passageiros) {
-        return passageiros.stream().filter(p -> p.getNome().startsWith("Fundador ")).findFirst().orElse(null);
+    private static Passageiro fundadorEm(List<Passageiro> passageiros, Fundador fundador) {
+        return passageiros.stream().filter(p -> ehFundador(p, fundador)).findFirst().orElse(null);
     }
 
-    private Color corDaBordaDoFundador(GameSession session, Fundador fundador) {
-        return estadoDoFundador(session, fundador).marcado() ? cor(fundador) : null;
+    private static boolean ehFundador(Passageiro passageiro, Fundador fundador) {
+        return passageiro.getNome().equals("Fundador " + nome(fundador));
+    }
+
+    private Color corDaBordaDoFundador(GameSession session, Fundador fundador,
+            PoliticaDeDestaque.Resultado destaques) {
+        return estadoDoFundador(session, fundador, destaques).marcado() ? cor(fundador) : null;
     }
 
     private void desenharRodape(GameSession session, boolean mudo, long segundos, RetanguloDeTela esquerdo) {
@@ -493,6 +505,10 @@ public final class HudRenderer {
 
     static String textoDaTempestade() {
         return "TEMPESTADE DE AREIA";
+    }
+
+    static String textoDoSinal(PoliticaDeDestaque.AlvoDoObjetivo alvo) {
+        return "Sinal a " + alvo.distancia() + " casas";
     }
 
     private record EstadoVisual(String texto, boolean marcado) {

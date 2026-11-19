@@ -4,7 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import br.edu.unifor.missaomarte.application.Acao;
 import br.edu.unifor.missaomarte.domain.Dificuldade;
+import br.edu.unifor.missaomarte.domain.Posicao;
+import br.edu.unifor.missaomarte.domain.Professor;
 import br.edu.unifor.missaomarte.gdx.ui.IconeDaInterface;
+import br.edu.unifor.missaomarte.gdx.visual.PoliticaDeDestaque;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class HudRendererTextoTest {
@@ -31,5 +36,17 @@ class HudRendererTextoTest {
     @Test
     void seloDaTempestadeTemTextoFixoSemUsarOsAvisosTransitorios() {
         assertEquals("TEMPESTADE DE AREIA", HudRenderer.textoDaTempestade());
+    }
+
+    @Test
+    void sinalDoHudUsaADistanciaCalculadaParaOAlvoDoObjetivo() {
+        Professor maisProximo = new Professor("Ada", 6, 0);
+        Professor fundador = new Professor("Fundador Professor", 4, 3);
+        PoliticaDeDestaque.Resultado resultado = PoliticaDeDestaque.decidir(
+                new Posicao(0, 0),
+                List.of(maisProximo, fundador), PoliticaDeDestaque.Tipo.PROFESSOR, Set.of(), List.of());
+
+        assertEquals("Sinal a 7 casas",
+                HudRenderer.textoDoSinal(resultado.alvoDoObjetivo().orElseThrow()));
     }
 }
