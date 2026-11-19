@@ -356,15 +356,9 @@ public final class HudRenderer {
         RetanguloDeTela direito = layout.rodapeDireito();
         float x = direito.x() + 12f * s;
         float y = direito.centroY() - EstiloDaInterface.ALTURA_DA_TECLA * s / 2f;
-        x = atalho("WASD", "Mover", x, y);
-        if (session.getModo() == ModoDeJogo.DINAMICO) {
-            x = atalho("F", "Atirar", x, y);
-            x = atalho("P", "Pausa", x, y);
-        } else {
-            x = atalho("E", "Embarcar", x, y);
+        for (AtalhosDoRodape.Atalho atalho : AtalhosDoRodape.para(session.getModo())) {
+            x = atalho(atalho.tecla(), atalho.acao(), x, y);
         }
-        x = atalho("M", "Som", x, y);
-        atalho("Esc", "Abortar", x, y);
     }
 
     private float atalho(String tecla, String acao, float x, float y) {
