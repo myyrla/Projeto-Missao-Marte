@@ -6,6 +6,7 @@ import br.edu.unifor.missaomarte.application.servidor.Resposta;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
+import br.edu.unifor.missaomarte.gdx.ui.RotulosDaInterface;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
@@ -126,7 +127,7 @@ public class RankingScreen extends TelaBase {
             y -= 34f;
             fonte(FonteDoJogo.TEXTO);
             cor(Color.WHITE);
-            texto("Dificuldade: " + resumo.getDificuldade()
+            texto("Dificuldade: " + RotulosDaInterface.dificuldade(resumo.getDificuldade())
                     + "   Pontuação final: " + resumo.getPontuacao()
                     + "   Movimentos: " + resumo.getMovimentos()
                     + "   Tempo: " + resumo.getDuracaoSegundos() + "s", 60f, y);

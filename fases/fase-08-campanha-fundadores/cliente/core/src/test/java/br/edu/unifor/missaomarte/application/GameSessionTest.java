@@ -34,13 +34,14 @@ class GameSessionTest {
         assertEquals(0, sessao.getResgatados());
         assertEquals(EstadoPartida.EM_ANDAMENTO, sessao.getEstado());
 
-        sessao.processarAcao(Acao.ESQUERDA);
+        ResultadoTurno resultado = sessao.processarAcao(Acao.ESQUERDA);
 
         assertEquals(1, sessao.getResgatados());
         assertTrue(nave.getPassageiros().isEmpty());
         assertEquals(EstadoPartida.VITORIA, sessao.getEstado());
         assertEquals(100 - 1 + 20 - 1, sessao.getPontuacao());
         assertEquals(2, sessao.getMovimentos());
+        assertTrue(resultado.getMensagens().contains("Base alcançada. 1 passageiro desembarcado."));
     }
 
     @Test
@@ -50,7 +51,7 @@ class GameSessionTest {
 
         ResultadoTurno resultado = sessao.processarAcao(Acao.EMBARCAR);
 
-        assertTrue(resultado.getMensagens().contains("Nao ha passageiro nesta posicao."));
+        assertTrue(resultado.getMensagens().contains("Não há passageiro nesta posição."));
         assertEquals(100, sessao.getPontuacao());
     }
 
@@ -79,11 +80,12 @@ class GameSessionTest {
         missao.adicionarAsteroide(new Asteroide(1, 0));
         GameSession sessao = sessao(missao, 100);
 
-        sessao.processarAcao(Acao.DIREITA);
+        ResultadoTurno resultado = sessao.processarAcao(Acao.DIREITA);
 
         assertEquals(2, nave.getVidas());
         assertTrue(missao.getAsteroides().isEmpty());
         assertEquals(100 - 1 - 5, sessao.getPontuacao());
+        assertEquals("Colisão detectada! -5 pontos por perigo e -1 vida.", resultado.getMensagens().get(0));
     }
 
     @Test
@@ -91,18 +93,20 @@ class GameSessionTest {
         Missao missao = new Missao(new Nave(0, 0, 3, 1));
         GameSession sessao = sessao(missao, 1);
 
-        sessao.processarAcao(Acao.DIREITA);
+        ResultadoTurno resultado = sessao.processarAcao(Acao.DIREITA);
 
         assertEquals(EstadoPartida.DERROTA, sessao.getEstado());
+        assertTrue(resultado.getMensagens().contains("Pontuação zerada. Missão falhou."));
     }
 
     @Test
     void sairAbortaAPartida() {
         GameSession sessao = sessao(new Missao(new Nave(0, 0, 3, 1)), 100);
 
-        sessao.processarAcao(Acao.SAIR);
+        ResultadoTurno resultado = sessao.processarAcao(Acao.SAIR);
 
         assertEquals(EstadoPartida.ABORTADA, sessao.getEstado());
+        assertEquals("Missão abortada pelo jogador.", resultado.getMensagens().get(0));
     }
 
     @Test
@@ -111,9 +115,33 @@ class GameSessionTest {
 
         ResultadoTurno resultado = sessao.processarAcao(Acao.INVALIDA);
 
-        assertTrue(resultado.getMensagens().contains("Comando invalido."));
+        assertTrue(resultado.getMensagens().contains("Comando inválido."));
         assertEquals(100, sessao.getPontuacao());
         assertEquals(0, sessao.getMovimentos());
         assertEquals(EstadoPartida.EM_ANDAMENTO, sessao.getEstado());
+    }
+
+    @Test
+    void colisaoFatalUsaMensagemComAcento() {
+        Nave nave = new Nave(0, 0, 1, 1);
+        Missao missao = new Missao(nave);
+        missao.adicionarAsteroide(new Asteroide(1, 0));
+        GameSession sessao = sessao(missao, 100);
+
+        ResultadoTurno resultado = sessao.processarAcao(Acao.DIREITA);
+
+        assertEquals("Colisão fatal! Suas vidas acabaram.", resultado.getMensagens().get(0));
+    }
+
+    @Test
+    void entregaPluralConcordaComAQuantidade() {
+        Nave nave = new Nave(1, 0, 3, 2);
+        nave.embarcar(new Professor("P1", 1, 0));
+        nave.embarcar(new Professor("P2", 1, 0));
+        GameSession sessao = sessao(new Missao(nave), 100);
+
+        ResultadoTurno resultado = sessao.processarAcao(Acao.ESQUERDA);
+
+        assertTrue(resultado.getMensagens().contains("Base alcançada. 2 passageiros desembarcados."));
     }
 }

@@ -60,7 +60,7 @@ public class Lwjgl3Launcher {
                 inicioDaCampanha);
 
         Lwjgl3ApplicationConfiguration configuracao = new Lwjgl3ApplicationConfiguration();
-        configuracao.setTitle("Missao Marte");
+        configuracao.setTitle(tituloDaJanela());
         int[] janela = tamanhoDaJanela(toque);
         configuracao.setWindowedMode(janela[0], janela[1]);
         configuracao.useVsync(true);
@@ -78,5 +78,9 @@ public class Lwjgl3Launcher {
             return new int[] {Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2))};
         }
         return new int[] {1280, 720};
+    }
+
+    private static String tituloDaJanela() {
+        return "Missão Marte";
     }
 }

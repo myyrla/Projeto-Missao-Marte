@@ -13,6 +13,7 @@ import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
 import br.edu.unifor.missaomarte.gdx.plataforma.Plataforma.TipoDeTexto;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
+import br.edu.unifor.missaomarte.gdx.ui.RotulosDaInterface;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
@@ -191,7 +192,7 @@ public class NovaPartidaScreen extends TelaBase {
         fonte(FonteDoJogo.SUBTITULO);
         cor(Color.WHITE);
         texto(logado() ? "Piloto: " + jogo.sessao().getNome() : "Nome do piloto: " + nome + cursor, 200f, 410f);
-        texto("Dificuldade: < " + dificuldade + " >", 200f, 360f);
+        texto("Dificuldade: < " + RotulosDaInterface.dificuldade(dificuldade) + " >", 200f, 360f);
         texto("Modo: < " + (modo == ModoDeJogo.DINAMICO ? "Dinâmico" : "Clássico") + " >", 200f, 310f);
 
         fonte(FonteDoJogo.TEXTO);

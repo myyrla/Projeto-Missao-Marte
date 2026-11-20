@@ -22,6 +22,7 @@ import br.edu.unifor.missaomarte.gdx.visual.PoliticaDeDestaque;
 import br.edu.unifor.missaomarte.gdx.visual.VisibilidadeDaTempestade;
 import br.edu.unifor.missaomarte.gdx.ui.EstiloDaInterface;
 import br.edu.unifor.missaomarte.gdx.ui.IconeDaInterface;
+import br.edu.unifor.missaomarte.gdx.ui.RotulosDaInterface;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -589,14 +590,7 @@ public final class HudRenderer {
     }
 
     private static String nomeDaDificuldade(br.edu.unifor.missaomarte.domain.Dificuldade dificuldade) {
-        switch (dificuldade) {
-            case MEDIO:
-                return "MÉDIO";
-            case DIFICIL:
-                return "DIFÍCIL";
-            default:
-                return "FÁCIL";
-        }
+        return RotulosDaInterface.dificuldade(dificuldade);
     }
 
     static String formatarMunicaoEMira(int municao, Acao mira) {

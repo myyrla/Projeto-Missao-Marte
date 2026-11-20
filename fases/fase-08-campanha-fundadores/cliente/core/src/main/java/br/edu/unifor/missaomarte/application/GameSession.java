@@ -113,14 +113,14 @@ public class GameSession {
         List<EventoJogo> eventos = new ArrayList<>();
 
         if (acao == Acao.INVALIDA) {
-            mensagens.add("Comando invalido.");
+            mensagens.add("Comando inválido.");
             return new ResultadoTurno(estado, mensagens);
         }
 
         if (acao == Acao.SAIR) {
             estado = EstadoPartida.ABORTADA;
             registrarFim();
-            mensagens.add("Missao abortada pelo jogador.");
+            mensagens.add("Missão abortada pelo jogador.");
             return new ResultadoTurno(estado, mensagens);
         }
 
@@ -129,7 +129,7 @@ public class GameSession {
         }
 
         if (acao == Acao.ATIRAR) {
-            mensagens.add("A nave nao tem arma no modo classico.");
+            mensagens.add("A nave não tem arma no modo clássico.");
             return new ResultadoTurno(estado, mensagens);
         }
 
@@ -169,7 +169,7 @@ public class GameSession {
     private void embarcarPassageiro(List<String> mensagens, List<EventoJogo> eventos) {
         Passageiro passageiro = missao.passageiroNaPosicaoDaNave();
         if (passageiro == null) {
-            mensagens.add("Nao ha passageiro nesta posicao.");
+            mensagens.add("Não há passageiro nesta posição.");
             return;
         }
 
@@ -197,7 +197,10 @@ public class GameSession {
             int pontos = regraDePontuacao.pontosDaEntrega(desembarcados);
             pontuacao += pontos;
             String bonus = pontos > 0 ? " +" + pontos + " pontos." : "";
-            mensagens.add("Base alcancada. " + desembarcados + " passageiro(s) desembarcado(s)." + bonus);
+            String entrega = desembarcados == 1
+                    ? "1 passageiro desembarcado."
+                    : desembarcados + " passageiros desembarcados.";
+            mensagens.add("Base alcançada. " + entrega + bonus);
             eventos.add(EventoJogo.ENTREGA);
         }
     }
@@ -234,17 +237,17 @@ public class GameSession {
 
         if (missao.getNave().getVidas() <= 0) {
             estado = EstadoPartida.DERROTA;
-            mensagens.add("Colisao fatal! Suas vidas acabaram.");
+            mensagens.add("Colisão fatal! Suas vidas acabaram.");
         } else {
             int custoPorPerigo = custo / Math.max(1, removidos);
-            mensagens.add("Colisao detectada! -" + custoPorPerigo + " pontos por perigo e -1 vida.");
+            mensagens.add("Colisão detectada! -" + custoPorPerigo + " pontos por perigo e -1 vida.");
         }
     }
 
     private void verificarPontuacao(List<String> mensagens) {
         if (pontuacao <= 0 && estado == EstadoPartida.EM_ANDAMENTO) {
             estado = EstadoPartida.DERROTA;
-            mensagens.add("Pontuacao zerada. Missao falhou.");
+            mensagens.add("Pontuação zerada. Missão falhou.");
         }
     }
 
@@ -470,7 +473,7 @@ public class GameSession {
             return new ResultadoTurno(estado, mensagens, eventos);
         }
         if (!missao.getNave().gastarMunicao()) {
-            mensagens.add("Sem municao.");
+            mensagens.add("Sem munição.");
             return new ResultadoTurno(estado, mensagens, eventos);
         }
 
@@ -482,7 +485,7 @@ public class GameSession {
         eventos.add(EventoJogo.TIRO);
         if (ultimoTiro.acertou()) {
             eventos.add(EventoJogo.PERIGO_DESTRUIDO);
-            mensagens.add("Alvo destruido!");
+            mensagens.add("Alvo destruído!");
         }
         verificarPontuacao(mensagens);
         concluirPasso(eventos);

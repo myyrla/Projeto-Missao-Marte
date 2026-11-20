@@ -1,6 +1,7 @@
 package br.edu.unifor.missaomarte.lwjgl3;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.AfterEach;
@@ -24,6 +25,14 @@ class Lwjgl3LauncherTest {
         System.setProperty("missaomarte.janela", "540x1200");
 
         assertArrayEquals(new int[] {540, 1200}, tamanhoDaJanela(true));
+    }
+
+    @Test
+    void tituloDaJanelaTemAcento() throws Exception {
+        Method metodo = Lwjgl3Launcher.class.getDeclaredMethod("tituloDaJanela");
+        metodo.setAccessible(true);
+
+        assertEquals("Missão Marte", metodo.invoke(null));
     }
 
     private static int[] tamanhoDaJanela(boolean toque) throws Exception {

@@ -5,6 +5,7 @@ import br.edu.unifor.missaomarte.application.servidor.Resposta;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
+import br.edu.unifor.missaomarte.gdx.ui.RotulosDaInterface;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
@@ -126,7 +127,8 @@ public class HistoricoScreen extends TelaBase {
             for (PartidaRegistrada p : partidas) {
                 boolean vitoria = "VITORIA".equals(p.getResultado());
                 cor(vitoria ? VITORIA : DERROTA);
-                texto(formatarData(p.getJogadaEm()) + "   " + (vitoria ? "VITÓRIA" : "DERROTA") + "   " + p.getDificuldade()
+                texto(formatarData(p.getJogadaEm()) + "   " + (vitoria ? "VITÓRIA" : "DERROTA") + "   "
+                        + RotulosDaInterface.dificuldade(p.getDificuldade())
                         + "   " + p.getPontuacao() + " pts   " + p.getDuracaoSegundos() + "s   " + p.getMovimentos() + " mov", 60f, y);
                 y -= 24f;
             }

@@ -352,6 +352,7 @@ class GameSessionDinamicoTest {
 
         assertTrue(r.getEventos().contains(EventoJogo.PERIGO_DESTRUIDO));
         assertEquals(new Posicao(0, -3), s.getUltimoTiro().getDestino());
+        assertEquals(List.of("Alvo destruído!"), r.getMensagens());
     }
 
     @Test
@@ -364,7 +365,7 @@ class GameSessionDinamicoTest {
         ResultadoTurno r = s.atirar();
 
         assertTrue(r.getEventos().isEmpty());
-        assertEquals(List.of("Sem municao."), r.getMensagens());
+        assertEquals(List.of("Sem munição."), r.getMensagens());
         assertEquals(antes, s.getPontuacao());
     }
 
@@ -392,7 +393,7 @@ class GameSessionDinamicoTest {
         s.avancar(1f);
         assertEquals(new Posicao(0, 0), classica.getNave().getPosicao());
         assertTrue(s.atirar().getEventos().isEmpty());
-        assertEquals(List.of("A nave nao tem arma no modo classico."), s.processarAcao(Acao.ATIRAR).getMensagens());
+        assertEquals(List.of("A nave não tem arma no modo clássico."), s.processarAcao(Acao.ATIRAR).getMensagens());
         assertEquals(100, s.getPontuacao());
     }
 
