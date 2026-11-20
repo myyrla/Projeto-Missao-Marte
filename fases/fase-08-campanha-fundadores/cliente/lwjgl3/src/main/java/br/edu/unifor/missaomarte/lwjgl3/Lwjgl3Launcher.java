@@ -24,7 +24,8 @@ import java.util.Random;
  * <p>Padrao: Injecao de Dependencia manual (como o antigo Main). Nao contem regra de jogo.
  * <p>Propriedades: missaomarte.semente (cenario repetivel), missaomarte.servidor (endereco padrao do servidor; o que o jogador
  * salvar na tela Servidor vale mais), missaomarte.semaudio, missaomarte.toque (mouse no lugar do dedo, com botoes virtuais)
- * e missaomarte.campanha.etapa (abre o campus diretamente numa etapa de demonstracao, de 1 a 3).
+ * missaomarte.campanha.etapa (abre o campus diretamente numa etapa de demonstracao, de 1 a 3) e
+ * missaomarte.campanha.concluida (abre uma campanha concluida somente em memoria).
  */
 public class Lwjgl3Launcher {
     public static void main(String[] args) {
@@ -45,7 +46,7 @@ public class Lwjgl3Launcher {
         EnderecoDoServidor endereco = new EnderecoDoServidor(
                 new RepositorioDeConfiguracaoDoServidor(armazem), padrao);
         PreparacaoInicialDaCampanha inicioDaCampanha = InicializadorDaCampanha.preparar(
-                System.getProperty("missaomarte.campanha.etapa"), new RepositorioDeProgressoEmTexto(armazem));
+                selecaoDaCampanha(), new RepositorioDeProgressoEmTexto(armazem));
 
         // -Dmissaomarte.toque=true liga o modo toque no desktop: o mouse faz o papel do dedo.
         boolean toque = Boolean.getBoolean("missaomarte.toque");
@@ -82,5 +83,11 @@ public class Lwjgl3Launcher {
 
     private static String tituloDaJanela() {
         return "Missão Marte";
+    }
+
+    private static String selecaoDaCampanha() {
+        return Boolean.getBoolean("missaomarte.campanha.concluida")
+                ? InicializadorDaCampanha.DEMONSTRACAO_CONCLUIDA
+                : System.getProperty("missaomarte.campanha.etapa");
     }
 }

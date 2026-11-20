@@ -43,6 +43,9 @@ run {
     // Abre o campus diretamente numa etapa de demonstracao: valores validos de 1 a 3.
     systemProperty 'missaomarte.campanha.etapa', System.getProperty('missaomarte.campanha.etapa', '')
 
+    // Abre o campus concluido com progresso somente em memoria, sem tocar no progresso salvo.
+    systemProperty 'missaomarte.campanha.concluida', System.getProperty('missaomarte.campanha.concluida', 'false')
+
     // O macOS exige que o loop de eventos rode na primeira thread.
     if (System.getProperty('os.name').toLowerCase().contains('mac')) {
         jvmArgs '-XstartOnFirstThread'

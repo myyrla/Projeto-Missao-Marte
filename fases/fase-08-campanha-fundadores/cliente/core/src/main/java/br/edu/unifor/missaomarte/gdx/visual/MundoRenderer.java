@@ -50,6 +50,7 @@ public class MundoRenderer {
     private static final float DURACAO_DO_CICLO_ESPECIAL = 0.5f;
     private static final float ALFA_DA_POEIRA = 0.45f;
     private static final Color ESCURIDAO_DA_TEMPESTADE = new Color(Color.valueOf("0A0612")).mul(1f, 1f, 1f, 0.82f);
+    private static final Color COR_DAS_PARTICULAS = Color.valueOf("F4B071");
 
     private final Recursos recursos;
     private final SpriteBatch batch;
@@ -98,35 +99,48 @@ public class MundoRenderer {
             PoliticaDeDestaque.Resultado destaques) {
         desenharTerreno(areaVisivel);
         desenharGradeELimites(areaVisivel);
+        CenaVisivelDaTempestade cena = CenaVisivelDaTempestade.projetar(
+                missao, tempestadeAtiva, estaVisivel);
+        Predicate<Posicao> visibilidadeVisual = posicao -> !tempestadeAtiva || estaVisivel.test(posicao);
 
         Color corAnterior = new Color(batch.getColor());
         batch.begin();
         try {
-            desenharRastro(rastro, deslocX, deslocY);
-            desenharAlcances(missao.getInimigos(), posicoes, deslocX, deslocY, destaques);
-            desenharObjetos(Collections.singletonList(missao.getBase()), posicoes, tempo, deslocX, deslocY);
-            desenharEstacoesNami(missao.getEstacoesNami(), posicoes, tempo, deslocX, deslocY);
-            desenharPassageiros(missao.getPassageiros(), posicoes, tempo, deslocX, deslocY, destaques);
-            desenharObjetos(missao.getAsteroides(), posicoes, tempo, deslocX, deslocY);
-            desenharObjetos(missao.getInimigos(), posicoes, tempo, deslocX, deslocY);
+            desenharRastro(rastro, deslocX, deslocY, visibilidadeVisual);
+            desenharAlcances(cena.inimigos(), posicoes, deslocX, deslocY, destaques);
+            if (!tempestadeAtiva) {
+                desenharObjetos(Collections.singletonList(cena.base()), posicoes, tempo, deslocX, deslocY);
+            }
+            desenharEstacoesNami(cena.estacoesNami(), posicoes, tempo, deslocX, deslocY);
+            desenharPassageiros(cena.passageiros(), posicoes, tempo, deslocX, deslocY, destaques);
+            desenharObjetos(cena.asteroides(), posicoes, tempo, deslocX, deslocY);
+            desenharObjetos(cena.inimigos(), posicoes, tempo, deslocX, deslocY);
 
             if (naveVisivel) {
                 desenharNave(missao, posicoes, tempo, anguloNave, deslocX, deslocY);
             }
 
-            desenharEfeitos(efeitos, deslocX, deslocY);
+            desenharEfeitos(efeitos, deslocX, deslocY, visibilidadeVisual);
         } finally {
             batch.setColor(corAnterior);
             batch.end();
         }
         if (tempestadeAtiva) {
             desenharEscuridao(estaVisivel);
+            batch.begin();
+            try {
+                desenharObjetos(Collections.singletonList(cena.base()), posicoes, tempo, deslocX, deslocY);
+            } finally {
+                batch.setColor(corAnterior);
+                batch.end();
+            }
             desenharPoeira(tempo);
+            desenharParticulas(tempo);
         }
         batch.begin();
         try {
             desenharEtiqueta(destaques);
-            desenharFlutuantes(flutuantes, deslocX, deslocY);
+            desenharFlutuantes(flutuantes, deslocX, deslocY, visibilidadeVisual);
         } finally {
             batch.setColor(corAnterior);
             batch.end();
@@ -134,17 +148,32 @@ public class MundoRenderer {
     }
 
     private void desenharEscuridao(Predicate<Posicao> estaVisivel) {
+        MascaraDaTempestade.Campo campo = MascaraDaTempestade.calcular(
+                mapa, estaVisivel, MissaoMarteGame.MIN, MissaoMarteGame.MAX,
+                ESCURIDAO_DA_TEMPESTADE.a);
+        float passo = mapa.celula() / 2f;
+        float direita = mapa.origemX() + mapa.largura();
+        float topo = mapa.origemY() + mapa.altura();
+        Color inferiorEsquerda = new Color(ESCURIDAO_DA_TEMPESTADE);
+        Color inferiorDireita = new Color(ESCURIDAO_DA_TEMPESTADE);
+        Color superiorDireita = new Color(ESCURIDAO_DA_TEMPESTADE);
+        Color superiorEsquerda = new Color(ESCURIDAO_DA_TEMPESTADE);
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         formas.begin(ShapeType.Filled);
         try {
-            formas.setColor(ESCURIDAO_DA_TEMPESTADE);
-            for (int y = MissaoMarteGame.MIN; y <= MissaoMarteGame.MAX; y++) {
-                for (int x = MissaoMarteGame.MIN; x <= MissaoMarteGame.MAX; x++) {
-                    if (!estaVisivel.test(new Posicao(x, y))) {
-                        formas.rect(mapa.xCentro(x) - mapa.celula() / 2f,
-                                mapa.yCentro(y) - mapa.celula() / 2f, mapa.celula(), mapa.celula());
-                    }
+            for (float y = mapa.origemY(); y < topo; y += passo) {
+                float altura = Math.min(passo, topo - y);
+                for (float x = mapa.origemX(); x < direita; x += passo) {
+                    float largura = Math.min(passo, direita - x);
+                    inferiorEsquerda.a = campo.alfa(x, y);
+                    inferiorDireita.a = campo.alfa(x + largura, y);
+                    superiorDireita.a = campo.alfa(x + largura, y + altura);
+                    superiorEsquerda.a = campo.alfa(x, y + altura);
+                    formas.triangle(x, y, x + largura, y, x + largura, y + altura,
+                            inferiorEsquerda, inferiorDireita, superiorDireita);
+                    formas.triangle(x, y, x + largura, y + altura, x, y + altura,
+                            inferiorEsquerda, superiorDireita, superiorEsquerda);
                 }
             }
         } finally {
@@ -159,23 +188,52 @@ public class MundoRenderer {
         float deslocamentoV = tempo * 0.004f;
         float repeticoesX = mapa.largura() / Imagem.POEIRA.larguraQuadro();
         float repeticoesY = mapa.altura() / Imagem.POEIRA.alturaQuadro();
+        Color corAnterior = new Color(batch.getColor());
         batch.begin();
         try {
             batch.setColor(1f, 1f, 1f, ALFA_DA_POEIRA);
             batch.draw(poeira, mapa.origemX(), mapa.origemY(), mapa.largura(), mapa.altura(),
                     deslocamentoU, deslocamentoV, deslocamentoU + repeticoesX, deslocamentoV + repeticoesY);
         } finally {
-            batch.setColor(Color.WHITE);
+            batch.setColor(corAnterior);
             batch.end();
         }
     }
 
-    private void desenharRastro(RastroDaNave rastro, float dx, float dy) {
+    private void desenharParticulas(float tempo) {
+        RetanguloDeTela areaDoMapa = new RetanguloDeTela(
+                mapa.origemX(), mapa.origemY(), mapa.largura(), mapa.altura());
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        formas.begin(ShapeType.Filled);
+        try {
+            for (ParticulasDaTempestade.Particula particula
+                    : ParticulasDaTempestade.calcular(areaDoMapa, tempo)) {
+                formas.setColor(COR_DAS_PARTICULAS.r, COR_DAS_PARTICULAS.g,
+                        COR_DAS_PARTICULAS.b, particula.alfa());
+                formas.rectLine(particula.inicioX(), particula.inicioY(),
+                        particula.fimX(), particula.fimY(), 1.4f);
+            }
+        } finally {
+            formas.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        }
+    }
+
+    private void desenharRastro(RastroDaNave rastro, float dx, float dy,
+            Predicate<Posicao> estaVisivel) {
         Texture ponto = recursos.textura(ImagemDoMapa.RASTRO_PONTO);
         float tamanho = ImagemDoMapa.RASTRO_PONTO.larguraLogica();
         for (GeometriaDoRastro.Ponto amostra : GeometriaDoRastro.calcular(rastro.casas(),
                 MissaoMarteGame.MIN, MissaoMarteGame.MAX, mapa.celula(), mapa.origemX(), mapa.origemY(),
                 ESPACAMENTO_DO_RASTRO)) {
+            int casaX = Math.round((amostra.x() - mapa.origemX()) / mapa.celula() - 0.5f)
+                    + MissaoMarteGame.MIN;
+            int casaY = MissaoMarteGame.MAX
+                    - Math.round((amostra.y() - mapa.origemY()) / mapa.celula() - 0.5f);
+            if (!estaVisivel.test(new Posicao(casaX, casaY))) {
+                continue;
+            }
             batch.setColor(CIANO.r, CIANO.g, CIANO.b, amostra.alfa());
             batch.draw(ponto, amostra.x() - tamanho / 2f + dx, amostra.y() - tamanho / 2f + dy,
                     tamanho, tamanho);
@@ -204,7 +262,7 @@ public class MundoRenderer {
     private void desenharPassageiros(List<Passageiro> passageiros, PosicoesVisuais posicoes,
             float tempo, float dx, float dy, PoliticaDeDestaque.Resultado destaques) {
         Texture pulso = recursos.textura(ImagemDoMapa.PULSO);
-        destaques.alvo().ifPresent(passageiro -> {
+        destaques.alvo().filter(passageiros::contains).ifPresent(passageiro -> {
             PosicaoVisual visual = posicoes.de(passageiro);
             Color cor = cor(PoliticaDeDestaque.Tipo.de(passageiro));
             desenharPulso(pulso, visual, cor, AnimacaoDoPulso.calcular(tempo, 0f), dx, dy);
@@ -365,8 +423,12 @@ public class MundoRenderer {
                 tamanho / 2f, tamanho / 2f, tamanho, tamanho, 1f, 1f, angulo);
     }
 
-    private void desenharEfeitos(EfeitosVisuais efeitos, float dx, float dy) {
+    private void desenharEfeitos(EfeitosVisuais efeitos, float dx, float dy,
+            Predicate<Posicao> estaVisivel) {
         for (EfeitosVisuais.Efeito efeito : efeitos.ativos()) {
+            if (!estaVisivel.test(new Posicao(Math.round(efeito.x()), Math.round(efeito.y())))) {
+                continue;
+            }
             TextureRegion[] quadros = recursos.quadros(efeito.imagem());
             float tamanho = mapa.celula() * (efeito.imagem() == Imagem.EXPLOSAO ? 1.6f : 1.2f);
             batch.draw(quadros[efeito.quadro(quadros.length)],
@@ -410,10 +472,14 @@ public class MundoRenderer {
         return DURACAO_DO_CICLO_ESPECIAL / 2f;
     }
 
-    private void desenharFlutuantes(MensagensFlutuantes flutuantes, float dx, float dy) {
+    private void desenharFlutuantes(MensagensFlutuantes flutuantes, float dx, float dy,
+            Predicate<Posicao> estaVisivel) {
         Color corAnterior = new Color(fonte.getColor());
         try {
             for (MensagensFlutuantes.Mensagem mensagem : flutuantes.ativas()) {
+                if (!estaVisivel.test(new Posicao(Math.round(mensagem.x()), Math.round(mensagem.y())))) {
+                    continue;
+                }
                 Color base = mensagem.positiva() ? VERDE : VERMELHO;
                 fonte.setColor(base.r, base.g, base.b, mensagem.alfa());
                 layout.setText(fonte, mensagem.texto());

@@ -164,6 +164,24 @@ class LayoutDoHudTest {
         assertFalse(layout.areaUtilDoMapa().sobrepoe(layout.objetivo()));
     }
 
+    @Test
+    void modoToqueUsaFaixasForaDaAreaUtilELevaOAvisoParaOTopoDoMapa() {
+        LayoutDoHud layout = calcular(540f, 1200f,
+                new RetanguloDeTela(0f, 204f, 540f, 792f), true,
+                new MedidasDoHud(10f, 10f, 24f, 0, 22f, true, true));
+        RetanguloDeTela tela = new RetanguloDeTela(0f, 0f, 540f, 1200f);
+
+        assertTrue(layout.faixaSuperior().estaDentroDe(tela));
+        assertTrue(layout.faixaInferior().estaDentroDe(tela));
+        assertEquals(layout.areaUtilDoMapa().topo(), layout.faixaSuperior().y(), 0.001f);
+        assertEquals(layout.areaUtilDoMapa().y(), layout.faixaInferior().topo(), 0.001f);
+        assertTrue(layout.aviso().estaDentroDe(layout.areaUtilDoMapa()));
+        assertEquals(layout.areaUtilDoMapa().topo() - 8f * layout.escala(),
+                layout.aviso().topo(), 0.001f);
+        assertFalse(layout.aviso().sobrepoe(layout.objetivo()));
+        assertFalse(layout.aviso().sobrepoe(layout.controles()));
+    }
+
     private static LayoutDoHud calcular(float largura, float altura, RetanguloDeTela mapa, boolean toque) {
         return LayoutDoHud.calcular(largura, altura, CELULAS, toque, MargensSeguras.NENHUMA, mapa);
     }

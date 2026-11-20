@@ -41,6 +41,7 @@ import br.edu.unifor.missaomarte.gdx.visual.PosicoesVisuais;
 import br.edu.unifor.missaomarte.gdx.visual.PosicaoVisual;
 import br.edu.unifor.missaomarte.gdx.visual.PoliticaDeDestaque;
 import br.edu.unifor.missaomarte.gdx.visual.RastroDaNave;
+import br.edu.unifor.missaomarte.gdx.visual.RecorteDoMundo;
 import br.edu.unifor.missaomarte.gdx.visual.Tremor;
 import br.edu.unifor.missaomarte.gdx.visual.VisibilidadeDaTempestade;
 import br.edu.unifor.missaomarte.gdx.ui.ControleDoFimDaPartida;
@@ -674,11 +675,13 @@ public class GameScreen extends TelaBase {
         RetanguloDeTela rodapeEsquerdo = hud.areaOcupadaDoRodape(session, mudo, segundos);
         PoliticaDeDestaque.Resultado destaques = calcularDestaques(missao, tempestadeAtiva);
         try {
-            mundo.desenhar(missao, posicoes, rastro, efeitos, flutuantes, tempo, anguloNave, naveVisivel,
-                    tremor.deslocamentoX(), tremor.deslocamentoY(), areaVisivelDoMundo,
-                    session::estaVisivel, tempestadeAtiva, destaques);
-            desenharRaio();
-            desenharFlashDeColisao();
+            desenharMundoRecortado(() -> {
+                mundo.desenhar(missao, posicoes, rastro, efeitos, flutuantes, tempo, anguloNave, naveVisivel,
+                        tremor.deslocamentoX(), tremor.deslocamentoY(), areaVisivelDoMundo,
+                        session::estaVisivel, tempestadeAtiva, destaques);
+                desenharRaio();
+                desenharFlashDeColisao();
+            });
         } finally {
             restaurarCameraDaInterface();
         }
@@ -759,6 +762,33 @@ public class GameScreen extends TelaBase {
         float escalaY = alturaDaTela / viewport.getWorldHeight();
         return new RetanguloDeTela(area.x() * escalaX, area.y() * escalaY,
                 area.largura() * escalaX, area.altura() * escalaY);
+    }
+
+    private void desenharMundoRecortado(Runnable desenho) {
+        if (!jogo.modoToque() || !layout.emRetrato() || layout.usaReserva()) {
+            desenho.run();
+            return;
+        }
+        Viewport viewport = jogo.viewport();
+        RecorteDoMundo recorte = RecorteDoMundo.calcular(layout.areaUtilDoMapa(),
+                viewport.getWorldWidth(), viewport.getWorldHeight(),
+                viewport.getScreenX(), viewport.getScreenY(), viewport.getScreenWidth(), viewport.getScreenHeight(),
+                Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
+                Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
+        flushDosRenderizadores();
+        Gdx.gl.glEnable(GL20.GL_SCISSOR_TEST);
+        try {
+            Gdx.gl.glScissor(recorte.x(), recorte.y(), recorte.largura(), recorte.altura());
+            desenho.run();
+        } finally {
+            flushDosRenderizadores();
+            Gdx.gl.glDisable(GL20.GL_SCISSOR_TEST);
+        }
+    }
+
+    private void flushDosRenderizadores() {
+        jogo.batch().flush();
+        jogo.shapes().flush();
     }
 
     private PoliticaDeDestaque.Resultado calcularDestaques(Missao missao, boolean tempestadeAtiva) {

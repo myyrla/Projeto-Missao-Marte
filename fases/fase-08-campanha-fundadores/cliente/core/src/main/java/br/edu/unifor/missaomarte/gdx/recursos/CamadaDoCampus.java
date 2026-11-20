@@ -17,6 +17,7 @@ public enum CamadaDoCampus {
 
     private static final String PASTA = "imagens/campus/";
     private static final String CAMINHO_DA_BASE = PASTA + "base.png";
+    private static final String CAMINHO_DA_BASE_INAUGURADA = PASTA + "base_inaugurada.png";
     private static final Map<Construcao, CamadaDoCampus> POR_CONSTRUCAO = criarIndice();
 
     private final Construcao construcao;
@@ -45,8 +46,8 @@ public enum CamadaDoCampus {
         return estado == EstadoDaConstrucao.PLANTA ? caminhoPlanta : caminhoConstruido;
     }
 
-    public static String caminhoDaBase() {
-        return CAMINHO_DA_BASE;
+    public static String caminhoDaBase(boolean campanhaConcluida) {
+        return campanhaConcluida ? CAMINHO_DA_BASE_INAUGURADA : CAMINHO_DA_BASE;
     }
 
     public static CamadaDoCampus da(Construcao construcao) {

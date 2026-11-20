@@ -46,6 +46,7 @@ public final class HudRenderer {
     private static final Color LARANJA = Color.valueOf("FF7A00");
     private static final Color CINZA_DO_ASTEROIDE = Color.valueOf("6B5A55");
     private static final Color VIDA_PERDIDA = Color.valueOf("3A3448");
+    private static final Color FUNDO_DA_FAIXA = Color.valueOf("0C0814");
 
     private final SpriteBatch batch;
     private final ShapeRenderer formas;
@@ -86,7 +87,7 @@ public final class HudRenderer {
             List<String> linhas = linhasDoStatus(session, mudo, segundos);
             float alturaDoStatus;
             if (referencia.compacto()) {
-                float larguraDoStatus = (!mensagens.isEmpty() || tempestadeAtiva)
+                float larguraDoStatus = tempestadeAtiva
                         ? referencia.piloto().largura() * 0.58f : referencia.piloto().largura();
                 medidor.setText(rotulo, String.join(" · ", linhas), SECUNDARIO,
                         Math.max(1f, larguraDoStatus - margemHorizontal), Align.left, true);
@@ -134,6 +135,7 @@ public final class HudRenderer {
 
     private void desenharPecas(GameSession session, Nave nave, RetanguloDeTela rodapeEsquerdo,
             boolean tempestadeAtiva, PoliticaDeDestaque.Resultado destaques) {
+        desenharFaixasOpacas();
         lote(() -> {
             estilo.painel(batch, layout.piloto());
             estilo.painel(batch, layout.objetivo());
@@ -164,6 +166,22 @@ public final class HudRenderer {
                         i < nave.getVidas() ? CIANO : VIDA_PERDIDA);
             }
         });
+    }
+
+    private void desenharFaixasOpacas() {
+        if (!layout.compacto()) {
+            return;
+        }
+        formas.begin(ShapeType.Filled);
+        try {
+            formas.setColor(FUNDO_DA_FAIXA);
+            RetanguloDeTela superior = layout.faixaSuperior();
+            RetanguloDeTela inferior = layout.faixaInferior();
+            formas.rect(superior.x(), superior.y(), superior.largura(), superior.altura());
+            formas.rect(inferior.x(), inferior.y(), inferior.largura(), inferior.altura());
+        } finally {
+            formas.end();
+        }
     }
 
     private void desenharRadar(GameSession session, RetanguloDeTela janelaVisivel) {
@@ -507,17 +525,26 @@ public final class HudRenderer {
 
     private void desenharAviso(List<String> mensagens) {
         RetanguloDeTela aviso = layout.aviso();
+        RetanguloDeTela areaDoTexto = areaDoTextoDoAviso(aviso, layout.escala());
         estilo.painel(batch, aviso);
         String texto = String.join(" ", mensagens);
         BitmapFont fonte = fontes.obter(FonteDoJogo.TEXTO);
         fonte.setColor(corDoAviso(texto));
         if (layout.usaReserva()) {
-            medidor.setText(fonte, limitar(texto, fonte, aviso.largura() - 24f * layout.escala()));
+            medidor.setText(fonte, limitar(texto, fonte, areaDoTexto.largura()));
+            fonte.draw(batch, medidor, areaDoTexto.centroX() - medidor.width / 2f,
+                    aviso.centroY() + medidor.height / 2f);
         } else {
             medidor.setText(fonte, texto, corDoAviso(texto),
-                    aviso.largura() - 24f * layout.escala(), Align.center, true);
+                    areaDoTexto.largura(), Align.center, true);
+            fonte.draw(batch, medidor, areaDoTexto.x(), aviso.centroY() + medidor.height / 2f);
         }
-        fonte.draw(batch, medidor, aviso.centroX() - medidor.width / 2f, aviso.centroY() + medidor.height / 2f);
+    }
+
+    static RetanguloDeTela areaDoTextoDoAviso(RetanguloDeTela aviso, float escala) {
+        float margem = 12f * escala;
+        return new RetanguloDeTela(aviso.x() + margem, aviso.y(),
+                Math.max(0f, aviso.largura() - 2f * margem), aviso.altura());
     }
 
     private void rotulo(String texto, float x, float y) {

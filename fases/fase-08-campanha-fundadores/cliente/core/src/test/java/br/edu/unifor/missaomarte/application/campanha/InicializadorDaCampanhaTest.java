@@ -50,6 +50,22 @@ class InicializadorDaCampanhaTest {
     }
 
     @Test
+    void conclusaoDeDemonstracaoUsaProgressoEmMemoriaSemAlterarOSalvo() {
+        RepositorioEmMemoria repositorio = new RepositorioEmMemoria();
+        Campanha campanhaSalva = Campanha.carregar(repositorio);
+        campanhaSalva.registrarResultado(1, EstadoPartida.VITORIA, 27);
+
+        InicioDaCampanha inicio = InicializadorDaCampanha.iniciar(
+                InicializadorDaCampanha.DEMONSTRACAO_CONCLUIDA, repositorio);
+
+        assertTrue(inicio.campanha().concluida());
+        assertTrue(inicio.abrirCampusAoIniciar());
+        assertTrue(inicio.demonstracao());
+        assertEquals(2, Campanha.carregar(repositorio).etapaAtual().orElseThrow().numero());
+        assertEquals(27, Campanha.carregar(repositorio).pontuacaoTotal());
+    }
+
+    @Test
     void preparacaoAdiaALeituraDoRepositorioAteAInicializacaoDoJogo() {
         RepositorioControlado repositorio = new RepositorioControlado();
 

@@ -172,11 +172,8 @@ public final class LayoutDoHud {
             return null;
         }
 
-        float alturaDoAviso = medidas.avisoVisivel()
-                ? Math.max(30f * escala, medidas.alturaDoAviso() + 12f * escala) : 0f;
         float alturaDoSelo = medidas.tempestadeVisivel() ? 34f * escala : 0f;
-        float alturaDaDireita = alturaDoAviso + alturaDoSelo
-                + (alturaDoAviso > 0f && alturaDoSelo > 0f ? 6f * escala : 0f);
+        float alturaDaDireita = alturaDoSelo;
         float alturaInferiorDoPainel = Math.max(medidas.alturaDoStatus(), alturaDaDireita);
         float alturaPiloto = 8f * escala + 64f * escala + 8f * escala
                 + alturaInferiorDoPainel + 8f * escala;
@@ -192,10 +189,6 @@ public final class LayoutDoHud {
         float larguraDireita = temAviso ? direita - xDireita : 0f;
         RetanguloDeTela selo = alturaDoSelo > 0f
                 ? new RetanguloDeTela(xDireita, piloto.y() + 8f * escala, larguraDireita, alturaDoSelo)
-                : vazio(largura, altura);
-        float yDoAviso = alturaDoSelo > 0f ? selo.topo() + 6f * escala : piloto.y() + 8f * escala;
-        RetanguloDeTela aviso = alturaDoAviso > 0f
-                ? new RetanguloDeTela(xDireita, yDoAviso, larguraDireita, alturaDoAviso)
                 : vazio(largura, altura);
         float alturaObjetivo = 8f * escala + medidas.alturaDoRotulo() + 4f * escala
                 + medidas.alturaDoTextoDoObjetivo() + 8f * escala + 52f * escala + 8f * escala;
@@ -214,6 +207,14 @@ public final class LayoutDoHud {
         if (areaUtil.altura() <= 0f) {
             return null;
         }
+        float alturaDoAviso = medidas.avisoVisivel()
+                ? Math.max(30f * escala, medidas.alturaDoAviso() + 12f * escala) : 0f;
+        float larguraDoAviso = Math.min(larguraUtil, 520f * escala);
+        RetanguloDeTela aviso = alturaDoAviso > 0f
+                ? new RetanguloDeTela((largura - larguraDoAviso) / 2f,
+                        areaUtil.topo() - 8f * escala - alturaDoAviso,
+                        larguraDoAviso, alturaDoAviso)
+                : vazio(largura, altura);
         return montarComAreas(largura, altura, celulas, escala, true, Modo.FAIXAS, 0f,
                 piloto, jogador, objetivo, textoDoObjetivo, vazio, vazio, mapa, areaUtil,
                 status, vazio, aviso, selo, controles);
@@ -352,6 +353,16 @@ public final class LayoutDoHud {
     public RetanguloDeTela radarInterno() { return radarInterno; }
     public RetanguloDeTela mapa() { return mapa; }
     public RetanguloDeTela areaUtilDoMapa() { return areaUtilDoMapa; }
+    public RetanguloDeTela faixaSuperior() {
+        return modo == Modo.FAIXAS
+                ? new RetanguloDeTela(0f, areaUtilDoMapa.topo(), largura, altura - areaUtilDoMapa.topo())
+                : vazio(largura, altura);
+    }
+    public RetanguloDeTela faixaInferior() {
+        return modo == Modo.FAIXAS
+                ? new RetanguloDeTela(0f, 0f, largura, areaUtilDoMapa.y())
+                : vazio(largura, altura);
+    }
     public RetanguloDeTela rodapeEsquerdo() { return rodapeEsquerdo; }
 
     public RetanguloDeTela rodapeEsquerdo(float larguraDoTexto) {

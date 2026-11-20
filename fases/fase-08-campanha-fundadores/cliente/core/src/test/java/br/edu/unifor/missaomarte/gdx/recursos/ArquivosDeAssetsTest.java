@@ -36,7 +36,8 @@ class ArquivosDeAssetsTest {
 
     @Test
     void cadaConstrucaoDoCampusPossuiPlantaEImagemConstruida() throws IOException {
-        validarImagemDoCampus(CamadaDoCampus.caminhoDaBase());
+        validarImagemDoCampus(CamadaDoCampus.caminhoDaBase(false));
+        validarImagemDoCampus(CamadaDoCampus.caminhoDaBase(true));
         for (CamadaDoCampus camada : CamadaDoCampus.values()) {
             validarImagemDoCampus(camada.caminhoPlanta());
             validarImagemDoCampus(camada.caminhoConstruido());

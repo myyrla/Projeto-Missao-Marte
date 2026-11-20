@@ -11,6 +11,8 @@ class Lwjgl3LauncherTest {
     @AfterEach
     void limparPropriedade() {
         System.clearProperty("missaomarte.janela");
+        System.clearProperty("missaomarte.campanha.etapa");
+        System.clearProperty("missaomarte.campanha.concluida");
     }
 
     @Test
@@ -33,6 +35,17 @@ class Lwjgl3LauncherTest {
         metodo.setAccessible(true);
 
         assertEquals("Missão Marte", metodo.invoke(null));
+    }
+
+    @Test
+    void conclusaoDeDemonstracaoTemPrecedenciaSobreAEtapa() throws Exception {
+        System.setProperty("missaomarte.campanha.etapa", "2");
+        System.setProperty("missaomarte.campanha.concluida", "true");
+
+        Method metodo = Lwjgl3Launcher.class.getDeclaredMethod("selecaoDaCampanha");
+        metodo.setAccessible(true);
+
+        assertEquals("concluida", metodo.invoke(null));
     }
 
     private static int[] tamanhoDaJanela(boolean toque) throws Exception {

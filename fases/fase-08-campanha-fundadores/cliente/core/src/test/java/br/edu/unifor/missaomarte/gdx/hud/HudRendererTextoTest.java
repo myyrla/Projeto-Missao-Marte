@@ -7,12 +7,24 @@ import br.edu.unifor.missaomarte.domain.Dificuldade;
 import br.edu.unifor.missaomarte.domain.Posicao;
 import br.edu.unifor.missaomarte.domain.Professor;
 import br.edu.unifor.missaomarte.gdx.ui.IconeDaInterface;
+import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.visual.PoliticaDeDestaque;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class HudRendererTextoTest {
+    @Test
+    void areaDoTextoDoAvisoMantemOMesmoCentroDaCaixa() {
+        RetanguloDeTela caixa = new RetanguloDeTela(100f, 40f, 300f, 50f);
+
+        RetanguloDeTela texto = HudRenderer.areaDoTextoDoAviso(caixa, 1f);
+
+        assertEquals(112f, texto.x(), 0.001f);
+        assertEquals(276f, texto.largura(), 0.001f);
+        assertEquals(caixa.centroX(), texto.centroX(), 0.001f);
+    }
+
     @Test
     void preservaDificuldadeMunicaoEMiraEmFormatosCurtos() {
         assertEquals("Dif.: DIFÍCIL", HudRenderer.formatarDificuldade(Dificuldade.DIFICIL));

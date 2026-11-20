@@ -52,7 +52,8 @@ class CamadaDoCampusTest {
     }
 
     @Test
-    void informaOCaminhoDaBase() {
-        assertEquals("imagens/campus/base.png", CamadaDoCampus.caminhoDaBase());
+    void escolheABaseInauguradaSomenteQuandoACampanhaTerminou() {
+        assertEquals("imagens/campus/base.png", CamadaDoCampus.caminhoDaBase(false));
+        assertEquals("imagens/campus/base_inaugurada.png", CamadaDoCampus.caminhoDaBase(true));
     }
 }

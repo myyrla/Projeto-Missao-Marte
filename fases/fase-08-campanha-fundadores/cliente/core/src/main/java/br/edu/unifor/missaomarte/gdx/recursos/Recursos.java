@@ -41,7 +41,8 @@ public class Recursos implements Disposable {
         for (IconeDaInterface icone : IconeDaInterface.values()) {
             gerenciador.load(icone.caminho(), Texture.class, parametrosDaTextura);
         }
-        gerenciador.load(CamadaDoCampus.caminhoDaBase(), Texture.class, parametrosDaTextura);
+        gerenciador.load(CamadaDoCampus.caminhoDaBase(false), Texture.class, parametrosDaTextura);
+        gerenciador.load(CamadaDoCampus.caminhoDaBase(true), Texture.class, parametrosDaTextura);
         for (CamadaDoCampus camada : CamadaDoCampus.values()) {
             gerenciador.load(camada.caminhoPlanta(), Texture.class, parametrosDaTextura);
             gerenciador.load(camada.caminhoConstruido(), Texture.class, parametrosDaTextura);
@@ -65,7 +66,7 @@ public class Recursos implements Disposable {
         }
         int totalDeImagens = Imagem.values().length + ImagemDoMapa.values().length
                 + PecaDaInterface.values().length + IconeDaInterface.values().length
-                + 1 + CamadaDoCampus.values().length * 2;
+                + 2 + CamadaDoCampus.values().length * 2;
         Gdx.app.log("Recursos", totalDeImagens + " imagens e " + Som.values().length + " sons carregados");
     }
 
@@ -89,8 +90,8 @@ public class Recursos implements Disposable {
         return iconesDaInterface.get(icone);
     }
 
-    public Texture texturaDaBaseDoCampus() {
-        return gerenciador.get(CamadaDoCampus.caminhoDaBase(), Texture.class);
+    public Texture texturaDaBaseDoCampus(boolean campanhaConcluida) {
+        return gerenciador.get(CamadaDoCampus.caminhoDaBase(campanhaConcluida), Texture.class);
     }
 
     public Texture textura(CamadaDoCampus camada, EstadoDaConstrucao estado) {
