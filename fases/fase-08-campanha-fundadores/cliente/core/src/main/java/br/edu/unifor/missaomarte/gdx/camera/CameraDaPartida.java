@@ -1,5 +1,7 @@
 package br.edu.unifor.missaomarte.gdx.camera;
 
+import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
+
 /** Centro suavizado e limitado da câmera de mundo. Objeto de estado sem dependência do libGDX. */
 public final class CameraDaPartida {
     private static final float SUAVIZACAO = 0.12f;
@@ -10,8 +12,14 @@ public final class CameraDaPartida {
 
     public Centro atualizar(float larguraDoMapa, float alturaDoMapa, float larguraVisivel, float alturaVisivel,
             float alvoX, float alvoY) {
-        float desejadoX = limitar(alvoX, larguraDoMapa, larguraVisivel);
-        float desejadoY = limitar(alvoY, alturaDoMapa, alturaVisivel);
+        return atualizar(larguraDoMapa, alturaDoMapa, larguraVisivel, alturaVisivel,
+                new RetanguloDeTela(0f, 0f, larguraVisivel, alturaVisivel), alvoX, alvoY);
+    }
+
+    public Centro atualizar(float larguraDoMapa, float alturaDoMapa, float larguraDaJanela, float alturaDaJanela,
+            RetanguloDeTela areaUtil, float alvoX, float alvoY) {
+        float desejadoX = limitar(alvoX, larguraDoMapa, larguraDaJanela, areaUtil.x(), areaUtil.largura());
+        float desejadoY = limitar(alvoY, alturaDoMapa, alturaDaJanela, areaUtil.y(), areaUtil.altura());
         if (!inicializada) {
             x = desejadoX;
             y = desejadoY;
@@ -23,12 +31,16 @@ public final class CameraDaPartida {
         return new Centro(x, y);
     }
 
-    private static float limitar(float alvo, float tamanhoDoMapa, float tamanhoVisivel) {
-        if (tamanhoDoMapa <= tamanhoVisivel) {
-            return tamanhoDoMapa / 2f;
+    private static float limitar(float alvo, float tamanhoDoMapa, float tamanhoDaJanela,
+            float inicioUtil, float tamanhoUtil) {
+        float centroUtil = inicioUtil + tamanhoUtil / 2f;
+        float deslocamento = tamanhoDaJanela / 2f - centroUtil;
+        if (tamanhoDoMapa <= tamanhoUtil) {
+            return tamanhoDoMapa / 2f + deslocamento;
         }
-        float metadeVisivel = tamanhoVisivel / 2f;
-        return Math.max(metadeVisivel, Math.min(tamanhoDoMapa - metadeVisivel, alvo));
+        float centroNoInicio = tamanhoDaJanela / 2f - inicioUtil;
+        float centroNoFim = tamanhoDoMapa + tamanhoDaJanela / 2f - inicioUtil - tamanhoUtil;
+        return Math.max(centroNoInicio, Math.min(centroNoFim, alvo + deslocamento));
     }
 
     public record Centro(float x, float y) {

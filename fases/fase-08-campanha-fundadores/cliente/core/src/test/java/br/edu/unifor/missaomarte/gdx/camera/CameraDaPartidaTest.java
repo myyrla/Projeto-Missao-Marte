@@ -1,7 +1,10 @@
 package br.edu.unifor.missaomarte.gdx.camera;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import br.edu.unifor.missaomarte.gdx.hud.MapaNaInterface;
+import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import org.junit.jupiter.api.Test;
 
 class CameraDaPartidaTest {
@@ -40,5 +43,55 @@ class CameraDaPartidaTest {
 
         assertEquals(612f, centro.x(), 0.001f);
         assertEquals(606f, centro.y(), 0.001f);
+    }
+
+    @Test
+    void mantemPrimeiraEUltimaLinhaDentroDaAreaUtilNoToque() {
+        RetanguloDeTela areaUtil = new RetanguloDeTela(0f, 200f, 540f, 650f);
+        CameraDaPartida cameraNoInicio = new CameraDaPartida();
+        CameraDaPartida cameraNoFim = new CameraDaPartida();
+
+        CameraDaPartida.Centro inicio = cameraNoInicio.atualizar(
+                792f, 792f, 540f, 1200f, areaUtil, 36f, 36f);
+        CameraDaPartida.Centro fim = cameraNoFim.atualizar(
+                792f, 792f, 540f, 1200f, areaUtil, 756f, 756f);
+
+        assertTrue(celulaNaTela(0f, 0f, inicio).estaDentroDe(areaUtil));
+        assertTrue(celulaNaTela(720f, 720f, fim).estaDentroDe(areaUtil));
+    }
+
+    @Test
+    void areaUtilIgualAJanelaPreservaORetanguloHorizontalDoMapa() {
+        CameraDaPartida anterior = new CameraDaPartida();
+        CameraDaPartida ajustada = new CameraDaPartida();
+        CameraDaPartida.Centro centroAnterior = anterior.atualizar(
+                720f, 720f, 1280f, 720f, 20f, 700f);
+        CameraDaPartida.Centro centroAjustado = ajustada.atualizar(
+                720f, 720f, 1280f, 720f,
+                new RetanguloDeTela(0f, 0f, 1280f, 720f), 20f, 700f);
+
+        RetanguloDeTela mapa = new RetanguloDeTela(0f, 0f, 720f, 720f);
+        RetanguloDeTela antes = MapaNaInterface.projetar(mapa,
+                areaVisivel(centroAnterior, 1280f, 720f), 1280f, 720f);
+        RetanguloDeTela depois = MapaNaInterface.projetar(mapa,
+                areaVisivel(centroAjustado, 1280f, 720f), 1280f, 720f);
+
+        assertRetangulo(antes, 280f, 0f, 720f, 720f);
+        assertRetangulo(depois, antes.x(), antes.y(), antes.largura(), antes.altura());
+    }
+
+    private static RetanguloDeTela celulaNaTela(float x, float y, CameraDaPartida.Centro centro) {
+        return new RetanguloDeTela(x - centro.x() + 270f, y - centro.y() + 600f, 72f, 72f);
+    }
+
+    private static RetanguloDeTela areaVisivel(CameraDaPartida.Centro centro, float largura, float altura) {
+        return new RetanguloDeTela(centro.x() - largura / 2f, centro.y() - altura / 2f, largura, altura);
+    }
+
+    private static void assertRetangulo(RetanguloDeTela atual, float x, float y, float largura, float altura) {
+        assertEquals(x, atual.x(), 0.001f);
+        assertEquals(y, atual.y(), 0.001f);
+        assertEquals(largura, atual.largura(), 0.001f);
+        assertEquals(altura, atual.altura(), 0.001f);
     }
 }

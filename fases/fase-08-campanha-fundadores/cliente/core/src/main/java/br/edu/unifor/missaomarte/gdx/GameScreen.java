@@ -26,6 +26,8 @@ import br.edu.unifor.missaomarte.gdx.camera.EscalaDaCelula;
 import br.edu.unifor.missaomarte.gdx.hud.HudRenderer;
 import br.edu.unifor.missaomarte.gdx.hud.JanelaDoRadar;
 import br.edu.unifor.missaomarte.gdx.hud.LayoutDoHud;
+import br.edu.unifor.missaomarte.gdx.hud.MapaNaInterface;
+import br.edu.unifor.missaomarte.gdx.hud.MedidasDoHud;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
@@ -638,10 +640,6 @@ public class GameScreen extends TelaBase {
 
     @Override
     protected void desenhar(float delta) {
-        layout = layoutAtual(jogo.viewport());
-        hud.definirLayout(layout);
-        atualizarBotoes();
-
         if (dinamico) {
             avancarTempoReal(delta);
         } else if (acaoSegurada != null && session.getEstado() == EstadoPartida.EM_ANDAMENTO && repetidor.atualizar(delta)) {
@@ -654,7 +652,6 @@ public class GameScreen extends TelaBase {
         Missao missao = session.getMissao();
         posicoes.sincronizar(todosOsObjetos(missao), delta);
         rastro.registrar(missao.getNave().getPosicao().getX(), missao.getNave().getPosicao().getY());
-        atualizarCameraDoMundo(missao);
         efeitos.atualizar(delta);
         flutuantes.atualizar(delta);
         tremor.atualizar(delta);
@@ -673,9 +670,9 @@ public class GameScreen extends TelaBase {
                 session::estaVisivel, MissaoMarteGame.MIN, MissaoMarteGame.MAX);
         boolean mudo = jogo.sons().mudo();
         long segundos = session.getDuracaoSegundos();
+        atualizarCameraELayout(missao, mudo, segundos, tempestadeAtiva);
         RetanguloDeTela rodapeEsquerdo = hud.areaOcupadaDoRodape(session, mudo, segundos);
-        PoliticaDeDestaque.Resultado destaques = calcularDestaques(
-                missao, tempestadeAtiva, rodapeEsquerdo);
+        PoliticaDeDestaque.Resultado destaques = calcularDestaques(missao, tempestadeAtiva);
         try {
             mundo.desenhar(missao, posicoes, rastro, efeitos, flutuantes, tempo, anguloNave, naveVisivel,
                     tremor.deslocamentoX(), tremor.deslocamentoY(), areaVisivelDoMundo,
@@ -705,15 +702,31 @@ public class GameScreen extends TelaBase {
         exibirAviso(dicaDaNami.proxima(!missao.getEstacoesNami().isEmpty()));
     }
 
-    private void atualizarCameraDoMundo(Missao missao) {
+    private void atualizarCameraELayout(Missao missao, boolean mudo, long segundos, boolean tempestadeAtiva) {
         mapa = geometriaAtual();
         mundo.definirMapa(mapa);
         float larguraDaTela = Math.max(1f, Gdx.graphics.getWidth());
         float alturaDaTela = Math.max(1f, Gdx.graphics.getHeight());
+        Viewport viewport = jogo.viewport();
+        boolean toqueVertical = jogo.modoToque() && viewport.getWorldHeight() > viewport.getWorldWidth();
+        MedidasDoHud medidas = null;
+        RetanguloDeTela areaUtilEmPixels = new RetanguloDeTela(0f, 0f, larguraDaTela, alturaDaTela);
+        if (toqueVertical) {
+            RetanguloDeTela mapaProvisorio = new RetanguloDeTela(0f, 0f,
+                    viewport.getWorldWidth(), viewport.getWorldHeight());
+            LayoutDoHud referencia = LayoutDoHud.calcular(viewport.getWorldWidth(), viewport.getWorldHeight(),
+                    CELULAS, true, jogo.margensSeguras(), mapaProvisorio);
+            medidas = hud.medir(session, mensagens, mudo, segundos, tempestadeAtiva, referencia);
+            LayoutDoHud preliminar = LayoutDoHud.calcular(viewport.getWorldWidth(), viewport.getWorldHeight(),
+                    CELULAS, true, jogo.margensSeguras(), mapaProvisorio, medidas);
+            areaUtilEmPixels = paraCoordenadasDaJanela(preliminar.areaUtilDoMapa(),
+                    viewport, larguraDaTela, alturaDaTela);
+        }
+
         PosicaoVisual nave = posicoes.de(missao.getNave());
         CameraDaPartida.Centro centro = acompanhamentoDaCamera.atualizar(
                 mapa.largura(), mapa.altura(), larguraDaTela, alturaDaTela,
-                mapa.xCentro(nave.x()), mapa.yCentro(nave.y()));
+                areaUtilEmPixels, mapa.xCentro(nave.x()), mapa.yCentro(nave.y()));
 
         cameraDoMundo.setToOrtho(false, larguraDaTela, alturaDaTela);
         cameraDoMundo.position.set(centro.x(), centro.y(), 0f);
@@ -723,12 +736,32 @@ public class GameScreen extends TelaBase {
 
         areaVisivelDoMundo = new RetanguloDeTela(centro.x() - larguraDaTela / 2f,
                 centro.y() - alturaDaTela / 2f, larguraDaTela, alturaDaTela);
+        RetanguloDeTela mapaNaInterface = MapaNaInterface.projetar(
+                new RetanguloDeTela(0f, 0f, mapa.largura(), mapa.altura()), areaVisivelDoMundo,
+                viewport.getWorldWidth(), viewport.getWorldHeight());
+        LayoutDoHud referencia = LayoutDoHud.calcular(viewport.getWorldWidth(), viewport.getWorldHeight(),
+                CELULAS, jogo.modoToque(), jogo.margensSeguras(), mapaNaInterface);
+        if (medidas == null) {
+            medidas = hud.medir(session, mensagens, mudo, segundos, tempestadeAtiva, referencia);
+        }
+        layout = LayoutDoHud.calcular(viewport.getWorldWidth(), viewport.getWorldHeight(), CELULAS,
+                jogo.modoToque(), jogo.margensSeguras(), mapaNaInterface, medidas);
+        hud.definirLayout(layout);
         janelaDoRadar = JanelaDoRadar.projetar(layout.radarInterno(), mapa.largura(), mapa.altura(),
-                centro.x(), centro.y(), larguraDaTela, alturaDaTela);
+                areaVisivelDoMundo.centroX(), areaVisivelDoMundo.centroY(),
+                areaVisivelDoMundo.largura(), areaVisivelDoMundo.altura());
+        atualizarBotoes();
     }
 
-    private PoliticaDeDestaque.Resultado calcularDestaques(Missao missao, boolean tempestadeAtiva,
-            RetanguloDeTela rodapeEsquerdo) {
+    private static RetanguloDeTela paraCoordenadasDaJanela(RetanguloDeTela area, Viewport viewport,
+            float larguraDaTela, float alturaDaTela) {
+        float escalaX = larguraDaTela / viewport.getWorldWidth();
+        float escalaY = alturaDaTela / viewport.getWorldHeight();
+        return new RetanguloDeTela(area.x() * escalaX, area.y() * escalaY,
+                area.largura() * escalaX, area.altura() * escalaY);
+    }
+
+    private PoliticaDeDestaque.Resultado calcularDestaques(Missao missao, boolean tempestadeAtiva) {
         PoliticaDeDestaque.Resultado resultado = PoliticaDeDestaque.decidir(
                 missao.getNave().getPosicao(), missao.getPassageiros(), tipoDoFundador(), tiposResgatados(),
                 missao.getInimigos());
@@ -748,30 +781,15 @@ public class GameScreen extends TelaBase {
         float largura = medidorDeEtiqueta.width + 24f;
         float altura = Math.max(28f, medidorDeEtiqueta.height + 12f);
         return PoliticaDeDestaque.posicionarEtiqueta(alvo, largura, altura, 8f,
-                        areaVisivelDoMundo, areasDoHudNoMundo(tempestadeAtiva, rodapeEsquerdo))
+                        areaVisivelDoMundo, areasDoHudNoMundo(tempestadeAtiva))
                 .map(resultado::comEtiqueta)
                 .orElse(resultado);
     }
 
-    private List<RetanguloDeTela> areasDoHudNoMundo(boolean tempestadeAtiva, RetanguloDeTela rodapeEsquerdo) {
+    private List<RetanguloDeTela> areasDoHudNoMundo(boolean tempestadeAtiva) {
         List<RetanguloDeTela> areas = new ArrayList<>();
-        areas.add(paraCoordenadasDoMundo(layout.piloto()));
-        areas.add(paraCoordenadasDoMundo(layout.objetivo()));
-        areas.add(paraCoordenadasDoMundo(rodapeEsquerdo));
-        if (!mensagens.isEmpty()) {
-            areas.add(paraCoordenadasDoMundo(layout.aviso()));
-        }
-        if (layout.exibeRadar()) {
-            areas.add(paraCoordenadasDoMundo(layout.radar()));
-        }
-        if (layout.exibeAtalhos()) {
-            areas.add(paraCoordenadasDoMundo(layout.rodapeDireito()));
-        }
-        if (layout.controles().largura() > 0f && layout.controles().altura() > 0f) {
-            areas.add(paraCoordenadasDoMundo(layout.controles()));
-        }
-        if (tempestadeAtiva) {
-            areas.add(paraCoordenadasDoMundo(layout.seloDaTempestade()));
+        for (RetanguloDeTela area : layout.areasDoHud(!mensagens.isEmpty(), tempestadeAtiva)) {
+            areas.add(paraCoordenadasDoMundo(area));
         }
         return List.copyOf(areas);
     }

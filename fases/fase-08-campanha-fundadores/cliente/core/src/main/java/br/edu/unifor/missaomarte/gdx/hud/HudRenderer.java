@@ -30,6 +30,7 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.utils.Align;
 import java.util.List;
 
 /** HUD no estilo Switch. Apenas projeta o estado da sessao, sem alterar regras da partida. */
@@ -71,6 +72,45 @@ public final class HudRenderer {
         this.layout = layout;
     }
 
+    public MedidasDoHud medir(GameSession session, List<String> mensagens, boolean mudo, long segundos,
+            boolean tempestadeAtiva, LayoutDoHud referencia) {
+        MedidasDoHud[] resultado = new MedidasDoHud[1];
+        fontes.comEscalaTemporaria(referencia.escala(), () -> {
+            BitmapFont rotulo = fontes.obter(FonteDoJogo.ROTULO);
+            BitmapFont texto = fontes.obter(FonteDoJogo.TEXTO);
+            float margemHorizontal = 32f * referencia.escala();
+            medidor.setText(texto, fraseDoObjetivo(), TEXTO,
+                    Math.max(1f, referencia.objetivo().largura() - margemHorizontal), Align.left, true);
+            float alturaDoObjetivo = medidor.height;
+            List<String> linhas = linhasDoStatus(session, mudo, segundos);
+            float alturaDoStatus;
+            if (referencia.compacto()) {
+                float larguraDoStatus = (!mensagens.isEmpty() || tempestadeAtiva)
+                        ? referencia.piloto().largura() * 0.58f : referencia.piloto().largura();
+                medidor.setText(rotulo, String.join(" · ", linhas), SECUNDARIO,
+                        Math.max(1f, larguraDoStatus - margemHorizontal), Align.left, true);
+                alturaDoStatus = medidor.height;
+            } else {
+                alturaDoStatus = linhas.size() * rotulo.getLineHeight();
+            }
+            float alturaDoAviso = 0f;
+            if (!mensagens.isEmpty()) {
+                float larguraDoAviso = referencia.aviso().largura() > 0f
+                        ? referencia.aviso().largura()
+                        : referencia.emRetrato() ? referencia.piloto().largura() * 0.4f
+                        : referencia.radar().largura();
+                medidor.setText(texto, String.join(" ", mensagens), TEXTO,
+                        Math.max(1f, larguraDoAviso - 24f * referencia.escala()),
+                        Align.center, true);
+                alturaDoAviso = medidor.height;
+            }
+            resultado[0] = new MedidasDoHud(rotulo.getLineHeight(), alturaDoObjetivo, alturaDoStatus,
+                    AtalhosDoRodape.para(session.getModo()).size(), alturaDoAviso,
+                    !mensagens.isEmpty(), tempestadeAtiva);
+        });
+        return resultado[0];
+    }
+
     public void desenhar(GameSession session, List<String> mensagens, boolean mudo, long segundos,
             RetanguloDeTela janelaVisivel, boolean tempestadeAtiva,
             PoliticaDeDestaque.Resultado destaques) {
@@ -99,7 +139,9 @@ public final class HudRenderer {
             if (layout.exibeRadar()) {
                 estilo.painel(batch, layout.radar());
             }
-            estilo.painel(batch, rodapeEsquerdo);
+            if (!layout.statusIntegradoAoJogador()) {
+                estilo.painel(batch, rodapeEsquerdo);
+            }
             if (layout.exibeAtalhos()) {
                 estilo.painel(batch, layout.rodapeDireito());
             }
@@ -112,9 +154,12 @@ public final class HudRenderer {
                 estilo.ficha(batch, layout.fichaDoObjetivo(i), borda);
             }
             float s = layout.escala();
+            RetanguloDeTela jogador = layout.jogador();
             for (int i = 0; i < vidasMaximas; i++) {
-                estilo.segmento(batch, new RetanguloDeTela(layout.piloto().x() + (88f + i * 40f) * s,
-                        layout.piloto().y() + 61f * s, 34f * s, 12f * s),
+                float x = layout.compacto() ? jogador.x() + (320f + i * 40f) * s
+                        : jogador.x() + (88f + i * 40f) * s;
+                float y = layout.compacto() ? jogador.centroY() - 6f * s : jogador.y() + 61f * s;
+                estilo.segmento(batch, new RetanguloDeTela(x, y, 34f * s, 12f * s),
                         i < nave.getVidas() ? CIANO : VIDA_PERDIDA);
             }
         });
@@ -227,7 +272,11 @@ public final class HudRenderer {
 
     private void desenharPiloto(GameSession session) {
         float s = layout.escala();
-        RetanguloDeTela painel = layout.piloto();
+        RetanguloDeTela painel = layout.jogador();
+        if (layout.compacto()) {
+            desenharPilotoCompacto(session, painel);
+            return;
+        }
         rotulo(tituloDoPiloto(session.getPiloto(), session.getDificuldade()),
                 painel.x() + 16f * s, painel.topo() - 17f * s);
         rotulo("CASCO", painel.x() + 16f * s, painel.topo() - 51f * s);
@@ -241,16 +290,35 @@ public final class HudRenderer {
                 painel.y() + 15f * s + medidor.height);
     }
 
+    private void desenharPilotoCompacto(GameSession session, RetanguloDeTela painel) {
+        float s = layout.escala();
+        float y = painel.centroY() + fontes.obter(FonteDoJogo.ROTULO).getLineHeight() / 2f;
+        rotulo(tituloDoPiloto(session.getPiloto(), session.getDificuldade()), painel.x() + 16f * s, y);
+        rotulo("CASCO", painel.x() + 264f * s, y);
+        rotulo("PONTOS", painel.x() + 474f * s, y);
+        BitmapFont titulo = fontes.obter(FonteDoJogo.TITULO);
+        titulo.setColor(TEXTO);
+        String pontos = String.format("%,d", session.getPontuacao()).replace(',', '.');
+        medidor.setText(titulo, pontos);
+        titulo.draw(batch, medidor, painel.direita() - 16f * s - medidor.width,
+                painel.centroY() + medidor.height / 2f);
+    }
+
     private void desenharObjetivo(GameSession session, Nave nave, PoliticaDeDestaque.Resultado destaques) {
         float s = layout.escala();
         RetanguloDeTela painel = layout.objetivo();
         rotulo("OBJETIVO", painel.x() + 16f * s, painel.topo() - 17f * s);
         BitmapFont texto = fontes.obter(FonteDoJogo.TEXTO);
         texto.setColor(TEXTO);
-        String frase = campanha == null ? "Resgate os passageiros e retorne à base"
-                : "Resgate os fundadores do campus";
-        texto.draw(batch, limitar(frase, texto, painel.largura() - 118f * s),
-                painel.x() + 106f * s, painel.topo() - 16f * s);
+        String frase = fraseDoObjetivo();
+        if (!layout.usaReserva()) {
+            RetanguloDeTela area = layout.textoDoObjetivo();
+            medidor.setText(texto, frase, TEXTO, area.largura(), Align.left, true);
+            texto.draw(batch, medidor, area.x(), area.topo());
+        } else {
+            texto.draw(batch, limitar(frase, texto, painel.largura() - 118f * s),
+                    painel.x() + 106f * s, painel.topo() - 16f * s);
+        }
 
         if (campanha == null) {
             desenharObjetivoRapido(session, nave);
@@ -295,8 +363,10 @@ public final class HudRenderer {
         BitmapFont pequena = fontes.obter(FonteDoJogo.PEQUENO);
         pequena.setColor(corDoEstado == null ? SECUNDARIO : corDoEstado);
         float largura = ficha.direita() - x - 12f * s;
-        nomeDaFicha.setText(texto, limitar(nome, texto, largura));
-        estadoDaFicha.setText(pequena, limitar(estado, pequena, largura));
+        String nomeVisivel = layout.usaReserva() ? limitar(nome, texto, largura) : nome;
+        String estadoVisivel = layout.usaReserva() ? limitar(estado, pequena, largura) : estado;
+        nomeDaFicha.setText(texto, nomeVisivel);
+        estadoDaFicha.setText(pequena, estadoVisivel);
         float espaco = 3f * s;
         float altura = nomeDaFicha.height + espaco + estadoDaFicha.height;
         float yDoNome = ficha.centroY() + altura / 2f;
@@ -343,22 +413,64 @@ public final class HudRenderer {
         float s = layout.escala();
         BitmapFont rotulo = fontes.obter(FonteDoJogo.ROTULO);
         rotulo.setColor(SECUNDARIO);
-        String informacoes = informacoesDaPartida(session, segundos);
-        if (mudo) {
-            informacoes += " · SOM DESLIGADO";
+        if (layout.usaReserva()) {
+            String informacoes = informacoesDaPartida(session, segundos);
+            if (mudo) {
+                informacoes += " · SOM DESLIGADO";
+            }
+            String limitado = limitar(informacoes, rotulo, esquerdo.largura() - 32f * s);
+            medidor.setText(rotulo, limitado);
+            rotulo.draw(batch, medidor, esquerdo.x() + 16f * s,
+                    esquerdo.centroY() + medidor.height / 2f);
+        } else {
+            desenharLinhasDoStatus(session, mudo, segundos, esquerdo, rotulo);
         }
-        String limitado = limitar(informacoes, rotulo, esquerdo.largura() - 32f * s);
-        medidor.setText(rotulo, limitado);
-        rotulo.draw(batch, medidor, esquerdo.x() + 16f * s, esquerdo.centroY() + medidor.height / 2f);
         if (!layout.exibeAtalhos()) {
             return;
         }
         RetanguloDeTela direito = layout.rodapeDireito();
-        float x = direito.x() + 12f * s;
-        float y = direito.centroY() - EstiloDaInterface.ALTURA_DA_TECLA * s / 2f;
-        for (AtalhosDoRodape.Atalho atalho : AtalhosDoRodape.para(session.getModo())) {
-            x = atalho(atalho.tecla(), atalho.acao(), x, y);
+        if (layout.usaReserva()) {
+            float x = direito.x() + 12f * s;
+            float y = direito.centroY() - EstiloDaInterface.ALTURA_DA_TECLA * s / 2f;
+            for (AtalhosDoRodape.Atalho atalho : AtalhosDoRodape.para(session.getModo())) {
+                x = atalho(atalho.tecla(), atalho.acao(), x, y);
+            }
+            return;
         }
+        float y = direito.topo() - 12f * s - EstiloDaInterface.ALTURA_DA_TECLA * s;
+        for (AtalhosDoRodape.Atalho atalho : AtalhosDoRodape.para(session.getModo())) {
+            atalho(atalho.tecla(), atalho.acao(), direito.x() + 12f * s, y);
+            y -= 38f * s;
+        }
+    }
+
+    private void desenharLinhasDoStatus(GameSession session, boolean mudo, long segundos,
+            RetanguloDeTela painel, BitmapFont fonte) {
+        List<String> linhas = linhasDoStatus(session, mudo, segundos);
+        float x = painel.x() + 16f * layout.escala();
+        float y = painel.topo();
+        if (layout.compacto()) {
+            medidor.setText(fonte, String.join(" · ", linhas), SECUNDARIO,
+                    painel.largura() - 32f * layout.escala(), Align.left, true);
+            fonte.draw(batch, medidor, x, y);
+            return;
+        }
+        for (String linha : linhas) {
+            fonte.draw(batch, linha, x, y);
+            y -= fonte.getLineHeight();
+        }
+    }
+
+    private List<String> linhasDoStatus(GameSession session, boolean mudo, long segundos) {
+        Integer sol = etapa == null ? null : etapa.numero() * 7;
+        String local = etapa == null ? null : etapa.local();
+        return LinhasDoStatus.para(session.getModo(), session.getMunicao(), session.getMira(),
+                session.getMovimentos(), segundos, sol, local, mudo);
+    }
+
+    private String fraseDoObjetivo() {
+        return campanha == null ? "Resgate os passageiros e retorne à base"
+                : "Resgate os fundadores do campus";
     }
 
     private float atalho(String tecla, String acao, float x, float y) {
@@ -383,6 +495,9 @@ public final class HudRenderer {
     }
 
     public RetanguloDeTela areaOcupadaDoRodape(GameSession session, boolean mudo, long segundos) {
+        if (!layout.usaReserva()) {
+            return layout.rodapeEsquerdo();
+        }
         BitmapFont fonte = fontes.obter(FonteDoJogo.ROTULO);
         String texto = informacoesDaPartida(session, segundos) + (mudo ? " · SOM DESLIGADO" : "");
         medidor.setText(fonte, texto);
@@ -395,7 +510,12 @@ public final class HudRenderer {
         String texto = String.join(" ", mensagens);
         BitmapFont fonte = fontes.obter(FonteDoJogo.TEXTO);
         fonte.setColor(corDoAviso(texto));
-        medidor.setText(fonte, limitar(texto, fonte, aviso.largura() - 24f * layout.escala()));
+        if (layout.usaReserva()) {
+            medidor.setText(fonte, limitar(texto, fonte, aviso.largura() - 24f * layout.escala()));
+        } else {
+            medidor.setText(fonte, texto, corDoAviso(texto),
+                    aviso.largura() - 24f * layout.escala(), Align.center, true);
+        }
         fonte.draw(batch, medidor, aviso.centroX() - medidor.width / 2f, aviso.centroY() + medidor.height / 2f);
     }
 

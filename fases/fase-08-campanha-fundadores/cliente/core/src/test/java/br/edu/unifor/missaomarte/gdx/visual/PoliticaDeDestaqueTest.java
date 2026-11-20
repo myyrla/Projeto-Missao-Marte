@@ -12,6 +12,8 @@ import br.edu.unifor.missaomarte.domain.Passageiro;
 import br.edu.unifor.missaomarte.domain.Posicao;
 import br.edu.unifor.missaomarte.domain.Professor;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
+import br.edu.unifor.missaomarte.gdx.hud.LayoutDoHud;
+import br.edu.unifor.missaomarte.gdx.layout.MargensSeguras;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -128,6 +130,21 @@ class PoliticaDeDestaqueTest {
 
         assertTrue(PoliticaDeDestaque.posicionarEtiqueta(
                 alvo, 100f, 30f, 8f, tela, List.of(hud)).isEmpty());
+    }
+
+    @Test
+    void etiquetaEvitaAsNovasColunasDoHud() {
+        RetanguloDeTela mapa = new RetanguloDeTela(280f, 0f, 720f, 720f);
+        RetanguloDeTela tela = new RetanguloDeTela(0f, 0f, 1280f, 720f);
+        LayoutDoHud layout = LayoutDoHud.calcular(1280f, 720f, 11, false,
+                MargensSeguras.NENHUMA, mapa);
+        RetanguloDeTela alvo = new RetanguloDeTela(282f, 330f, 40f, 40f);
+
+        RetanguloDeTela etiqueta = PoliticaDeDestaque.posicionarEtiqueta(
+                alvo, 100f, 30f, 8f, tela, layout.areasDoHud(true, true)).orElseThrow();
+
+        assertRetangulo(new RetanguloDeTela(330f, 335f, 100f, 30f), etiqueta);
+        assertTrue(layout.areasDoHud(true, true).stream().noneMatch(etiqueta::sobrepoe));
     }
 
     @Test
