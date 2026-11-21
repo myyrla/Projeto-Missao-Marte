@@ -247,16 +247,18 @@ public final class LayoutDoHud {
         RetanguloDeTela mapa = new RetanguloDeTela((largura - lado) / 2f, baseDoMapa, lado, lado);
         RetanguloDeTela rodapeEsquerdo = new RetanguloDeTela(margens.esquerda() + margem,
                 margens.baixo() + margem, 576f * escala, 44f * escala);
-        RetanguloDeTela rodapeDireito = new RetanguloDeTela(largura - margens.direita() - margem - 540f * escala,
-                margens.baixo() + margem, 540f * escala, 44f * escala);
+        RetanguloDeTela rodapeDireito = PoliticaDeAtalhos.exibeRodapeDeTeclado(toque)
+                ? new RetanguloDeTela(largura - margens.direita() - margem - 540f * escala,
+                        margens.baixo() + margem, 540f * escala, 44f * escala)
+                : vazio(largura, altura);
         RetanguloDeTela aviso = new RetanguloDeTela((largura - 340f * escala) / 2f,
                 rodapeEsquerdo.topo() + 14f * escala, 340f * escala, 38f * escala);
         RetanguloDeTela selo = new RetanguloDeTela(objetivo.centroX() - 120f * escala,
                 objetivo.y() - 42f * escala, 240f * escala, 34f * escala);
         RetanguloDeTela controles = toque
                 ? new RetanguloDeTela(largura - margens.direita() - 260f * escala,
-                        rodapeDireito.topo() + 8f * escala, 260f * escala,
-                        Math.max(0f, mapa.topo() - rodapeDireito.topo() - 16f * escala))
+                        margens.baixo() + margem, 260f * escala,
+                        Math.max(0f, mapa.topo() - margens.baixo() - margem - 8f * escala))
                 : vazio(largura, altura);
         return montar(largura, altura, celulas, escala, false, Modo.RESERVA, 0f, piloto, objetivo,
                 radar, radarInterno, mapa, rodapeEsquerdo, rodapeDireito, aviso, selo, controles);

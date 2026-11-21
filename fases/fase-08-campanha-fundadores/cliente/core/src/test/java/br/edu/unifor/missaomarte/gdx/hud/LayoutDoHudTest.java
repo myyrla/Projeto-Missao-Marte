@@ -74,6 +74,30 @@ class LayoutDoHudTest {
     }
 
     @Test
+    void modoToqueNaoExibeAtalhosMesmoEmPaisagem() {
+        LayoutDoHud layout = calcular(1280f, 720f,
+                new RetanguloDeTela(280f, 0f, 720f, 720f), true);
+
+        assertFalse(layout.exibeAtalhos());
+    }
+
+    @Test
+    void textosComFatorUmPontoSeisNaoSobrepoemOMapaVertical() {
+        RetanguloDeTela mapa = new RetanguloDeTela(0f, 204f, 540f, 792f);
+        MedidasDoHud medidas = new MedidasDoHud(
+                16f, 32f, 45f, 0, 0f, false, true);
+        LayoutDoHud layout = calcular(540f, 1200f, mapa, true, medidas);
+
+        assertFalse(layout.usaReserva());
+        assertFalse(layout.exibeAtalhos());
+        assertTrue(layout.textosCabemSemTruncar());
+        assertFalse(layout.piloto().sobrepoe(layout.objetivo()));
+        assertFalse(layout.piloto().sobrepoe(layout.areaUtilDoMapa()));
+        assertFalse(layout.objetivo().sobrepoe(layout.areaUtilDoMapa()));
+        assertFalse(layout.areaUtilDoMapa().sobrepoe(layout.controles()));
+    }
+
+    @Test
     void usaColunasLivresSemCobrirMapaEm1280x720E1920x1080() {
         LayoutDoHud hd = calcular(1280f, 720f, new RetanguloDeTela(280f, 0f, 720f, 720f), false);
         LayoutDoHud fullHd = calcular(1920f, 1080f, new RetanguloDeTela(564f, 144f, 792f, 792f), false);

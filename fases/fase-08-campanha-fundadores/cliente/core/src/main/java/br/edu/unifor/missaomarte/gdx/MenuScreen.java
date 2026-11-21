@@ -2,6 +2,7 @@ package br.edu.unifor.missaomarte.gdx;
 
 import br.edu.unifor.missaomarte.application.campanha.ProgressoDaCampanha;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
+import br.edu.unifor.missaomarte.gdx.hud.PoliticaDeAtalhos;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
@@ -321,7 +322,7 @@ public class MenuScreen extends TelaBase {
         medidor.setText(pequena, conta);
         float margem = layout.emRetrato() ? 32f : 96f * layout.escala();
         pequena.draw(jogo.batch(), medidor, layout.largura() - margem - medidor.width, margem + medidor.height);
-        if (layout.emRetrato()) {
+        if (!PoliticaDeAtalhos.exibeRodapeDeTeclado(jogo.modoToque())) {
             pequena.draw(jogo.batch(), "Toque em uma opção para selecionar", margem, margem + 44f);
             return;
         }

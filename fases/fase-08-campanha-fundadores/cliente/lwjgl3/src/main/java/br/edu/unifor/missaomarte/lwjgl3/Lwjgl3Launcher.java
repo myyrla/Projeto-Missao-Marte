@@ -56,7 +56,7 @@ public class Lwjgl3Launcher {
                 new RankingService(new FileRankingRepository(Paths.get("ranking.json"))),
                 new ServidorHttp(endereco),
                 endereco,
-                new Plataforma(toque, false),
+                Plataforma.desktop(toque),
                 random,
                 inicioDaCampanha);
 

@@ -15,15 +15,31 @@ public final class Plataforma {
 
     private final boolean toque;
     private final boolean textoNativo;
+    private final boolean usaDensidadeDaTela;
 
     public Plataforma(boolean toque, boolean textoNativo) {
+        this(toque, textoNativo, false);
+    }
+
+    private Plataforma(boolean toque, boolean textoNativo, boolean usaDensidadeDaTela) {
         this.toque = toque;
         this.textoNativo = textoNativo;
+        this.usaDensidadeDaTela = usaDensidadeDaTela;
     }
 
     /** Desktop com teclado e mouse (comportamento das fases anteriores). */
     public static Plataforma desktop() {
-        return new Plataforma(false, false);
+        return desktop(false);
+    }
+
+    /** Desktop opcionalmente simulando controles por toque, sem aplicar densidade fisica. */
+    public static Plataforma desktop(boolean toque) {
+        return new Plataforma(toque, false, false);
+    }
+
+    /** Android com toque, teclado nativo e escala pela densidade fisica da tela. */
+    public static Plataforma android() {
+        return new Plataforma(true, true, true);
     }
 
     public boolean usaToque() {
@@ -32,6 +48,10 @@ public final class Plataforma {
 
     public boolean temTextoNativo() {
         return textoNativo;
+    }
+
+    public boolean usaDensidadeDaTela() {
+        return usaDensidadeDaTela;
     }
 
     /** Abre a caixa de texto do sistema; se o jogador cancelar, nada e devolvido. */

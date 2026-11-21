@@ -64,7 +64,7 @@ public final class CampusLayout {
 
     public static CampusLayout calcular(float largura, float altura, boolean toque) {
         if (toque && altura > largura) {
-            return vertical(largura, altura, -1f);
+            return vertical(largura, altura, MedidasDoCampus.padrao(), -1f);
         }
         return horizontal(largura, altura, MedidasDoCampus.padrao());
     }
@@ -72,7 +72,9 @@ public final class CampusLayout {
     public static CampusLayout calcular(float largura, float altura, boolean toque,
             float alturaDoCartaoConcluido) {
         if (toque && altura > largura) {
-            return vertical(largura, altura, alturaDoCartaoConcluido);
+            return vertical(largura, altura,
+                    MedidasDoCampus.padraoComCartao(alturaDoCartaoConcluido, false, false),
+                    alturaDoCartaoConcluido);
         }
         return horizontal(largura, altura,
                 MedidasDoCampus.padraoComCartao(alturaDoCartaoConcluido, false, false));
@@ -81,7 +83,7 @@ public final class CampusLayout {
     public static CampusLayout calcular(float largura, float altura, boolean toque,
             MedidasDoCampus medidas) {
         if (toque && altura > largura) {
-            return vertical(largura, altura, medidas.alturaDoCartao());
+            return vertical(largura, altura, medidas, medidas.alturaDoCartao());
         }
         return horizontal(largura, altura, medidas);
     }
@@ -157,11 +159,12 @@ public final class CampusLayout {
         return new RetanguloDeTela(x, y, 0f, 0f);
     }
 
-    private static CampusLayout vertical(float largura, float altura, float alturaDoCartaoConcluido) {
+    private static CampusLayout vertical(float largura, float altura, MedidasDoCampus medidas,
+            float alturaDoCartaoConcluido) {
         float margem = 16f;
-        float espaco = 12f;
-        float alturaDoTitulo = 64f;
-        float alturaDoRodape = 128f;
+        float espaco = 8f;
+        float alturaDoTitulo = 56f;
+        float alturaDoRodape = 112f;
         RetanguloDeTela titulo = new RetanguloDeTela(0f, altura - alturaDoTitulo,
                 largura, alturaDoTitulo);
         float alturaDoMapa = largura / PROPORCAO_DO_MAPA;
@@ -172,14 +175,50 @@ public final class CampusLayout {
         float baseDoProgresso = rodape.topo() + espaco;
         RetanguloDeTela progresso = new RetanguloDeTela(margem, baseDoProgresso,
                 largura - 2f * margem, Math.max(0f, topoDoProgresso - baseDoProgresso));
-        float alturaDaEtapa = 32f;
         float espacoDasEtapas = 6f;
-        float topoDasEtapas = progresso.topo() - 40f;
+        float margemDoPainel = 12f;
+        float larguraDoConteudo = progresso.largura() - 2f * margemDoPainel;
+        int colunasDoCabecalho = 1 + (medidas.exibePontuacao() ? 1 : 0)
+                + (medidas.exibeDemonstracao() ? 1 : 0);
+        float larguraDaColuna = larguraDoConteudo / colunasDoCabecalho;
+        float alturaDoCabecalho = Math.max(medidas.alturaDosFundadores(),
+                Math.max(medidas.alturaDaPontuacao(), medidas.alturaDaDemonstracao()));
+        float yDoCabecalho = progresso.topo() - 8f - alturaDoCabecalho;
+        float xDoCabecalho = progresso.x() + margemDoPainel;
+        RetanguloDeTela fundadores = new RetanguloDeTela(xDoCabecalho, yDoCabecalho,
+                larguraDaColuna, alturaDoCabecalho);
+        xDoCabecalho += larguraDaColuna;
+        RetanguloDeTela pontuacao = medidas.exibePontuacao()
+                ? new RetanguloDeTela(xDoCabecalho, yDoCabecalho, larguraDaColuna, alturaDoCabecalho)
+                : linhaVazia(xDoCabecalho, yDoCabecalho);
+        if (medidas.exibePontuacao()) {
+            xDoCabecalho += larguraDaColuna;
+        }
+        RetanguloDeTela demonstracao = medidas.exibeDemonstracao()
+                ? new RetanguloDeTela(xDoCabecalho, yDoCabecalho, larguraDaColuna, alturaDoCabecalho)
+                : linhaVazia(xDoCabecalho, yDoCabecalho);
+        float topoDasEtapas = yDoCabecalho - 8f;
         RetanguloDeTela[] etapas = new RetanguloDeTela[3];
+        RetanguloDeTela[] titulos = new RetanguloDeTela[3];
+        RetanguloDeTela[] cenarios = new RetanguloDeTela[3];
+        RetanguloDeTela[] fundadoresDasEtapas = new RetanguloDeTela[3];
+        float cursor = topoDasEtapas;
         for (int i = 0; i < etapas.length; i++) {
+            MedidasDoCampus.MedidasDaEtapa medida = medidas.etapas().get(i);
+            float alturaDaEtapa = Math.max(32f, medida.alturaDoTitulo()
+                    + Math.max(medida.alturaDoCenario(), medida.alturaDoFundador()));
             etapas[i] = new RetanguloDeTela(progresso.x() + 12f,
-                    topoDasEtapas - alturaDaEtapa - i * (alturaDaEtapa + espacoDasEtapas),
+                    cursor - alturaDaEtapa,
                     progresso.largura() - 24f, alturaDaEtapa);
+            float xDoTexto = etapas[i].x() + 28f;
+            float larguraDoTexto = etapas[i].largura() - 28f;
+            titulos[i] = new RetanguloDeTela(xDoTexto,
+                    etapas[i].topo() - medida.alturaDoTitulo(), larguraDoTexto,
+                    medida.alturaDoTitulo());
+            float alturaDoSubtitulo = Math.max(medida.alturaDoCenario(), medida.alturaDoFundador());
+            cenarios[i] = new RetanguloDeTela(xDoTexto, etapas[i].y(), larguraDoTexto, alturaDoSubtitulo);
+            fundadoresDasEtapas[i] = linhaVazia(xDoTexto, etapas[i].y());
+            cursor = etapas[i].y() - espacoDasEtapas;
         }
         float topoDoCartao = etapas[2].y() - 10f;
         float alturaDoCartao = alturaDoCartaoConcluido >= 0f
@@ -208,10 +247,9 @@ public final class CampusLayout {
                 larguraDoBotaoModal, 54f);
         RetanguloDeTela confirmar = new RetanguloDeTela(cancelar.direita() + espacoModal,
                 cancelar.y(), larguraDoBotaoModal, 54f);
-        RetanguloDeTela vazio = linhaVazia(progresso.x(), progresso.topo());
-        RetanguloDeTela[] vazios = { vazio, vazio, vazio };
         return new CampusLayout(largura, altura, true, titulo, mapa, progresso, rodape,
-                vazio, vazio, vazio, etapas, vazios, vazios.clone(), vazios.clone(), cartao,
+                fundadores, pontuacao, demonstracao, etapas, titulos, cenarios,
+                fundadoresDasEtapas, cartao,
                 principal, voltar, confirmacao, confirmar, cancelar);
     }
 

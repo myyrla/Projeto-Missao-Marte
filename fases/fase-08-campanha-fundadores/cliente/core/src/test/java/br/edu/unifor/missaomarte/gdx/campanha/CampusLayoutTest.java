@@ -30,6 +30,21 @@ class CampusLayoutTest {
     }
 
     @Test
+    void layoutVerticalComTextoUmPontoSeisMantemConteudoDentroDosPaineis() {
+        MedidasDoCampus.MedidasDaEtapa etapa = new MedidasDoCampus.MedidasDaEtapa(
+                21f * 1.6f, 17f * 1.6f, 17f * 1.6f);
+        MedidasDoCampus medidas = new MedidasDoCampus(
+                29f * 1.6f, 21f * 1.6f, 17f * 1.6f,
+                true, true, List.of(etapa, etapa, etapa), 82f * 1.6f);
+
+        float larguraDoMundo = 800f;
+        validarCampusComTextoAmpliado(CampusLayout.calcular(
+                larguraDoMundo, larguraDoMundo * 1200f / 540f, true, medidas), medidas);
+        validarCampusComTextoAmpliado(CampusLayout.calcular(
+                larguraDoMundo, larguraDoMundo * 895f / 540f, true, medidas), medidas);
+    }
+
+    @Test
     void layoutHorizontalPreservaOMapaAtual() {
         CampusLayout layout = CampusLayout.calcular(800f, 600f, false);
 
@@ -151,6 +166,31 @@ class CampusLayoutTest {
         assertTrue(layout.titulo().y() - layout.mapa().topo() <= 12f);
         assertTrue(layout.mapa().y() - layout.progresso().topo() <= 12f);
         assertTrue(layout.progresso().y() - layout.rodape().topo() <= 12f);
+    }
+
+    private static void validarCampusComTextoAmpliado(CampusLayout layout, MedidasDoCampus medidas) {
+        validarLayoutVertical(layout, layout.largura(), layout.altura());
+        assertTrue(layout.linhaDosFundadores().largura() > 0f);
+        assertTrue(layout.linhaDaPontuacao().largura() > 0f);
+        assertTrue(layout.linhaDaDemonstracao().largura() > 0f);
+        assertFalse(layout.linhaDosFundadores().sobrepoe(layout.linhaDaPontuacao()));
+        assertFalse(layout.linhaDaPontuacao().sobrepoe(layout.linhaDaDemonstracao()));
+        assertTrue(layout.linhaDosFundadores().estaDentroDe(layout.progresso()));
+        assertTrue(layout.linhaDaPontuacao().estaDentroDe(layout.progresso()));
+        assertTrue(layout.linhaDaDemonstracao().estaDentroDe(layout.progresso()));
+        for (int i = 0; i < 3; i++) {
+            MedidasDoCampus.MedidasDaEtapa etapa = medidas.etapas().get(i);
+            float alturaDoTexto = etapa.alturaDoTitulo()
+                    + Math.max(etapa.alturaDoCenario(), etapa.alturaDoFundador());
+            assertTrue(layout.etapa(i).altura() >= alturaDoTexto,
+                    "texto ampliado não cabe na etapa " + (i + 1));
+            if (i + 1 < 3) {
+                assertFalse(layout.etapa(i).sobrepoe(layout.etapa(i + 1)));
+            }
+        }
+        assertFalse(layout.etapa(2).sobrepoe(layout.cartaoDaProximaMissao()));
+        assertTrue(layout.cartaoDaProximaMissao().estaDentroDe(layout.progresso()));
+        assertTrue(layout.cartaoDaProximaMissao().altura() >= medidas.alturaDoCartao());
     }
 
     private static MedidasDoCampus medidasHorizontais(boolean pontuacao, boolean demonstracao,

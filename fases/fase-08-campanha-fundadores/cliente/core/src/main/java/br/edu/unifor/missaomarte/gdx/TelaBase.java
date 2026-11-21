@@ -1,9 +1,11 @@
 package br.edu.unifor.missaomarte.gdx;
 
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
+import br.edu.unifor.missaomarte.gdx.entrada.SetasDoControleDeToque;
 import br.edu.unifor.missaomarte.gdx.layout.TextoResponsivo;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
+import br.edu.unifor.missaomarte.gdx.ui.IconeDaInterface;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.Input.Buttons;
@@ -23,6 +25,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Base das telas: limpa a janela, desenha o fundo, aplica o viewport e registra o ciclo de vida da Screen no log.
@@ -108,8 +111,10 @@ abstract class TelaBase implements Screen {
                 larguraDoMundo, alturaDoMundo);
         jogo.batch().end();
 
-        desenhar(delta);
-        desenharBotoes();
+        jogo.fontes().comEscalaTemporaria(jogo.fatorDeTexto(), () -> {
+            desenhar(delta);
+            desenharBotoes();
+        });
 
         tipoDaFonte = FonteDoJogo.TEXTO;
     }
@@ -143,12 +148,28 @@ abstract class TelaBase implements Screen {
         for (BotaoVirtual original : botoes) {
             BotaoVirtual b = efetivo(original);
             if (!b.getRotulo().isEmpty()) {
-                fonte(b.getRotulo().length() <= 1 ? FonteDoJogo.SUBTITULO : FonteDoJogo.TEXTO);
-                cor(Color.WHITE);
-                textoCentralizado(b.getRotulo(), b.getX() + b.getLargura() / 2f, b.getY() + b.getAltura() / 2f);
+                Optional<Float> rotacao = SetasDoControleDeToque.rotacao(b.getId());
+                if (rotacao.isPresent()) {
+                    desenharSeta(b, rotacao.orElseThrow());
+                } else {
+                    fonte(b.getRotulo().length() <= 1 ? FonteDoJogo.SUBTITULO : FonteDoJogo.TEXTO);
+                    cor(Color.WHITE);
+                    textoCentralizado(b.getRotulo(), b.getX() + b.getLargura() / 2f,
+                            b.getY() + b.getAltura() / 2f);
+                }
             }
         }
         jogo.batch().end();
+    }
+
+    private void desenharSeta(BotaoVirtual botao, float rotacao) {
+        float lado = Math.min(32f, Math.min(botao.getLargura(), botao.getAltura()) * 0.56f);
+        float x = botao.getX() + (botao.getLargura() - lado) / 2f;
+        float y = botao.getY() + (botao.getAltura() - lado) / 2f;
+        jogo.batch().setColor(Color.WHITE);
+        jogo.batch().draw(jogo.estilo().icone(IconeDaInterface.SETA), x, y,
+                lado / 2f, lado / 2f, lado, lado, 1f, 1f, rotacao);
+        jogo.batch().setColor(Color.WHITE);
     }
 
     // Botao com texto nunca fica menor que o alvo minimo de toque (48 dp); campos sem texto mantem o tamanho original.

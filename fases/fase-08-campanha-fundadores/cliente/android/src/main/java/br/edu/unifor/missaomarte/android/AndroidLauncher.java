@@ -47,7 +47,7 @@ public class AndroidLauncher extends AndroidApplication {
                 new RankingService(new FileRankingRepository(new File(getFilesDir(), "ranking.json").toPath())),
                 new ServidorHttp(endereco),
                 endereco,
-                new Plataforma(true, true),
+                Plataforma.android(),
                 new Random(),
                 inicioDaCampanha);
 

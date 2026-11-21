@@ -3,6 +3,7 @@ package br.edu.unifor.missaomarte.gdx.layout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import br.edu.unifor.missaomarte.gdx.plataforma.Plataforma;
 import org.junit.jupiter.api.Test;
 
 class EscalaDeTelaTest {
@@ -33,5 +34,23 @@ class EscalaDeTelaTest {
         assertEquals(0f, EscalaDeTela.alvoMinimoNoMundo(2f, 0f), 0f);
         assertEquals(0f, EscalaDeTela.pixelsParaMundo(10f, 0f), 0f);
         assertEquals(5f, EscalaDeTela.pixelsParaMundo(10f, 2f), 0.001f);
+    }
+
+    @Test
+    void desktopSemToqueMantemFatorDeTextoExatamenteUm() {
+        assertEquals(1f, EscalaDeTela.fatorDeTexto(
+                Plataforma.desktop(), 4f, 0.5f), 0f);
+    }
+
+    @Test
+    void desktopComModoToqueMantemFatorDeTextoExatamenteUm() {
+        assertEquals(1f, EscalaDeTela.fatorDeTexto(
+                Plataforma.desktop(true), 4f, 0.5f), 0f);
+    }
+
+    @Test
+    void androidUsaADensidadeFisicaDaTela() {
+        assertEquals(EscalaDeTela.FATOR_MAXIMO_DE_TEXTO,
+                EscalaDeTela.fatorDeTexto(Plataforma.android(), 4f, 0.5f), 0f);
     }
 }

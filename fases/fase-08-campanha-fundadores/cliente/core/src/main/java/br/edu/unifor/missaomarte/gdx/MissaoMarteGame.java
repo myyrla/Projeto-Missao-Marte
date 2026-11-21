@@ -144,9 +144,16 @@ public class MissaoMarteGame extends Game {
         return viewport == null || viewport.getWorldWidth() <= 0f ? 0f : viewport.getScreenWidth() / viewport.getWorldWidth();
     }
 
-    /** Multiplicador do texto para que ele fique legivel no celular; 1 fora do modo toque. */
+    /** Multiplicador do texto para que ele fique legivel no celular; exatamente 1 no desktop. */
     float fatorDeTexto() {
-        return modoToque() ? EscalaDeTela.fatorDeTexto(Gdx.graphics.getDensity(), pixelsPorUnidade()) : 1f;
+        if (!plataforma.usaDensidadeDaTela()) {
+            return 1f;
+        }
+        return fatorDeTexto(plataforma, Gdx.graphics.getDensity(), pixelsPorUnidade());
+    }
+
+    static float fatorDeTexto(Plataforma plataforma, float densidade, float pixelsPorUnidade) {
+        return EscalaDeTela.fatorDeTexto(plataforma, densidade, pixelsPorUnidade);
     }
 
     /** Menor lado de um botao tocavel (48 dp) em unidades do mundo; 0 fora do modo toque. */

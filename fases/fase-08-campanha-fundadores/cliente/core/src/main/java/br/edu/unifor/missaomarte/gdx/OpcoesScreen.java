@@ -1,6 +1,7 @@
 package br.edu.unifor.missaomarte.gdx;
 
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
+import br.edu.unifor.missaomarte.gdx.hud.PoliticaDeAtalhos;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.layout.TextoResponsivo;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
@@ -326,7 +327,7 @@ public class OpcoesScreen extends TelaBase {
     }
 
     private void desenharRodape() {
-        if (layout.emRetrato()) {
+        if (!PoliticaDeAtalhos.exibeRodapeDeTeclado(jogo.modoToque())) {
             BitmapFont pequena = jogo.fonte(FonteDoJogo.PEQUENO);
             pequena.setColor(SECUNDARIO);
             pequena.draw(jogo.batch(), "Toque em uma opção · Voltar retorna ao menu", 32f, 44f);

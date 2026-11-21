@@ -28,6 +28,20 @@ class FontesDoJogoEscalaTest {
         assertEscalaPadrao(titulo, texto);
     }
 
+    @Test
+    void restauraEscalaDoAndroidDepoisDeUmaEscalaInternaDoLayout() {
+        BitmapFont fonte = fonteComEscala(0.5f);
+
+        FontesDoJogo.comEscalaTemporaria(List.of(fonte), 1.6f, () -> {
+            assertEquals(0.8f, fonte.getData().scaleX, 0.0001f);
+            FontesDoJogo.comEscalaTemporaria(List.of(fonte), 0.675f,
+                    () -> assertEquals(0.54f, fonte.getData().scaleX, 0.0001f));
+            assertEquals(0.8f, fonte.getData().scaleX, 0.0001f);
+        });
+
+        assertEscalaPadrao(fonte);
+    }
+
     private static BitmapFont fonteComEscala(float escala) {
         BitmapFont.BitmapFontData dados = new BitmapFont.BitmapFontData();
         dados.setScale(escala);

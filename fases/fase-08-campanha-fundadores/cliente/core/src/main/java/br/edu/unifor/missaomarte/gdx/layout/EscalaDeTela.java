@@ -1,5 +1,7 @@
 package br.edu.unifor.missaomarte.gdx.layout;
 
+import br.edu.unifor.missaomarte.gdx.plataforma.Plataforma;
+
 /**
  * Converte medidas fisicas (dp) em unidades do mundo e decide a escala do texto.
  * <p>Uma unidade do mundo vale {@code pixelsPorUnidade} pixels da tela; um dp vale {@code densidade} pixels
@@ -32,6 +34,12 @@ public final class EscalaDeTela {
         }
         float necessario = TEXTO_MINIMO_DP * densidade / (ALTURA_DO_TEXTO * pixelsPorUnidade);
         return Math.max(1f, Math.min(FATOR_MAXIMO_DE_TEXTO, necessario));
+    }
+
+    /** No desktop a escala tipografica permanece exatamente 1, inclusive na simulacao de toque. */
+    public static float fatorDeTexto(Plataforma plataforma, float densidade, float pixelsPorUnidade) {
+        return plataforma.usaDensidadeDaTela()
+                ? fatorDeTexto(densidade, pixelsPorUnidade) : 1f;
     }
 
     public static float pixelsParaMundo(float pixels, float pixelsPorUnidade) {
