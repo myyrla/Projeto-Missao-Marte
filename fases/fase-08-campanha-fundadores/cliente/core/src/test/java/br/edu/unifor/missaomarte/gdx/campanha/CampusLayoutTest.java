@@ -45,6 +45,18 @@ class CampusLayoutTest {
     }
 
     @Test
+    void pontuacaoVerticalFicaEmLinhaPropriaAlinhadaAEsquerda() {
+        CampusLayout layout = CampusLayout.calcular(800f, 1400f, true,
+                medidasVerticais(1.6f, 107.2f));
+
+        assertEquals(layout.linhaDosFundadores().x(), layout.linhaDaPontuacao().x(), 0.001f);
+        assertEquals(layout.linhaDosFundadores().largura(),
+                layout.linhaDaPontuacao().largura(), 0.001f);
+        assertTrue(layout.linhaDaPontuacao().topo() < layout.linhaDosFundadores().y());
+        assertTrue(layout.linhaDaDemonstracao().topo() < layout.linhaDaPontuacao().y());
+    }
+
+    @Test
     void layoutHorizontalPreservaOMapaAtual() {
         CampusLayout layout = CampusLayout.calcular(800f, 600f, false);
 
@@ -108,13 +120,25 @@ class CampusLayoutTest {
     }
 
     @Test
-    void cartaoDaProximaMissaoOcupaOEspacoAbaixoDasEtapas() {
-        CampusLayout layout = CampusLayout.calcular(540f, 895f, true);
+    void cartaoDaProximaMissaoVerticalUsaAAlturaMedidaDoConteudo() {
+        CampusLayout layout = CampusLayout.calcular(540f, 895f, true,
+                MedidasDoCampus.padrao());
 
         assertTrue(layout.cartaoDaProximaMissao().estaDentroDe(layout.progresso()));
         assertFalse(layout.cartaoDaProximaMissao().sobrepoe(layout.etapa(2)));
-        assertTrue(layout.cartaoDaProximaMissao().altura() >= 48f);
+        assertEquals(MedidasDoCampus.padrao().alturaDoCartao(),
+                layout.cartaoDaProximaMissao().altura(), 0.001f);
         assertEquals(10f, layout.etapa(2).y() - layout.cartaoDaProximaMissao().topo(), 0.001f);
+        assertTrue(layout.cartaoDaProximaMissao().y() > layout.progresso().y());
+    }
+
+    @Test
+    void calculoVerticalPadraoNaoEsticaOCartaoAteORodape() {
+        CampusLayout layout = CampusLayout.calcular(540f, 1200f, true);
+
+        assertEquals(MedidasDoCampus.padrao().alturaDoCartao(),
+                layout.cartaoDaProximaMissao().altura(), 0.001f);
+        assertTrue(layout.cartaoDaProximaMissao().y() > layout.progresso().y());
     }
 
     @Test
@@ -173,8 +197,10 @@ class CampusLayoutTest {
         assertTrue(layout.linhaDosFundadores().largura() > 0f);
         assertTrue(layout.linhaDaPontuacao().largura() > 0f);
         assertTrue(layout.linhaDaDemonstracao().largura() > 0f);
-        assertFalse(layout.linhaDosFundadores().sobrepoe(layout.linhaDaPontuacao()));
-        assertFalse(layout.linhaDaPontuacao().sobrepoe(layout.linhaDaDemonstracao()));
+        assertEquals(layout.linhaDosFundadores().x(), layout.linhaDaPontuacao().x(), 0.001f);
+        assertEquals(layout.linhaDosFundadores().largura(), layout.linhaDaPontuacao().largura(), 0.001f);
+        assertTrue(layout.linhaDaPontuacao().topo() < layout.linhaDosFundadores().y());
+        assertTrue(layout.linhaDaDemonstracao().topo() < layout.linhaDaPontuacao().y());
         assertTrue(layout.linhaDosFundadores().estaDentroDe(layout.progresso()));
         assertTrue(layout.linhaDaPontuacao().estaDentroDe(layout.progresso()));
         assertTrue(layout.linhaDaDemonstracao().estaDentroDe(layout.progresso()));
@@ -182,15 +208,24 @@ class CampusLayoutTest {
             MedidasDoCampus.MedidasDaEtapa etapa = medidas.etapas().get(i);
             float alturaDoTexto = etapa.alturaDoTitulo()
                     + Math.max(etapa.alturaDoCenario(), etapa.alturaDoFundador());
-            assertTrue(layout.etapa(i).altura() >= alturaDoTexto,
+            assertTrue(layout.etapa(i).altura() > alturaDoTexto,
                     "texto ampliado não cabe na etapa " + (i + 1));
+            assertTrue(layout.tituloDaEtapa(i).y() > layout.cenarioDaEtapa(i).topo(),
+                    "não há respiro entre as linhas da etapa " + (i + 1));
             if (i + 1 < 3) {
                 assertFalse(layout.etapa(i).sobrepoe(layout.etapa(i + 1)));
             }
         }
         assertFalse(layout.etapa(2).sobrepoe(layout.cartaoDaProximaMissao()));
         assertTrue(layout.cartaoDaProximaMissao().estaDentroDe(layout.progresso()));
-        assertTrue(layout.cartaoDaProximaMissao().altura() >= medidas.alturaDoCartao());
+        assertEquals(medidas.alturaDoCartao(), layout.cartaoDaProximaMissao().altura(), 0.001f);
+    }
+
+    private static MedidasDoCampus medidasVerticais(float fator, float alturaDoCartao) {
+        MedidasDoCampus.MedidasDaEtapa etapa = new MedidasDoCampus.MedidasDaEtapa(
+                21f * fator, 17f * fator, 0f);
+        return new MedidasDoCampus(29f * fator, 21f * fator, 17f * fator,
+                true, true, List.of(etapa, etapa, etapa), alturaDoCartao);
     }
 
     private static MedidasDoCampus medidasHorizontais(boolean pontuacao, boolean demonstracao,

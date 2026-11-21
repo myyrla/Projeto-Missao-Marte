@@ -64,7 +64,7 @@ public final class CampusLayout {
 
     public static CampusLayout calcular(float largura, float altura, boolean toque) {
         if (toque && altura > largura) {
-            return vertical(largura, altura, MedidasDoCampus.padrao(), -1f);
+            return vertical(largura, altura, MedidasDoCampus.padrao());
         }
         return horizontal(largura, altura, MedidasDoCampus.padrao());
     }
@@ -73,8 +73,7 @@ public final class CampusLayout {
             float alturaDoCartaoConcluido) {
         if (toque && altura > largura) {
             return vertical(largura, altura,
-                    MedidasDoCampus.padraoComCartao(alturaDoCartaoConcluido, false, false),
-                    alturaDoCartaoConcluido);
+                    MedidasDoCampus.padraoComCartao(alturaDoCartaoConcluido, false, false));
         }
         return horizontal(largura, altura,
                 MedidasDoCampus.padraoComCartao(alturaDoCartaoConcluido, false, false));
@@ -83,7 +82,7 @@ public final class CampusLayout {
     public static CampusLayout calcular(float largura, float altura, boolean toque,
             MedidasDoCampus medidas) {
         if (toque && altura > largura) {
-            return vertical(largura, altura, medidas, medidas.alturaDoCartao());
+            return vertical(largura, altura, medidas);
         }
         return horizontal(largura, altura, medidas);
     }
@@ -159,12 +158,11 @@ public final class CampusLayout {
         return new RetanguloDeTela(x, y, 0f, 0f);
     }
 
-    private static CampusLayout vertical(float largura, float altura, MedidasDoCampus medidas,
-            float alturaDoCartaoConcluido) {
+    private static CampusLayout vertical(float largura, float altura, MedidasDoCampus medidas) {
         float margem = 16f;
         float espaco = 8f;
         float alturaDoTitulo = 56f;
-        float alturaDoRodape = 112f;
+        float alturaDoRodape = 90f;
         RetanguloDeTela titulo = new RetanguloDeTela(0f, altura - alturaDoTitulo,
                 largura, alturaDoTitulo);
         float alturaDoMapa = largura / PROPORCAO_DO_MAPA;
@@ -178,26 +176,29 @@ public final class CampusLayout {
         float espacoDasEtapas = 6f;
         float margemDoPainel = 12f;
         float larguraDoConteudo = progresso.largura() - 2f * margemDoPainel;
-        int colunasDoCabecalho = 1 + (medidas.exibePontuacao() ? 1 : 0)
-                + (medidas.exibeDemonstracao() ? 1 : 0);
-        float larguraDaColuna = larguraDoConteudo / colunasDoCabecalho;
-        float alturaDoCabecalho = Math.max(medidas.alturaDosFundadores(),
-                Math.max(medidas.alturaDaPontuacao(), medidas.alturaDaDemonstracao()));
-        float yDoCabecalho = progresso.topo() - 8f - alturaDoCabecalho;
         float xDoCabecalho = progresso.x() + margemDoPainel;
-        RetanguloDeTela fundadores = new RetanguloDeTela(xDoCabecalho, yDoCabecalho,
-                larguraDaColuna, alturaDoCabecalho);
-        xDoCabecalho += larguraDaColuna;
+        float cursorDoCabecalho = progresso.topo() - 4f;
+        float espacoDoCabecalho = menorAlturaVisivel(medidas) * 0.2f;
+        RetanguloDeTela fundadores = linhaAbaixoDoCursor(xDoCabecalho, larguraDoConteudo,
+                cursorDoCabecalho, medidas.alturaDosFundadores());
+        cursorDoCabecalho = fundadores.y();
         RetanguloDeTela pontuacao = medidas.exibePontuacao()
-                ? new RetanguloDeTela(xDoCabecalho, yDoCabecalho, larguraDaColuna, alturaDoCabecalho)
-                : linhaVazia(xDoCabecalho, yDoCabecalho);
+                ? linhaAbaixoDoCursor(xDoCabecalho, larguraDoConteudo,
+                        cursorDoCabecalho - espacoDoCabecalho,
+                        medidas.alturaDaPontuacao())
+                : linhaVazia(xDoCabecalho, cursorDoCabecalho);
         if (medidas.exibePontuacao()) {
-            xDoCabecalho += larguraDaColuna;
+            cursorDoCabecalho = pontuacao.y();
         }
         RetanguloDeTela demonstracao = medidas.exibeDemonstracao()
-                ? new RetanguloDeTela(xDoCabecalho, yDoCabecalho, larguraDaColuna, alturaDoCabecalho)
-                : linhaVazia(xDoCabecalho, yDoCabecalho);
-        float topoDasEtapas = yDoCabecalho - 8f;
+                ? linhaAbaixoDoCursor(xDoCabecalho, larguraDoConteudo,
+                        cursorDoCabecalho - espacoDoCabecalho,
+                        medidas.alturaDaDemonstracao())
+                : linhaVazia(xDoCabecalho, cursorDoCabecalho);
+        if (medidas.exibeDemonstracao()) {
+            cursorDoCabecalho = demonstracao.y();
+        }
+        float topoDasEtapas = cursorDoCabecalho - 4f;
         RetanguloDeTela[] etapas = new RetanguloDeTela[3];
         RetanguloDeTela[] titulos = new RetanguloDeTela[3];
         RetanguloDeTela[] cenarios = new RetanguloDeTela[3];
@@ -205,8 +206,11 @@ public final class CampusLayout {
         float cursor = topoDasEtapas;
         for (int i = 0; i < etapas.length; i++) {
             MedidasDoCampus.MedidasDaEtapa medida = medidas.etapas().get(i);
-            float alturaDaEtapa = Math.max(32f, medida.alturaDoTitulo()
-                    + Math.max(medida.alturaDoCenario(), medida.alturaDoFundador()));
+            float alturaDoSubtitulo = Math.max(medida.alturaDoCenario(), medida.alturaDoFundador());
+            float respiro = alturaDoSubtitulo > 0f
+                    ? Math.min(medida.alturaDoTitulo(), alturaDoSubtitulo) * 0.18f : 0f;
+            float alturaDaEtapa = Math.max(32f,
+                    medida.alturaDoTitulo() + respiro + alturaDoSubtitulo);
             etapas[i] = new RetanguloDeTela(progresso.x() + 12f,
                     cursor - alturaDaEtapa,
                     progresso.largura() - 24f, alturaDaEtapa);
@@ -215,14 +219,12 @@ public final class CampusLayout {
             titulos[i] = new RetanguloDeTela(xDoTexto,
                     etapas[i].topo() - medida.alturaDoTitulo(), larguraDoTexto,
                     medida.alturaDoTitulo());
-            float alturaDoSubtitulo = Math.max(medida.alturaDoCenario(), medida.alturaDoFundador());
             cenarios[i] = new RetanguloDeTela(xDoTexto, etapas[i].y(), larguraDoTexto, alturaDoSubtitulo);
             fundadoresDasEtapas[i] = linhaVazia(xDoTexto, etapas[i].y());
             cursor = etapas[i].y() - espacoDasEtapas;
         }
         float topoDoCartao = etapas[2].y() - 10f;
-        float alturaDoCartao = alturaDoCartaoConcluido >= 0f
-                ? alturaDoCartaoConcluido : Math.max(0f, topoDoCartao - progresso.y() - 12f);
+        float alturaDoCartao = medidas.alturaDoCartao();
         float yDoCartao = topoDoCartao - alturaDoCartao;
         RetanguloDeTela cartao = new RetanguloDeTela(progresso.x() + 12f, yDoCartao,
                 progresso.largura() - 24f, alturaDoCartao);
@@ -251,6 +253,17 @@ public final class CampusLayout {
                 fundadores, pontuacao, demonstracao, etapas, titulos, cenarios,
                 fundadoresDasEtapas, cartao,
                 principal, voltar, confirmacao, confirmar, cancelar);
+    }
+
+    private static float menorAlturaVisivel(MedidasDoCampus medidas) {
+        float menor = medidas.alturaDosFundadores();
+        if (medidas.exibePontuacao()) {
+            menor = Math.min(menor, medidas.alturaDaPontuacao());
+        }
+        if (medidas.exibeDemonstracao()) {
+            menor = Math.min(menor, medidas.alturaDaDemonstracao());
+        }
+        return menor;
     }
 
     public float largura() { return largura; }

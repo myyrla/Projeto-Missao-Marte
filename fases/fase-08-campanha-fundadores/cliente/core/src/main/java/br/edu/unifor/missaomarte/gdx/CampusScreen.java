@@ -11,7 +11,9 @@ import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoPadrao;
 import br.edu.unifor.missaomarte.gdx.campanha.CampusLayout;
 import br.edu.unifor.missaomarte.gdx.campanha.ConteudoDoCartaoDaCampanha;
 import br.edu.unifor.missaomarte.gdx.campanha.ControleDoCampus;
+import br.edu.unifor.missaomarte.gdx.campanha.MedidasDoCartao;
 import br.edu.unifor.missaomarte.gdx.campanha.MedidasDoCampus;
+import br.edu.unifor.missaomarte.gdx.campanha.MetricasTipograficasDoCampus;
 import br.edu.unifor.missaomarte.gdx.campanha.ResumoVisualDaCampanha;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
@@ -83,11 +85,11 @@ public class CampusScreen extends TelaBase {
         ResumoVisualDaCampanha resumo = ResumoVisualDaCampanha.de(campanha);
         ConteudoDoCartaoDaCampanha conteudo = ConteudoDoCartaoDaCampanha.de(
                 resumo, jogo.demonstracaoDaCampanha());
-        float alturaDoCartao = medirAlturaDoCartao(base.cartaoDaProximaMissao().largura(), conteudo);
+        float alturaDoCartao = medirCartao(
+                base.cartaoDaProximaMissao().largura(), conteudo).alturaTotal();
         if (vertical) {
             return CampusLayout.calcular(largura, altura, true,
-                    medirConteudoVertical(base, resumo,
-                            resumo.conclusao().isEmpty() ? -1f : alturaDoCartao));
+                    medirConteudoVertical(base, resumo, alturaDoCartao));
         }
         return CampusLayout.calcular(largura, altura, false,
                 medirConteudoHorizontal(base, resumo, alturaDoCartao));
@@ -121,8 +123,7 @@ public class CampusScreen extends TelaBase {
         float largura = base.progresso().largura() - 24f;
         boolean exibePontuacao = resumo.exibePontuacaoNoCabecalho();
         boolean exibeDemonstracao = jogo.demonstracaoDaCampanha();
-        int colunas = 1 + (exibePontuacao ? 1 : 0) + (exibeDemonstracao ? 1 : 0);
-        float larguraDoCabecalho = largura / colunas;
+        float larguraDoCabecalho = largura;
         float larguraDaEtapa = largura - 28f;
         List<MedidasDoCampus.MedidasDaEtapa> etapas = new ArrayList<>();
         for (ResumoVisualDaCampanha.Etapa etapa : resumo.etapas()) {
@@ -142,21 +143,28 @@ public class CampusScreen extends TelaBase {
                 exibePontuacao, exibeDemonstracao, etapas, alturaDoCartao);
     }
 
-    private float medirAlturaDoCartao(float largura, ConteudoDoCartaoDaCampanha conteudo) {
+    private MedidasDoCartao medirCartao(float largura, ConteudoDoCartaoDaCampanha conteudo) {
         float larguraDoTexto = Math.max(1f, largura - 24f);
-        float altura = 22f + medirAltura(FonteDoJogo.ROTULO, conteudo.titulo(), larguraDoTexto) + 4f;
-        for (int i = 0; i < conteudo.linhas().size(); i++) {
-            altura += medirAltura(FonteDoJogo.TEXTO, conteudo.linhas().get(i), larguraDoTexto);
-            if (i + 1 < conteudo.linhas().size()) {
-                altura += 6f;
-            }
+        BitmapFont fonteDoTitulo = jogo.fonte(FonteDoJogo.ROTULO);
+        medidor.setText(fonteDoTitulo, conteudo.titulo(), TEXTO,
+                larguraDoTexto, Align.left, true);
+        float alturaDoLayoutDoTitulo = medidor.height;
+        BitmapFont fonteDoTexto = jogo.fonte(FonteDoJogo.TEXTO);
+        List<Float> alturasDosLayouts = new ArrayList<>();
+        for (String linha : conteudo.linhas()) {
+            medidor.setText(fonteDoTexto, linha, TEXTO, larguraDoTexto, Align.left, true);
+            alturasDosLayouts.add(medidor.height);
         }
-        return altura;
+        return MetricasTipograficasDoCampus.medidasDoCartao(
+                alturaDoLayoutDoTitulo, fonteDoTitulo.getCapHeight(), fonteDoTitulo.getLineHeight(),
+                alturasDosLayouts, fonteDoTexto.getCapHeight(), fonteDoTexto.getLineHeight());
     }
 
     private float medirAltura(FonteDoJogo fonte, String texto, float largura) {
-        medidor.setText(jogo.fonte(fonte), texto, TEXTO, Math.max(1f, largura), Align.left, true);
-        return medidor.height;
+        BitmapFont bitmapFont = jogo.fonte(fonte);
+        medidor.setText(bitmapFont, texto, TEXTO, Math.max(1f, largura), Align.left, true);
+        return MetricasTipograficasDoCampus.alturaEmLinhas(
+                medidor.height, bitmapFont.getCapHeight(), bitmapFont.getLineHeight());
     }
 
     @Override
@@ -406,11 +414,11 @@ public class CampusScreen extends TelaBase {
                 layout.linhaDosFundadores(), FonteDoJogo.SUBTITULO, TEXTO, Align.left);
         if (resumo.exibePontuacaoNoCabecalho()) {
             desenharTextoNaArea("Pontuação: " + resumo.pontuacaoTotal(),
-                    layout.linhaDaPontuacao(), FonteDoJogo.TEXTO, TEXTO, Align.center);
+                    layout.linhaDaPontuacao(), FonteDoJogo.TEXTO, TEXTO, Align.left);
         }
         if (jogo.demonstracaoDaCampanha()) {
             desenharTextoNaArea("Modo demonstração", layout.linhaDaDemonstracao(),
-                    FonteDoJogo.PEQUENO, LILAS, Align.right);
+                    FonteDoJogo.PEQUENO, LILAS, Align.left);
         }
 
         int indice = 0;
@@ -431,28 +439,24 @@ public class CampusScreen extends TelaBase {
             RetanguloDeTela cartao) {
         ConteudoDoCartaoDaCampanha conteudo = ConteudoDoCartaoDaCampanha.de(
                 resumo, jogo.demonstracaoDaCampanha());
+        MedidasDoCartao medidas = medirCartao(cartao.largura(), conteudo);
         float x = cartao.x() + 12f;
-        float y = cartao.topo() - 11f;
         float largura = cartao.largura() - 24f;
-        y -= desenharLinhaQuebrada(conteudo.titulo(), FonteDoJogo.ROTULO,
-                resumo.conclusao().isPresent() ? LILAS : SECUNDARIO, x, y, largura) + 4f;
+        desenharLinhaQuebrada(conteudo.titulo(), FonteDoJogo.ROTULO,
+                resumo.conclusao().isPresent() ? LILAS : SECUNDARIO,
+                x, medidas.topoDoTitulo(cartao.topo()), largura);
         for (int i = 0; i < conteudo.linhas().size(); i++) {
-            y -= desenharLinhaQuebrada(conteudo.linhas().get(i), FonteDoJogo.TEXTO,
-                    TEXTO, x, y, largura);
-            if (i + 1 < conteudo.linhas().size()) {
-                y -= 6f;
-            }
+            desenharLinhaQuebrada(conteudo.linhas().get(i), FonteDoJogo.TEXTO,
+                    TEXTO, x, medidas.topoDoConteudo(cartao.topo(), i), largura);
         }
     }
 
-    private float desenharLinhaQuebrada(String texto, FonteDoJogo fonte, Color cor,
+    private void desenharLinhaQuebrada(String texto, FonteDoJogo fonte, Color cor,
             float x, float y, float largura) {
         BitmapFont bitmapFont = jogo.fonte(fonte);
         bitmapFont.setColor(cor);
         medidor.setText(bitmapFont, texto, cor, Math.max(1f, largura), Align.left, true);
-        float altura = medidor.height;
         bitmapFont.draw(jogo.batch(), medidor, x, y);
-        return altura;
     }
 
     private static int etapaAtual(ResumoVisualDaCampanha resumo) {
