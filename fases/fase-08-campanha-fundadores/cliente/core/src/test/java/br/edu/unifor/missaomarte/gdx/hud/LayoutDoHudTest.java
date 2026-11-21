@@ -98,6 +98,45 @@ class LayoutDoHudTest {
     }
 
     @Test
+    void toqueVerticalReservaAlturaRealParaDuasLinhasChipsEAlvosEm540x1200() {
+        MedidasDoHud medidas = medidasDoToqueComFatorUmPontoSeis(72f);
+        LayoutDoHud layout = calcular(540f, 1200f,
+                new RetanguloDeTela(0f, 320f, 540f, 540f), true, medidas);
+
+        assertFalse(layout.usaReserva());
+        assertTrue(layout.jogador().altura() >= 2f * medidas.alturaDoRotulo());
+        assertTrue(layout.fichaDoObjetivo(0).altura()
+                >= medidas.alturaDaLinhaDoTexto() + medidas.alturaDaLinhaPequena());
+        assertTrue(layout.controles().altura() >= 3f * medidas.alvoMinimo());
+        float folgaDosControles = Math.max(8f * layout.escala(), medidas.alvoMinimo() / 6f);
+        assertTrue(layout.controles().altura() >= 3f * Math.max(76f, medidas.alvoMinimo())
+                + 2f * folgaDosControles + 32f * layout.escala());
+        assertFalse(layout.linhaPrincipalDoJogador().sobrepoe(layout.linhaSecundariaDoJogador()));
+        assertFalse(layout.inicioDaLinhaPrincipalDoJogador()
+                .sobrepoe(layout.fimDaLinhaPrincipalDoJogador()));
+        assertFalse(layout.inicioDaLinhaSecundariaDoJogador()
+                .sobrepoe(layout.fimDaLinhaSecundariaDoJogador()));
+        assertTrue(layout.linhaPrincipalDoJogador().estaDentroDe(layout.jogador()));
+        assertTrue(layout.linhaSecundariaDoJogador().estaDentroDe(layout.jogador()));
+        assertFalse(layout.jogador().sobrepoe(layout.objetivo()));
+        assertFalse(layout.objetivo().sobrepoe(layout.areaUtilDoMapa()));
+        assertFalse(layout.areaUtilDoMapa().sobrepoe(layout.controles()));
+    }
+
+    @Test
+    void toqueVerticalReservaAlturaRealSemSobreporEm540x895() {
+        MedidasDoHud medidas = medidasDoToqueComFatorUmPontoSeis(72f);
+        LayoutDoHud layout = calcular(540f, 895f,
+                new RetanguloDeTela(0f, 230f, 540f, 540f), true, medidas);
+
+        assertFalse(layout.usaReserva());
+        assertTrue(layout.fichaDoObjetivo(1).altura()
+                >= medidas.alturaDaLinhaDoTexto() + medidas.alturaDaLinhaPequena());
+        assertFalse(layout.piloto().sobrepoe(layout.areaUtilDoMapa()));
+        assertFalse(layout.areaUtilDoMapa().sobrepoe(layout.controles()));
+    }
+
+    @Test
     void usaColunasLivresSemCobrirMapaEm1280x720E1920x1080() {
         LayoutDoHud hd = calcular(1280f, 720f, new RetanguloDeTela(280f, 0f, 720f, 720f), false);
         LayoutDoHud fullHd = calcular(1920f, 1080f, new RetanguloDeTela(564f, 144f, 792f, 792f), false);
@@ -213,6 +252,11 @@ class LayoutDoHudTest {
     private static LayoutDoHud calcular(float largura, float altura, RetanguloDeTela mapa, boolean toque,
             MedidasDoHud medidas) {
         return LayoutDoHud.calcular(largura, altura, CELULAS, toque, MargensSeguras.NENHUMA, mapa, medidas);
+    }
+
+    private static MedidasDoHud medidasDoToqueComFatorUmPontoSeis(float alvoMinimo) {
+        return new MedidasDoHud(21.6f, 22.7f, 0f, 0, 0f, false, true,
+                22.7f, 17.8f, alvoMinimo);
     }
 
     private static void assertSemSobreposicaoComMapa(LayoutDoHud layout) {

@@ -15,4 +15,12 @@ public final class EscalaDaCelula {
         float desejada = alturaDaJanela / linhas;
         return Math.max(MINIMA, Math.min(MAXIMA, desejada));
     }
+
+    /** No toque em retrato, o mapa usa toda a largura livre e a camera resolve somente a falta de altura. */
+    public static float calcularNoToqueVertical(float larguraUtil, int colunas) {
+        if (larguraUtil <= 0f || colunas <= 0) {
+            throw new IllegalArgumentException("A largura util e as colunas precisam ser positivas.");
+        }
+        return larguraUtil / colunas;
+    }
 }

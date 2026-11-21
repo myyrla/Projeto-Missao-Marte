@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import br.edu.unifor.missaomarte.gdx.layout.EscalaDeTela;
 import br.edu.unifor.missaomarte.gdx.plataforma.Plataforma;
+import java.util.Random;
 import org.junit.jupiter.api.Test;
 
 class MissaoMarteGameEscalaTest {
@@ -23,5 +24,20 @@ class MissaoMarteGameEscalaTest {
     void fatorDeTextoDoAndroidRespeitaOLimite() {
         assertEquals(EscalaDeTela.FATOR_MAXIMO_DE_TEXTO,
                 MissaoMarteGame.fatorDeTexto(Plataforma.android(), 4f, 0.5f), 0f);
+    }
+
+    @Test
+    void fatorForcadoNoDesktopPrevaleceSobreAPoliticaDeDensidade() {
+        assertEquals(1.6f, MissaoMarteGame.fatorDeTexto(
+                Plataforma.desktop(true, 1.6f), 4f, 0.5f), 0f);
+    }
+
+    @Test
+    void instanciaDoJogoTambemUsaOFatorForcadoNoDesktop() {
+        MissaoMarteGame jogo = new MissaoMarteGame(
+                null, null, null, null, Plataforma.desktop(true, 1.6f),
+                new Random(1), null);
+
+        assertEquals(1.6f, jogo.fatorDeTexto(), 0f);
     }
 }

@@ -13,6 +13,7 @@ class Lwjgl3LauncherTest {
         System.clearProperty("missaomarte.janela");
         System.clearProperty("missaomarte.campanha.etapa");
         System.clearProperty("missaomarte.campanha.concluida");
+        System.clearProperty("missaomarte.fatorTexto");
     }
 
     @Test
@@ -48,9 +49,36 @@ class Lwjgl3LauncherTest {
         assertEquals("concluida", metodo.invoke(null));
     }
 
+    @Test
+    void fatorDeTextoDoDesktopPermaneceUmSemAPropriedade() throws Exception {
+        System.clearProperty("missaomarte.fatorTexto");
+
+        assertEquals(1f, fatorDeTexto(), 0f);
+    }
+
+    @Test
+    void fatorDeTextoDoDesktopPodeSerForcadoParaUmPontoSeis() throws Exception {
+        System.setProperty("missaomarte.fatorTexto", "1.6");
+
+        assertEquals(1.6f, fatorDeTexto(), 0f);
+    }
+
+    @Test
+    void fatorDeTextoInvalidoMantemOPadraoDoDesktop() throws Exception {
+        System.setProperty("missaomarte.fatorTexto", "invalido");
+
+        assertEquals(1f, fatorDeTexto(), 0f);
+    }
+
     private static int[] tamanhoDaJanela(boolean toque) throws Exception {
         Method metodo = Lwjgl3Launcher.class.getDeclaredMethod("tamanhoDaJanela", boolean.class);
         metodo.setAccessible(true);
         return (int[]) metodo.invoke(null, toque);
+    }
+
+    private static float fatorDeTexto() throws Exception {
+        Method metodo = Lwjgl3Launcher.class.getDeclaredMethod("fatorDeTextoDoDesktop");
+        metodo.setAccessible(true);
+        return (float) metodo.invoke(null);
     }
 }

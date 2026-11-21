@@ -56,7 +56,7 @@ public class Lwjgl3Launcher {
                 new RankingService(new FileRankingRepository(Paths.get("ranking.json"))),
                 new ServidorHttp(endereco),
                 endereco,
-                Plataforma.desktop(toque),
+                Plataforma.desktop(toque, fatorDeTextoDoDesktop()),
                 random,
                 inicioDaCampanha);
 
@@ -83,6 +83,16 @@ public class Lwjgl3Launcher {
 
     private static String tituloDaJanela() {
         return "Missão Marte";
+    }
+
+    // -Dmissaomarte.fatorTexto=1.6 reproduz no desktop a tipografia ampliada de uma tela Android densa.
+    private static float fatorDeTextoDoDesktop() {
+        try {
+            float fator = Float.parseFloat(System.getProperty("missaomarte.fatorTexto", "1.0"));
+            return Float.isFinite(fator) && fator > 0f ? fator : 1f;
+        } catch (NumberFormatException e) {
+            return 1f;
+        }
     }
 
     private static String selecaoDaCampanha() {

@@ -16,15 +16,18 @@ public final class Plataforma {
     private final boolean toque;
     private final boolean textoNativo;
     private final boolean usaDensidadeDaTela;
+    private final float fatorDeTextoForcado;
 
     public Plataforma(boolean toque, boolean textoNativo) {
-        this(toque, textoNativo, false);
+        this(toque, textoNativo, false, 0f);
     }
 
-    private Plataforma(boolean toque, boolean textoNativo, boolean usaDensidadeDaTela) {
+    private Plataforma(boolean toque, boolean textoNativo, boolean usaDensidadeDaTela,
+            float fatorDeTextoForcado) {
         this.toque = toque;
         this.textoNativo = textoNativo;
         this.usaDensidadeDaTela = usaDensidadeDaTela;
+        this.fatorDeTextoForcado = fatorDeTextoForcado;
     }
 
     /** Desktop com teclado e mouse (comportamento das fases anteriores). */
@@ -34,12 +37,20 @@ public final class Plataforma {
 
     /** Desktop opcionalmente simulando controles por toque, sem aplicar densidade fisica. */
     public static Plataforma desktop(boolean toque) {
-        return new Plataforma(toque, false, false);
+        return new Plataforma(toque, false, false, 0f);
+    }
+
+    /** Desktop com uma escala tipografica explicita, usada para reproduzir telas densas durante o desenvolvimento. */
+    public static Plataforma desktop(boolean toque, float fatorDeTexto) {
+        if (!Float.isFinite(fatorDeTexto) || fatorDeTexto <= 0f) {
+            throw new IllegalArgumentException("O fator de texto precisa ser positivo.");
+        }
+        return new Plataforma(toque, false, false, fatorDeTexto);
     }
 
     /** Android com toque, teclado nativo e escala pela densidade fisica da tela. */
     public static Plataforma android() {
-        return new Plataforma(true, true, true);
+        return new Plataforma(true, true, true, 0f);
     }
 
     public boolean usaToque() {
@@ -52,6 +63,10 @@ public final class Plataforma {
 
     public boolean usaDensidadeDaTela() {
         return usaDensidadeDaTela;
+    }
+
+    public float fatorDeTextoForcado() {
+        return fatorDeTextoForcado;
     }
 
     /** Abre a caixa de texto do sistema; se o jogador cancelar, nada e devolvido. */

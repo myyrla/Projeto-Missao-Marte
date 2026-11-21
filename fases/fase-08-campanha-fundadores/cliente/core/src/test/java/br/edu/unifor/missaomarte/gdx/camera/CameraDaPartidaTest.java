@@ -80,6 +80,25 @@ class CameraDaPartidaTest {
         assertRetangulo(depois, antes.x(), antes.y(), antes.largura(), antes.altura());
     }
 
+    @Test
+    void mapaDoToqueVerticalOcupaALarguraInteiraECentralizaNaAreaUtilQuandoCabe() {
+        float largura = 540f;
+        float altura = 1200f;
+        float ladoDoMapa = EscalaDaCelula.calcularNoToqueVertical(largura, 11) * 11f;
+        RetanguloDeTela areaUtil = new RetanguloDeTela(0f, 200f, largura, 650f);
+        CameraDaPartida camera = new CameraDaPartida();
+
+        CameraDaPartida.Centro centro = camera.atualizar(
+                ladoDoMapa, ladoDoMapa, largura, altura, areaUtil, 25f, 25f);
+        RetanguloDeTela projetado = MapaNaInterface.projetar(
+                new RetanguloDeTela(0f, 0f, ladoDoMapa, ladoDoMapa),
+                areaVisivel(centro, largura, altura), largura, altura);
+
+        assertEquals(0f, projetado.x(), 0.001f);
+        assertEquals(largura, projetado.largura(), 0.001f);
+        assertEquals(areaUtil.centroY(), projetado.centroY(), 0.001f);
+    }
+
     private static RetanguloDeTela celulaNaTela(float x, float y, CameraDaPartida.Centro centro) {
         return new RetanguloDeTela(x - centro.x() + 270f, y - centro.y() + 600f, 72f, 72f);
     }

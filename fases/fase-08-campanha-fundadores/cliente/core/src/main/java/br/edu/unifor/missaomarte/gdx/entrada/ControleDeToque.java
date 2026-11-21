@@ -24,7 +24,6 @@ public final class ControleDeToque {
     public static final String ABORTAR = "abortar";
 
     private static final float LADO_PADRAO = 76f;
-    private static final float LADO_MAXIMO = 92f;
     private static final float FOLGA = 4f;
     private static final float MARGEM = 12f;
     private static final float ESPACO_ENTRE_BOTOES = 8f;
@@ -46,7 +45,7 @@ public final class ControleDeToque {
     }
 
     private static float ladoDasSetas(float alvoMinimo, float limite) {
-        return Math.max(40f, Math.min(Math.max(LADO_PADRAO, Math.min(alvoMinimo, LADO_MAXIMO)), limite));
+        return Math.max(40f, Math.min(Math.max(LADO_PADRAO, alvoMinimo), limite));
     }
 
     private static void montarEmPaisagem(List<BotaoVirtual> lista, RetanguloDeTela area, boolean dinamico, float alvoMinimo) {
@@ -75,23 +74,36 @@ public final class ControleDeToque {
     }
 
     private static void montarEmRetrato(List<BotaoVirtual> lista, RetanguloDeTela area, boolean dinamico, float alvoMinimo) {
-        float lado = ladoDasSetas(alvoMinimo, (area.altura() - 32f - 2 * FOLGA) / 3f);
+        float folga = Math.max(FOLGA, alvoMinimo / 6f);
+        float lado = ladoDasSetas(alvoMinimo, (area.altura() - 32f - 2 * folga) / 3f);
         float xSetas = area.x() + MARGEM;
         float yBaixo = area.y() + 16f;
-        float yMeio = yBaixo + lado + FOLGA;
-        float yCima = yMeio + lado + FOLGA;
-        lista.add(new BotaoVirtual(CIMA, "^", xSetas + lado + FOLGA, yCima, lado, lado));
+        float yMeio = yBaixo + lado + folga;
+        float yCima = yMeio + lado + folga;
+        lista.add(new BotaoVirtual(CIMA, "^", xSetas + lado + folga, yCima, lado, lado));
         lista.add(new BotaoVirtual(ESQUERDA, "<", xSetas, yMeio, lado, lado));
-        lista.add(new BotaoVirtual(DIREITA, ">", xSetas + 2 * (lado + FOLGA), yMeio, lado, lado));
-        lista.add(new BotaoVirtual(BAIXO, "v", xSetas + lado + FOLGA, yBaixo, lado, lado));
+        lista.add(new BotaoVirtual(DIREITA, ">", xSetas + 2 * (lado + folga), yMeio, lado, lado));
+        lista.add(new BotaoVirtual(BAIXO, "v", xSetas + lado + folga, yBaixo, lado, lado));
 
-        float fimDasSetas = xSetas + 3 * lado + 2 * FOLGA;
-        float larguraDaColuna = Math.max(120f, Math.min(300f, area.direita() - MARGEM - fimDasSetas - 24f));
+        float fimDasSetas = xSetas + 3 * lado + 2 * folga;
+        float larguraMinimaDaColuna = dinamico
+                ? 2f * alvoMinimo + ESPACO_ENTRE_BOTOES : alvoMinimo;
+        float larguraDisponivel = area.direita() - MARGEM - fimDasSetas - 24f;
+        float larguraDaColuna = Math.max(120f,
+                Math.min(Math.max(300f, larguraMinimaDaColuna), larguraDisponivel));
         float xColuna = area.direita() - MARGEM - larguraDaColuna;
         lista.add(dinamico
                 ? new BotaoVirtual(ATIRAR, "Atirar", xColuna, yCima, larguraDaColuna, lado)
                 : new BotaoVirtual(EMBARCAR, "Embarcar", xColuna, yCima, larguraDaColuna, lado));
-        adicionarPequenos(lista, xColuna, yMeio, larguraDaColuna, lado, dinamico);
+        if (dinamico) {
+            float larguraPequena = (larguraDaColuna - ESPACO_ENTRE_BOTOES) / 2f;
+            lista.add(new BotaoVirtual(PAUSA, "Pausa", xColuna, yMeio, larguraPequena, lado));
+            lista.add(new BotaoVirtual(SOM, "Som", xColuna + larguraPequena + ESPACO_ENTRE_BOTOES,
+                    yMeio, larguraPequena, lado));
+        } else {
+            lista.add(new BotaoVirtual(SOM, "Som", xColuna, yMeio, larguraDaColuna, lado));
+        }
+        lista.add(new BotaoVirtual(ABORTAR, "Abortar", xColuna, yBaixo, larguraDaColuna, lado));
     }
 
     private static void adicionarPequenos(List<BotaoVirtual> lista, float x, float y, float largura, float altura, boolean dinamico) {

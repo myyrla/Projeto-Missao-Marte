@@ -706,8 +706,6 @@ public class GameScreen extends TelaBase {
     }
 
     private void atualizarCameraELayout(Missao missao, boolean mudo, long segundos, boolean tempestadeAtiva) {
-        mapa = geometriaAtual();
-        mundo.definirMapa(mapa);
         float larguraDaTela = Math.max(1f, Gdx.graphics.getWidth());
         float alturaDaTela = Math.max(1f, Gdx.graphics.getHeight());
         Viewport viewport = jogo.viewport();
@@ -719,12 +717,19 @@ public class GameScreen extends TelaBase {
                     viewport.getWorldWidth(), viewport.getWorldHeight());
             LayoutDoHud referencia = LayoutDoHud.calcular(viewport.getWorldWidth(), viewport.getWorldHeight(),
                     CELULAS, true, jogo.margensSeguras(), mapaProvisorio);
-            medidas = hud.medir(session, mensagens, mudo, segundos, tempestadeAtiva, referencia);
+            medidas = hud.medir(session, mensagens, mudo, segundos, tempestadeAtiva, referencia)
+                    .comAlvoMinimo(jogo.alvoMinimo());
             LayoutDoHud preliminar = LayoutDoHud.calcular(viewport.getWorldWidth(), viewport.getWorldHeight(),
                     CELULAS, true, jogo.margensSeguras(), mapaProvisorio, medidas);
             areaUtilEmPixels = paraCoordenadasDaJanela(preliminar.areaUtilDoMapa(),
                     viewport, larguraDaTela, alturaDaTela);
         }
+
+        float celula = toqueVertical
+                ? EscalaDaCelula.calcularNoToqueVertical(areaUtilEmPixels.largura(), CELULAS)
+                : EscalaDaCelula.calcular(alturaDaTela, CELULAS);
+        mapa = new MapaGeometria(MissaoMarteGame.MIN, MissaoMarteGame.MAX, celula, 0f, 0f);
+        mundo.definirMapa(mapa);
 
         PosicaoVisual nave = posicoes.de(missao.getNave());
         CameraDaPartida.Centro centro = acompanhamentoDaCamera.atualizar(
@@ -745,7 +750,8 @@ public class GameScreen extends TelaBase {
         LayoutDoHud referencia = LayoutDoHud.calcular(viewport.getWorldWidth(), viewport.getWorldHeight(),
                 CELULAS, jogo.modoToque(), jogo.margensSeguras(), mapaNaInterface);
         if (medidas == null) {
-            medidas = hud.medir(session, mensagens, mudo, segundos, tempestadeAtiva, referencia);
+            medidas = hud.medir(session, mensagens, mudo, segundos, tempestadeAtiva, referencia)
+                    .comAlvoMinimo(jogo.alvoMinimo());
         }
         layout = LayoutDoHud.calcular(viewport.getWorldWidth(), viewport.getWorldHeight(), CELULAS,
                 jogo.modoToque(), jogo.margensSeguras(), mapaNaInterface, medidas);

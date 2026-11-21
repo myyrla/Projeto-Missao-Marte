@@ -146,6 +146,9 @@ public class MissaoMarteGame extends Game {
 
     /** Multiplicador do texto para que ele fique legivel no celular; exatamente 1 no desktop. */
     float fatorDeTexto() {
+        if (plataforma.fatorDeTextoForcado() > 0f) {
+            return plataforma.fatorDeTextoForcado();
+        }
         if (!plataforma.usaDensidadeDaTela()) {
             return 1f;
         }
@@ -153,6 +156,9 @@ public class MissaoMarteGame extends Game {
     }
 
     static float fatorDeTexto(Plataforma plataforma, float densidade, float pixelsPorUnidade) {
+        if (plataforma.fatorDeTextoForcado() > 0f) {
+            return plataforma.fatorDeTextoForcado();
+        }
         return EscalaDeTela.fatorDeTexto(plataforma, densidade, pixelsPorUnidade);
     }
 

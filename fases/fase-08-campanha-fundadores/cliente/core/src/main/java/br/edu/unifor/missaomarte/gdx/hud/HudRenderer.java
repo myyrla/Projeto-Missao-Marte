@@ -80,6 +80,7 @@ public final class HudRenderer {
         fontes.comEscalaTemporaria(referencia.escala(), () -> {
             BitmapFont rotulo = fontes.obter(FonteDoJogo.ROTULO);
             BitmapFont texto = fontes.obter(FonteDoJogo.TEXTO);
+            BitmapFont pequena = fontes.obter(FonteDoJogo.PEQUENO);
             float margemHorizontal = 32f * referencia.escala();
             medidor.setText(texto, fraseDoObjetivo(), TEXTO,
                     Math.max(1f, referencia.objetivo().largura() - margemHorizontal), Align.left, true);
@@ -87,11 +88,7 @@ public final class HudRenderer {
             List<String> linhas = linhasDoStatus(session, mudo, segundos);
             float alturaDoStatus;
             if (referencia.compacto()) {
-                float larguraDoStatus = tempestadeAtiva
-                        ? referencia.piloto().largura() * 0.58f : referencia.piloto().largura();
-                medidor.setText(rotulo, String.join(" · ", linhas), SECUNDARIO,
-                        Math.max(1f, larguraDoStatus - margemHorizontal), Align.left, true);
-                alturaDoStatus = medidor.height;
+                alturaDoStatus = 0f;
             } else {
                 alturaDoStatus = linhas.size() * rotulo.getLineHeight();
             }
@@ -108,7 +105,8 @@ public final class HudRenderer {
             }
             resultado[0] = new MedidasDoHud(rotulo.getLineHeight(), alturaDoObjetivo, alturaDoStatus,
                     AtalhosDoRodape.para(session.getModo()).size(), alturaDoAviso,
-                    !mensagens.isEmpty(), tempestadeAtiva);
+                    !mensagens.isEmpty(), tempestadeAtiva,
+                    texto.getLineHeight(), pequena.getLineHeight(), 0f);
         });
         return resultado[0];
     }
@@ -159,9 +157,18 @@ public final class HudRenderer {
             float s = layout.escala();
             RetanguloDeTela jogador = layout.jogador();
             for (int i = 0; i < vidasMaximas; i++) {
-                float x = layout.compacto() ? jogador.x() + (320f + i * 40f) * s
-                        : jogador.x() + (88f + i * 40f) * s;
-                float y = layout.compacto() ? jogador.centroY() - 6f * s : jogador.y() + 61f * s;
+                float x;
+                float y;
+                if (layout.compacto()) {
+                    BitmapFont rotulo = fontes.obter(FonteDoJogo.ROTULO);
+                    medidor.setText(rotulo, "CASCO");
+                    RetanguloDeTela linha = layout.inicioDaLinhaSecundariaDoJogador();
+                    x = linha.x() + medidor.width + 8f * s + i * 40f * s;
+                    y = linha.centroY() - 6f * s;
+                } else {
+                    x = jogador.x() + (88f + i * 40f) * s;
+                    y = jogador.y() + 61f * s;
+                }
                 estilo.segmento(batch, new RetanguloDeTela(x, y, 34f * s, 12f * s),
                         i < nave.getVidas() ? CIANO : VIDA_PERDIDA);
             }
@@ -264,7 +271,7 @@ public final class HudRenderer {
             RetanguloDeTela rodapeEsquerdo, boolean tempestadeAtiva,
             PoliticaDeDestaque.Resultado destaques) {
         lote(() -> {
-            desenharPiloto(session);
+            desenharPiloto(session, segundos);
             desenharObjetivo(session, nave, destaques);
             if (layout.exibeRadar()) {
                 rotulo("RADAR", layout.radar().x() + 14f * layout.escala(),
@@ -289,11 +296,11 @@ public final class HudRenderer {
                 selo.centroY() + medidor.height / 2f);
     }
 
-    private void desenharPiloto(GameSession session) {
+    private void desenharPiloto(GameSession session, long segundos) {
         float s = layout.escala();
         RetanguloDeTela painel = layout.jogador();
         if (layout.compacto()) {
-            desenharPilotoCompacto(session, painel);
+            desenharPilotoCompacto(session, segundos);
             return;
         }
         rotulo(tituloDoPiloto(session.getPiloto(), session.getDificuldade()),
@@ -309,18 +316,30 @@ public final class HudRenderer {
                 painel.y() + 15f * s + medidor.height);
     }
 
-    private void desenharPilotoCompacto(GameSession session, RetanguloDeTela painel) {
-        float s = layout.escala();
-        float y = painel.centroY() + fontes.obter(FonteDoJogo.ROTULO).getLineHeight() / 2f;
-        rotulo(tituloDoPiloto(session.getPiloto(), session.getDificuldade()), painel.x() + 16f * s, y);
-        rotulo("CASCO", painel.x() + 264f * s, y);
-        rotulo("PONTOS", painel.x() + 474f * s, y);
-        BitmapFont titulo = fontes.obter(FonteDoJogo.TITULO);
-        titulo.setColor(TEXTO);
+    private void desenharPilotoCompacto(GameSession session, long segundos) {
+        BitmapFont rotulo = fontes.obter(FonteDoJogo.ROTULO);
+        rotulo.setColor(TEXTO);
+        RetanguloDeTela principal = layout.inicioDaLinhaPrincipalDoJogador();
+        RetanguloDeTela pontosNaLinha = layout.fimDaLinhaPrincipalDoJogador();
+        RetanguloDeTela secundaria = layout.inicioDaLinhaSecundariaDoJogador();
+        RetanguloDeTela statusNaLinha = layout.fimDaLinhaSecundariaDoJogador();
+        float yPrincipal = principal.centroY() + rotulo.getCapHeight() / 2f;
+        float ySecundaria = secundaria.centroY() + rotulo.getCapHeight() / 2f;
+        String piloto = tituloDoPiloto(session.getPiloto(), session.getDificuldade());
+        rotulo.draw(batch, limitar(piloto, rotulo, principal.largura()), principal.x(), yPrincipal);
+
         String pontos = String.format("%,d", session.getPontuacao()).replace(',', '.');
-        medidor.setText(titulo, pontos);
-        titulo.draw(batch, medidor, painel.direita() - 16f * s - medidor.width,
-                painel.centroY() + medidor.height / 2f);
+        String textoDosPontos = "PONTOS " + pontos;
+        medidor.setText(rotulo, limitar(textoDosPontos, rotulo, pontosNaLinha.largura()));
+        rotulo.draw(batch, medidor, pontosNaLinha.direita() - medidor.width, yPrincipal);
+
+        rotulo.draw(batch, "CASCO", secundaria.x(), ySecundaria);
+        String informacoes = String.format("TEMPO %02d:%02d", segundos / 60, segundos % 60)
+                + (session.getModo() == ModoDeJogo.DINAMICO
+                        ? " · MUNIÇÃO " + session.getMunicao()
+                        : " · MOVIMENTOS " + session.getMovimentos());
+        medidor.setText(rotulo, limitar(informacoes, rotulo, statusNaLinha.largura()));
+        rotulo.draw(batch, medidor, statusNaLinha.direita() - medidor.width, ySecundaria);
     }
 
     private void desenharObjetivo(GameSession session, Nave nave, PoliticaDeDestaque.Resultado destaques) {
@@ -429,6 +448,9 @@ public final class HudRenderer {
     }
 
     private void desenharRodape(GameSession session, boolean mudo, long segundos, RetanguloDeTela esquerdo) {
+        if (layout.compacto()) {
+            return;
+        }
         float s = layout.escala();
         BitmapFont rotulo = fontes.obter(FonteDoJogo.ROTULO);
         rotulo.setColor(SECUNDARIO);

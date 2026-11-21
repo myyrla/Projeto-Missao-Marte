@@ -12,4 +12,10 @@ class EscalaDaCelulaTest {
         assertEquals(720f / 11f, EscalaDaCelula.calcular(720f, 11), 0.001f);
         assertEquals(72f, EscalaDaCelula.calcular(1200f, 11), 0.001f);
     }
+
+    @Test
+    void noToqueVerticalOcupaTodaALarguraUtilSemAplicarOLimiteHorizontal() {
+        assertEquals(540f / 11f, EscalaDaCelula.calcularNoToqueVertical(540f, 11), 0.001f);
+        assertEquals(1080f / 11f, EscalaDaCelula.calcularNoToqueVertical(1080f, 11), 0.001f);
+    }
 }

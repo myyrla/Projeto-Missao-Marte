@@ -40,6 +40,9 @@ run {
     // Tamanho da janela (simula telas de celular): gradlew :lwjgl3:run -Dmissaomarte.toque=true -Dmissaomarte.janela=540x1200
     systemProperty 'missaomarte.janela', System.getProperty('missaomarte.janela', '')
 
+    // Escala tipografica opcional para reproduzir a densidade do Android no desktop.
+    systemProperty 'missaomarte.fatorTexto', System.getProperty('missaomarte.fatorTexto', '')
+
     // Abre o campus diretamente numa etapa de demonstracao: valores validos de 1 a 3.
     systemProperty 'missaomarte.campanha.etapa', System.getProperty('missaomarte.campanha.etapa', '')
 

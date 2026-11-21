@@ -111,6 +111,28 @@ class ControleDeToqueTest {
     }
 
     @Test
+    void direcionalDensoReservaOAlvoMinimoSemSobreporOsQuadrados() {
+        float alvoMinimo = 107f;
+        RetanguloDeTela area = new RetanguloDeTela(0f, 0f, 800f, 400f);
+        ControleDeToque controles = new ControleDeToque(area, true, true, alvoMinimo);
+        List<BotaoVirtual> lista = new ArrayList<>(controles.getBotoes());
+
+        for (BotaoVirtual botao : lista) {
+            assertTrue(botao.getLargura() >= alvoMinimo && botao.getAltura() >= alvoMinimo,
+                    botao.getId());
+        }
+        for (BotaoVirtual a : lista) {
+            for (BotaoVirtual b : lista) {
+                if (a != b) {
+                    assertFalse(retangulo(a).sobrepoe(retangulo(b)), a.getId() + " x " + b.getId());
+                }
+            }
+        }
+        assertTrue(botao(controles, ControleDeToque.ABORTAR).getLargura() >= 2f * alvoMinimo,
+                "Abortar precisa da largura da coluna para o texto ampliado");
+    }
+
+    @Test
     void asSetasFormamUmaCruzEmPaisagemEEmRetrato() {
         for (float[] mundo : new float[][] {MUNDOS[2], MUNDOS[5]}) {
             ControleDeToque c = controles(mundo, true, 53f);

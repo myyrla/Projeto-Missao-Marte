@@ -167,36 +167,40 @@ public final class LayoutDoHud {
         float larguraUtil = direita - esquerda;
         float topoDaFaixaSuperior = altura - margens.cima() - margem;
         float baseDaFaixaInferior = margens.baixo() + margem;
-        float alturaDosControles = toque ? 240f * escala : 0f;
+        float espacoDosControles = Math.max(8f * escala, medidas.alvoMinimo() / 6f);
+        float alturaFisicaDosControles = medidas.alvoMinimo() > 0f
+                ? 3f * Math.max(76f, medidas.alvoMinimo())
+                        + 2f * espacoDosControles + 32f * escala
+                : 0f;
+        float alturaDosControles = toque
+                ? Math.max(240f * escala, alturaFisicaDosControles)
+                : 0f;
         if (larguraUtil < 700f * escala) {
             return null;
         }
 
         float alturaDoSelo = medidas.tempestadeVisivel() ? 34f * escala : 0f;
-        float alturaDaDireita = alturaDoSelo;
-        float alturaInferiorDoPainel = Math.max(medidas.alturaDoStatus(), alturaDaDireita);
-        float alturaPiloto = 8f * escala + 64f * escala + 8f * escala
-                + alturaInferiorDoPainel + 8f * escala;
+        float respiroEntreLinhas = 6f * escala;
+        float alturaJogador = 2f * 8f * escala + 2f * medidas.alturaDoRotulo() + respiroEntreLinhas;
+        float alturaPiloto = alturaJogador + (alturaDoSelo > 0f ? espaco + alturaDoSelo : 0f);
         RetanguloDeTela piloto = new RetanguloDeTela(esquerda,
                 topoDaFaixaSuperior - alturaPiloto, larguraUtil, alturaPiloto);
-        RetanguloDeTela jogador = new RetanguloDeTela(esquerda, piloto.topo() - 8f * escala - 64f * escala,
-                larguraUtil, 64f * escala);
-        boolean temAviso = alturaDaDireita > 0f;
-        float larguraDoStatus = temAviso ? larguraUtil * 0.58f : larguraUtil;
-        RetanguloDeTela status = new RetanguloDeTela(esquerda, piloto.y() + 8f * escala,
-                larguraDoStatus, medidas.alturaDoStatus());
-        float xDireita = status.direita() + (temAviso ? espaco : 0f);
-        float larguraDireita = temAviso ? direita - xDireita : 0f;
+        RetanguloDeTela jogador = new RetanguloDeTela(esquerda, piloto.topo() - alturaJogador,
+                larguraUtil, alturaJogador);
+        RetanguloDeTela status = vazio(largura, altura);
+        float larguraDoSelo = Math.min(larguraUtil, 280f * escala);
         RetanguloDeTela selo = alturaDoSelo > 0f
-                ? new RetanguloDeTela(xDireita, piloto.y() + 8f * escala, larguraDireita, alturaDoSelo)
+                ? new RetanguloDeTela(esquerda, piloto.y(), larguraDoSelo, alturaDoSelo)
                 : vazio(largura, altura);
+        float alturaDaFicha = Math.max(52f * escala, medidas.alturaDaLinhaDoTexto()
+                + medidas.alturaDaLinhaPequena() + 3f * escala + 16f * escala);
         float alturaObjetivo = 8f * escala + medidas.alturaDoRotulo() + 4f * escala
-                + medidas.alturaDoTextoDoObjetivo() + 8f * escala + 52f * escala + 8f * escala;
+                + medidas.alturaDoTextoDoObjetivo() + 8f * escala + alturaDaFicha + 8f * escala;
         RetanguloDeTela objetivo = new RetanguloDeTela(esquerda,
                 piloto.y() - espaco - alturaObjetivo, larguraUtil, alturaObjetivo);
         float yDosChips = objetivo.y() + 8f * escala;
         RetanguloDeTela textoDoObjetivo = new RetanguloDeTela(objetivo.x() + 16f * escala,
-                yDosChips + 52f * escala + 8f * escala,
+                yDosChips + alturaDaFicha + 8f * escala,
                 objetivo.largura() - 32f * escala, medidas.alturaDoTextoDoObjetivo());
         RetanguloDeTela controles = toque
                 ? new RetanguloDeTela(esquerda, baseDaFaixaInferior, larguraUtil, alturaDosControles)
@@ -349,6 +353,41 @@ public final class LayoutDoHud {
     public float larguraDaColuna() { return larguraDaColuna; }
     public RetanguloDeTela piloto() { return piloto; }
     public RetanguloDeTela jogador() { return jogador; }
+    public RetanguloDeTela linhaPrincipalDoJogador() {
+        if (!compacto()) return jogador;
+        float margem = 8f * escala;
+        float espaco = 6f * escala;
+        float alturaDaLinha = Math.max(0f, (jogador.altura() - 2f * margem - espaco) / 2f);
+        return new RetanguloDeTela(jogador.x() + 16f * escala,
+                jogador.topo() - margem - alturaDaLinha,
+                Math.max(0f, jogador.largura() - 32f * escala), alturaDaLinha);
+    }
+    public RetanguloDeTela linhaSecundariaDoJogador() {
+        if (!compacto()) return jogador;
+        float margem = 8f * escala;
+        float espaco = 6f * escala;
+        float alturaDaLinha = Math.max(0f, (jogador.altura() - 2f * margem - espaco) / 2f);
+        return new RetanguloDeTela(jogador.x() + 16f * escala, jogador.y() + margem,
+                Math.max(0f, jogador.largura() - 32f * escala), alturaDaLinha);
+    }
+    public RetanguloDeTela inicioDaLinhaPrincipalDoJogador() {
+        RetanguloDeTela linha = linhaPrincipalDoJogador();
+        return new RetanguloDeTela(linha.x(), linha.y(), linha.largura() * 0.68f, linha.altura());
+    }
+    public RetanguloDeTela fimDaLinhaPrincipalDoJogador() {
+        RetanguloDeTela linha = linhaPrincipalDoJogador();
+        return new RetanguloDeTela(linha.x() + linha.largura() * 0.72f, linha.y(),
+                linha.largura() * 0.28f, linha.altura());
+    }
+    public RetanguloDeTela inicioDaLinhaSecundariaDoJogador() {
+        RetanguloDeTela linha = linhaSecundariaDoJogador();
+        return new RetanguloDeTela(linha.x(), linha.y(), linha.largura() * 0.44f, linha.altura());
+    }
+    public RetanguloDeTela fimDaLinhaSecundariaDoJogador() {
+        RetanguloDeTela linha = linhaSecundariaDoJogador();
+        return new RetanguloDeTela(linha.x() + linha.largura() * 0.48f, linha.y(),
+                linha.largura() * 0.52f, linha.altura());
+    }
     public RetanguloDeTela objetivo() { return objetivo; }
     public RetanguloDeTela textoDoObjetivo() { return textoDoObjetivo; }
     public RetanguloDeTela radar() { return radar; }
@@ -411,8 +450,10 @@ public final class LayoutDoHud {
             float margem = 12f * escala;
             float espaco = 8f * escala;
             float larguraDaFicha = (objetivo.largura() - 2f * margem - 2f * espaco) / 3f;
+            float yDaFicha = objetivo.y() + 8f * escala;
+            float alturaDaFicha = textoDoObjetivo.y() - 8f * escala - yDaFicha;
             return new RetanguloDeTela(objetivo.x() + margem + indice * (larguraDaFicha + espaco),
-                    objetivo.y() + 8f * escala, larguraDaFicha, 52f * escala);
+                    yDaFicha, larguraDaFicha, alturaDaFicha);
         }
         float larguraDaFicha = 170f * escala;
         float passo = 178f * escala;
