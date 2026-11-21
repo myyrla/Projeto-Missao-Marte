@@ -18,6 +18,7 @@ import br.edu.unifor.missaomarte.gdx.ui.IconeDaInterface;
 import br.edu.unifor.missaomarte.gdx.ui.LayoutDaNovaPartida;
 import br.edu.unifor.missaomarte.gdx.ui.MedidasDaNovaPartida;
 import br.edu.unifor.missaomarte.gdx.ui.RotulosDaInterface;
+import br.edu.unifor.missaomarte.gdx.ui.TextoDoCampoDeNome;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
@@ -270,16 +271,22 @@ public class NovaPartidaScreen extends TelaBase {
             desenharCentralizado("NOVA PARTIDA", FonteDoJogo.TITULO,
                     layoutDoToque.titulo(), DESTAQUE);
             String[] rotulos = {"NOME", "DIFICULDADE", "MODO"};
+            TextoDoCampoDeNome nomeVisual = TextoDoCampoDeNome.de(logado(),
+                    logado() ? jogo.sessao().getNome() : "", nome.toString(), cursor);
             String[] valores = {
-                logado() ? jogo.sessao().getNome() : nome + cursor,
+                nomeVisual.conteudo(),
                 RotulosDaInterface.dificuldade(dificuldade),
                 modo == ModoDeJogo.DINAMICO ? "Dinâmico" : "Clássico"
             };
             for (int i = 0; i < 3; i++) {
                 desenharCentralizado(rotulos[i], FonteDoJogo.ROTULO,
                         layoutDoToque.rotulo(i), Color.LIGHT_GRAY);
-                desenharCentralizado(valores[i], FonteDoJogo.SUBTITULO,
-                        layoutDoToque.valor(i), Color.WHITE);
+                FonteDoJogo fonteDoValor = i == 0 && nomeVisual.exemplo()
+                        ? FonteDoJogo.TEXTO : FonteDoJogo.SUBTITULO;
+                Color corDoValor = i == 0 && nomeVisual.exemplo()
+                        ? Color.LIGHT_GRAY : Color.WHITE;
+                desenharCentralizado(valores[i], fonteDoValor,
+                        layoutDoToque.valor(i), corDoValor);
             }
             desenharQuebrado(resumo, FonteDoJogo.TEXTO, layoutDoToque.resumo(), Color.WHITE);
             desenharQuebrado(descricao, FonteDoJogo.TEXTO, layoutDoToque.descricao(), DESTAQUE);

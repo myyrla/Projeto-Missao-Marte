@@ -8,7 +8,9 @@ import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
 import br.edu.unifor.missaomarte.gdx.ui.LayoutDoMenu;
+import br.edu.unifor.missaomarte.gdx.ui.LayoutDoMenuToque;
 import br.edu.unifor.missaomarte.gdx.ui.ListaDeBotoes;
+import br.edu.unifor.missaomarte.gdx.ui.MedidasDoMenuToque;
 import br.edu.unifor.missaomarte.gdx.ui.RodapeDeTeclas;
 import br.edu.unifor.missaomarte.gdx.ui.RodapeDeTeclas.Atalho;
 import com.badlogic.gdx.Gdx;
@@ -39,6 +41,7 @@ public class MenuScreen extends TelaBase {
     private final RodapeDeTeclas rodape = new RodapeDeTeclas();
     private final GlyphLayout medidor = new GlyphLayout();
     private LayoutDoMenu layout;
+    private LayoutDoMenuToque layoutDoToque;
     private boolean confirmandoSaida;
 
     public MenuScreen(MissaoMarteGame jogo) {
@@ -82,8 +85,12 @@ public class MenuScreen extends TelaBase {
             return;
         }
         for (int i = 0; i < QUANTIDADE_DE_OPCOES; i++) {
-            botoes.add(botaoVirtual("menu_" + i, layout.botaoMenu(i)));
+            botoes.add(botaoVirtual("menu_" + i, botaoDoMenu(i)));
         }
+    }
+
+    private RetanguloDeTela botaoDoMenu(int indice) {
+        return layoutDoToque != null ? layoutDoToque.botao(indice) : layout.botaoMenu(indice);
     }
 
     private static BotaoVirtual botaoVirtual(String id, RetanguloDeTela area) {
@@ -215,6 +222,7 @@ public class MenuScreen extends TelaBase {
     protected void desenhar(float delta) {
         desenharEscurecimento();
         jogo.fontes().comEscalaTemporaria(layout.escala(), () -> {
+            atualizarLayoutDoToque();
             jogo.batch().begin();
             try {
                 desenharTituloEFrase();
@@ -228,6 +236,30 @@ public class MenuScreen extends TelaBase {
         if (confirmandoSaida) {
             desenharConfirmacao();
         }
+    }
+
+    private void atualizarLayoutDoToque() {
+        if (!jogo.modoToque() || !layout.emRetrato()) {
+            layoutDoToque = null;
+            return;
+        }
+        BitmapFont rotulo = jogo.fonte(FonteDoJogo.ROTULO);
+        BitmapFont display = jogo.fonte(FonteDoJogo.DISPLAY);
+        BitmapFont texto = jogo.fonte(FonteDoJogo.TEXTO);
+        BitmapFont opcao = jogo.fonte(FonteDoJogo.SUBTITULO);
+        BitmapFont pequeno = jogo.fonte(FonteDoJogo.PEQUENO);
+        float larguraDaFrase = Math.max(1f, layout.largura() - 64f);
+        medidor.setText(texto,
+                "Resgate os três fundadores e construa o primeiro campus interplanetário.",
+                FRASE, larguraDaFrase, com.badlogic.gdx.utils.Align.left, true);
+        int linhas = Math.max(1,
+                Math.round((medidor.height - texto.getCapHeight()) / texto.getLineHeight()) + 1);
+        MedidasDoMenuToque medidas = new MedidasDoMenuToque(
+                rotulo.getLineHeight(), display.getLineHeight(), linhas * texto.getLineHeight(),
+                opcao.getLineHeight(), pequeno.getLineHeight(), jogo.alvoMinimo());
+        layoutDoToque = LayoutDoMenuToque.calcular(layout.largura(), layout.altura(),
+                jogo.margensSeguras(), medidas);
+        atualizarAreasDeAcao();
     }
 
     private void desenharEscurecimento() {
@@ -244,6 +276,18 @@ public class MenuScreen extends TelaBase {
     }
 
     private void desenharTituloEFrase() {
+        if (layoutDoToque != null) {
+            desenharLinhaEsquerda("UNIFOR · EXPEDIÇÃO 2087", FonteDoJogo.ROTULO,
+                    AMBAR, layoutDoToque.expedicao());
+            desenharLinhaEsquerda("MISSÃO", FonteDoJogo.DISPLAY, TEXTO, layoutDoToque.missao());
+            desenharLinhaEsquerda("MARTE", FonteDoJogo.DISPLAY, TEXTO, layoutDoToque.marte());
+            fonte(FonteDoJogo.TEXTO);
+            cor(FRASE);
+            textoQuebrado("Resgate os três fundadores e construa o primeiro campus interplanetário.",
+                    layoutDoToque.frase().x(), layoutDoToque.frase().topo(),
+                    layoutDoToque.frase().largura());
+            return;
+        }
         float x = layout.emRetrato() ? 48f : layout.xDaReferencia(96f);
         fonte(FonteDoJogo.ROTULO);
         cor(AMBAR);
@@ -262,6 +306,14 @@ public class MenuScreen extends TelaBase {
         textoQuebrado("Resgate os três fundadores e construa o primeiro campus interplanetário.", x, yFrase, largura);
     }
 
+    private void desenharLinhaEsquerda(String texto, FonteDoJogo tipo, Color cor,
+            RetanguloDeTela area) {
+        BitmapFont fonte = jogo.fonte(tipo);
+        fonte.setColor(cor);
+        medidor.setText(fonte, texto);
+        fonte.draw(jogo.batch(), medidor, area.x(), area.centroY() + medidor.height / 2f);
+    }
+
     private void desenharNave() {
         if (layout.emRetrato()) {
             return;
@@ -278,7 +330,7 @@ public class MenuScreen extends TelaBase {
         String[] rotulos = {rotuloDaCampanha(), "Partida rápida", "Ranking", "Opções"};
         String detalhe = detalheDaCampanha();
         for (int i = 0; i < rotulos.length; i++) {
-            RetanguloDeTela area = layout.botaoMenu(i);
+            RetanguloDeTela area = botaoDoMenu(i);
             boolean foco = opcoes.emFoco(i);
             jogo.estilo().botao(jogo.batch(), area, foco);
             BitmapFont fonte = jogo.fonte(FonteDoJogo.SUBTITULO);
@@ -319,6 +371,12 @@ public class MenuScreen extends TelaBase {
         pequena.setColor(SECUNDARIO);
         String conta = jogo.sessao() == null ? "Convidado · ranking local"
                 : jogo.sessao().getNome() + " · ranking global";
+        if (layoutDoToque != null) {
+            desenharLinhaEsquerda(conta, FonteDoJogo.PEQUENO, SECUNDARIO, layoutDoToque.conta());
+            desenharLinhaEsquerda("Toque em uma opção para selecionar", FonteDoJogo.PEQUENO,
+                    SECUNDARIO, layoutDoToque.instrucao());
+            return;
+        }
         medidor.setText(pequena, conta);
         float margem = layout.emRetrato() ? 32f : 96f * layout.escala();
         pequena.draw(jogo.batch(), medidor, layout.largura() - margem - medidor.width, margem + medidor.height);

@@ -75,6 +75,13 @@ public final class PoliticaDeDestaque {
                 .findFirst();
     }
 
+    public static List<RetanguloDeTela> areasEvitadas(List<RetanguloDeTela> areasDoHud,
+            RetanguloDeTela nave) {
+        List<RetanguloDeTela> areas = new ArrayList<>(areasDoHud);
+        areas.add(nave);
+        return List.copyOf(areas);
+    }
+
     private static String textoDaEtiqueta(AlvoDoObjetivo alvo) {
         return Tipo.de(alvo.passageiro()).name() + " · " + alvo.distancia() + " "
                 + (alvo.distancia() == 1 ? "CASA" : "CASAS");

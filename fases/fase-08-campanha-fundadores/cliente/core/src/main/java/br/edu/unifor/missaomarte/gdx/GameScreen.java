@@ -26,8 +26,10 @@ import br.edu.unifor.missaomarte.gdx.camera.EscalaDaCelula;
 import br.edu.unifor.missaomarte.gdx.hud.HudRenderer;
 import br.edu.unifor.missaomarte.gdx.hud.JanelaDoRadar;
 import br.edu.unifor.missaomarte.gdx.hud.LayoutDoHud;
+import br.edu.unifor.missaomarte.gdx.hud.LayoutDoResultadoDaPartida;
 import br.edu.unifor.missaomarte.gdx.hud.MapaNaInterface;
 import br.edu.unifor.missaomarte.gdx.hud.MedidasDoHud;
+import br.edu.unifor.missaomarte.gdx.hud.MedidasDoResultadoDaPartida;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
@@ -51,9 +53,11 @@ import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -104,6 +108,7 @@ public class GameScreen extends TelaBase {
     private final GlyphLayout medidorDeEtiqueta = new GlyphLayout();
 
     private LayoutDoHud layout;
+    private LayoutDoResultadoDaPartida layoutDoResultado;
     private MapaGeometria mapa;
     private RetanguloDeTela areaVisivelDoMundo;
     private RetanguloDeTela janelaDoRadar;
@@ -405,8 +410,10 @@ public class GameScreen extends TelaBase {
             botoes.add(new BotaoVirtual("sair", "Abortar", x, yBase - 10f - altura, largura, altura));
             return;
         }
-        RetanguloDeTela tentar = layout.botaoDoFim(0);
-        RetanguloDeTela sair = layout.botaoDoFim(1);
+        RetanguloDeTela tentar = layoutDoResultado == null
+                ? layout.botaoDoFim(0) : layoutDoResultado.botao(0);
+        RetanguloDeTela sair = layoutDoResultado == null
+                ? layout.botaoDoFim(1) : layoutDoResultado.botao(1);
         botoes.add(new BotaoVirtual("tentar_novamente", "", tentar.x(), tentar.y(), tentar.largura(), tentar.altura()));
         botoes.add(new BotaoVirtual("sair_fim", "", sair.x(), sair.y(), sair.largura(), sair.altura()));
     }
@@ -759,7 +766,59 @@ public class GameScreen extends TelaBase {
         janelaDoRadar = JanelaDoRadar.projetar(layout.radarInterno(), mapa.largura(), mapa.altura(),
                 areaVisivelDoMundo.centroX(), areaVisivelDoMundo.centroY(),
                 areaVisivelDoMundo.largura(), areaVisivelDoMundo.altura());
+        atualizarLayoutDoResultado();
         atualizarBotoes();
+    }
+
+    private void atualizarLayoutDoResultado() {
+        if (session.getEstado() == EstadoPartida.EM_ANDAMENTO
+                || !jogo.modoToque() || !layout.emRetrato()) {
+            layoutDoResultado = null;
+            return;
+        }
+        boolean vitoria = session.getEstado() == EstadoPartida.VITORIA;
+        String titulo = vitoria ? "MISSÃO CUMPRIDA" : "MISSÃO FALHOU";
+        String primeiroBotao = "Tentar de novo";
+        String segundoBotao = emCampanha() ? "Campus" : "Menu";
+        BitmapFont fonteDoTitulo = jogo.fonte(FonteDoJogo.TITULO);
+        BitmapFont fonteDoTexto = jogo.fonte(FonteDoJogo.TEXTO);
+        BitmapFont fonteDoRotulo = jogo.fonte(FonteDoJogo.ROTULO);
+        BitmapFont fontePequena = jogo.fonte(FonteDoJogo.PEQUENO);
+        BitmapFont fonteDoBotao = jogo.fonte(FonteDoJogo.SUBTITULO);
+        float larguraDoTitulo = medirLargura(fonteDoTitulo, titulo);
+        float larguraDoPrimeiroBotao = medirLargura(fonteDoBotao, primeiroBotao);
+        float larguraDoSegundoBotao = medirLargura(fonteDoBotao, segundoBotao);
+        MedidasDoResultadoDaPartida preliminares = new MedidasDoResultadoDaPartida(
+                larguraDoTitulo, fonteDoTitulo.getLineHeight(), fonteDoTexto.getLineHeight(),
+                fonteDoRotulo.getLineHeight(), fonteDoTitulo.getLineHeight(),
+                fontePequena.getLineHeight(), larguraDoPrimeiroBotao,
+                larguraDoSegundoBotao, fonteDoBotao.getLineHeight(), jogo.alvoMinimo());
+        LayoutDoResultadoDaPartida preliminar = LayoutDoResultadoDaPartida.calcular(
+                layout.largura(), layout.altura(), jogo.margensSeguras(), preliminares);
+        float alturaDoMotivo = medirAlturaQuebrada(fonteDoTexto, motivoDoFim(vitoria),
+                preliminar.motivo().largura());
+        MedidasDoResultadoDaPartida medidas = new MedidasDoResultadoDaPartida(
+                larguraDoTitulo, fonteDoTitulo.getLineHeight(), alturaDoMotivo,
+                fonteDoRotulo.getLineHeight(), fonteDoTitulo.getLineHeight(),
+                fontePequena.getLineHeight(), larguraDoPrimeiroBotao,
+                larguraDoSegundoBotao, fonteDoBotao.getLineHeight(), jogo.alvoMinimo());
+        layoutDoResultado = LayoutDoResultadoDaPartida.calcular(
+                layout.largura(), layout.altura(), jogo.margensSeguras(), medidas);
+    }
+
+    private float medirLargura(BitmapFont fonte, String texto) {
+        medidorDeEtiqueta.setText(fonte, texto);
+        return medidorDeEtiqueta.width;
+    }
+
+    private float medirAlturaQuebrada(BitmapFont fonte, String texto, float largura) {
+        medidorDeEtiqueta.setText(fonte, texto, Color.WHITE, largura, Align.center, true);
+        if (medidorDeEtiqueta.height <= 0f) {
+            return 0f;
+        }
+        int linhas = Math.max(1,
+                Math.round((medidorDeEtiqueta.height - fonte.getCapHeight()) / fonte.getLineHeight()) + 1);
+        return linhas * fonte.getLineHeight();
     }
 
     private static RetanguloDeTela paraCoordenadasDaJanela(RetanguloDeTela area, Viewport viewport,
@@ -816,8 +875,14 @@ public class GameScreen extends TelaBase {
         medidorDeEtiqueta.setText(jogo.fonte(FonteDoJogo.ROTULO), resultado.textoDaEtiqueta());
         float largura = medidorDeEtiqueta.width + 24f;
         float altura = Math.max(28f, medidorDeEtiqueta.height + 12f);
+        PosicaoVisual naveVisual = posicoes.de(missao.getNave());
+        RetanguloDeTela nave = new RetanguloDeTela(
+                mapa.xCentro(naveVisual.x()) - tamanho / 2f + tremor.deslocamentoX(),
+                mapa.yCentro(naveVisual.y()) - tamanho / 2f + tremor.deslocamentoY(), tamanho, tamanho);
+        List<RetanguloDeTela> areasEvitadas = PoliticaDeDestaque.areasEvitadas(
+                areasDoHudNoMundo(tempestadeAtiva), nave);
         return PoliticaDeDestaque.posicionarEtiqueta(alvo, largura, altura, 8f,
-                        areaVisivelDoMundo, areasDoHudNoMundo(tempestadeAtiva))
+                        areaVisivelDoMundo, areasEvitadas)
                 .map(resultado::comEtiqueta)
                 .orElse(resultado);
     }
@@ -995,6 +1060,10 @@ public class GameScreen extends TelaBase {
     }
 
     private void desenharFimDePartida() {
+        if (layoutDoResultado != null) {
+            desenharFimDePartidaNoToque();
+            return;
+        }
         RetanguloDeTela caixa = layout.painelDoFim();
         float s = layout.escala();
         boolean vitoria = session.getEstado() == EstadoPartida.VITORIA;
@@ -1043,6 +1112,61 @@ public class GameScreen extends TelaBase {
                 }
             }
         });
+    }
+
+    private void desenharFimDePartidaNoToque() {
+        RetanguloDeTela caixa = layoutDoResultado.painel();
+        boolean vitoria = session.getEstado() == EstadoPartida.VITORIA;
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        jogo.shapes().begin(ShapeType.Filled);
+        jogo.shapes().setColor(0.02f, 0.01f, 0.05f, 0.78f);
+        jogo.shapes().rect(0f, 0f, layout.largura(), layout.altura());
+        jogo.shapes().end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        jogo.batch().begin();
+        try {
+            jogo.estilo().painel(jogo.batch(), caixa);
+            jogo.estilo().botao(jogo.batch(), layoutDoResultado.botao(0),
+                    controleDoFim.emFoco(ControleDoFimDaPartida.Acao.TENTAR_DE_NOVO));
+            jogo.estilo().botao(jogo.batch(), layoutDoResultado.botao(1),
+                    controleDoFim.emFoco(ControleDoFimDaPartida.Acao.SAIR));
+
+            fonte(FonteDoJogo.TITULO);
+            cor(vitoria ? VITORIA : DERROTA);
+            textoCentralizado(vitoria ? "MISSÃO CUMPRIDA" : "MISSÃO FALHOU",
+                    layoutDoResultado.titulo().centroX(), layoutDoResultado.titulo().centroY());
+            fonte(FonteDoJogo.TEXTO);
+            cor(Color.valueOf("F2EEF7"));
+            desenharTextoQuebradoCentralizado(motivoDoFim(vitoria), layoutDoResultado.motivo());
+            fonte(FonteDoJogo.ROTULO);
+            cor(Color.valueOf("B9B2C6"));
+            textoCentralizado("PONTOS", layoutDoResultado.rotuloDosPontos().centroX(),
+                    layoutDoResultado.rotuloDosPontos().centroY());
+            fonte(FonteDoJogo.TITULO);
+            cor(Color.valueOf("F2EEF7"));
+            textoCentralizado(String.format("%,d", session.getPontuacao()).replace(',', '.'),
+                    layoutDoResultado.pontos().centroX(), layoutDoResultado.pontos().centroY());
+            fonte(FonteDoJogo.PEQUENO);
+            desenharSituacaoDoEnvio(layoutDoResultado.situacao().centroX(),
+                    layoutDoResultado.situacao().centroY());
+            desenharRotuloDoBotao("Tentar de novo", layoutDoResultado.botao(0),
+                    controleDoFim.emFoco(ControleDoFimDaPartida.Acao.TENTAR_DE_NOVO));
+            desenharRotuloDoBotao(emCampanha() ? "Campus" : "Menu", layoutDoResultado.botao(1),
+                    controleDoFim.emFoco(ControleDoFimDaPartida.Acao.SAIR));
+        } finally {
+            jogo.batch().end();
+            for (FonteDoJogo tipo : FonteDoJogo.values()) {
+                jogo.fonte(tipo).setColor(Color.WHITE);
+            }
+        }
+    }
+
+    private void desenharTextoQuebradoCentralizado(String texto, RetanguloDeTela area) {
+        BitmapFont fonte = jogo.fonte(FonteDoJogo.TEXTO);
+        medidorDeEtiqueta.setText(fonte, texto, fonte.getColor(), area.largura(), Align.center, true);
+        fonte.draw(jogo.batch(), medidorDeEtiqueta, area.x(), area.topo());
     }
 
     private void desenharRotuloDoBotao(String rotulo, RetanguloDeTela botao, boolean foco) {

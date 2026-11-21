@@ -148,6 +148,21 @@ class PoliticaDeDestaqueTest {
     }
 
     @Test
+    void etiquetaTambemEvitaORetanguloDaNave() {
+        RetanguloDeTela alvo = new RetanguloDeTela(130f, 130f, 40f, 40f);
+        RetanguloDeTela tela = new RetanguloDeTela(0f, 0f, 300f, 300f);
+        RetanguloDeTela nave = new RetanguloDeTela(95f, 175f, 110f, 40f);
+
+        List<RetanguloDeTela> proibidas = PoliticaDeDestaque.areasEvitadas(
+                List.of(), nave);
+        RetanguloDeTela etiqueta = PoliticaDeDestaque.posicionarEtiqueta(
+                alvo, 100f, 30f, 8f, tela, proibidas).orElseThrow();
+
+        assertRetangulo(new RetanguloDeTela(100f, 92f, 100f, 30f), etiqueta);
+        assertFalse(etiqueta.sobrepoe(nave));
+    }
+
+    @Test
     void textoUsaDistanciaManhattanNoPlural() {
         Professor professor = new Professor("Ada", 2, 3);
 
