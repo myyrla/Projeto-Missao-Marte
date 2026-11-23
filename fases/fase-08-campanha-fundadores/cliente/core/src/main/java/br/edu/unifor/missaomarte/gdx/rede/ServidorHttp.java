@@ -102,7 +102,8 @@ public class ServidorHttp implements ServidorDoJogo {
 
             @Override
             public void failed(Throwable t) {
-                entregar(retorno, Resposta.<T>erro("Não foi possível conectar ao servidor (" + urlBase + ")."));
+                entregar(retorno, Resposta.<T>erroDeConexao(
+                        "Não foi possível conectar ao servidor (" + urlBase + ")."));
             }
 
             @Override

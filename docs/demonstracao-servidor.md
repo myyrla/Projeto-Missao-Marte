@@ -197,8 +197,9 @@ As chamadas HTTP do cliente têm limite de 5 segundos.
 - `Testar conexão`, cadastro e login mostram `Não foi possível conectar ao servidor (...)`.
 - Sem uma sessão, o jogo continua funcionando como convidado e usa o ranking local.
 - Se o servidor cair depois do login, a consulta ao ranking global mostra o erro e permite tentar novamente.
-- Se o envio de uma partida rápida falhar, o resultado não migra para o ranking local e não existe fila persistente.
-- No desktop, enquanto a tela final ainda estiver aberta e a sessão continuar válida, a tecla `R` tenta reenviar o resultado.
+- Se o envio de uma vitória em partida rápida falhar por falta de conexão, o cliente a registra uma vez no ranking local com o nome do jogador e mostra `Sem conexão: salvo no ranking local`.
+- No desktop, enquanto a tela final ainda estiver aberta e a sessão continuar válida, a tecla `R` tenta reenviar o resultado. Um envio posterior bem-sucedido não cria outra entrada no ranking local.
+- Não existe fila persistente de resultados pendentes para envio ao servidor.
 - Uma falha de conexão não encerra a sessão. Uma resposta `401` encerra o login porque indica token ausente, inválido ou expirado.
 - A campanha continua jogável, pois seu progresso e sua pontuação são locais.
 

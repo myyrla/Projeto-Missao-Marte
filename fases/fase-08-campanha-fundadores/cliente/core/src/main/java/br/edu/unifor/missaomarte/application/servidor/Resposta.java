@@ -5,26 +5,32 @@ package br.edu.unifor.missaomarte.application.servidor;
  * <p>{@code naoAutorizado} indica que o servidor recusou o token (sessao expirada), para a tela mandar o jogador entrar de novo.
  */
 public final class Resposta<T> {
+    private enum TipoDeErro { NENHUM, GERAL, CONEXAO, NAO_AUTORIZADO }
+
     private final T valor;
     private final String mensagem;
-    private final boolean naoAutorizado;
+    private final TipoDeErro tipoDeErro;
 
-    private Resposta(T valor, String mensagem, boolean naoAutorizado) {
+    private Resposta(T valor, String mensagem, TipoDeErro tipoDeErro) {
         this.valor = valor;
         this.mensagem = mensagem;
-        this.naoAutorizado = naoAutorizado;
+        this.tipoDeErro = tipoDeErro;
     }
 
     public static <T> Resposta<T> sucesso(T valor) {
-        return new Resposta<>(valor, null, false);
+        return new Resposta<>(valor, null, TipoDeErro.NENHUM);
     }
 
     public static <T> Resposta<T> erro(String mensagem) {
-        return new Resposta<>(null, mensagem, false);
+        return new Resposta<>(null, mensagem, TipoDeErro.GERAL);
+    }
+
+    public static <T> Resposta<T> erroDeConexao(String mensagem) {
+        return new Resposta<>(null, mensagem, TipoDeErro.CONEXAO);
     }
 
     public static <T> Resposta<T> erroNaoAutorizado(String mensagem) {
-        return new Resposta<>(null, mensagem, true);
+        return new Resposta<>(null, mensagem, TipoDeErro.NAO_AUTORIZADO);
     }
 
     public boolean isSucesso() {
@@ -40,6 +46,10 @@ public final class Resposta<T> {
     }
 
     public boolean isNaoAutorizado() {
-        return naoAutorizado;
+        return tipoDeErro == TipoDeErro.NAO_AUTORIZADO;
+    }
+
+    public boolean isErroDeConexao() {
+        return tipoDeErro == TipoDeErro.CONEXAO;
     }
 }

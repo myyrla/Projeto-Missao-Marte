@@ -83,4 +83,13 @@ class DadosDoServidorTest {
         assertFalse(r.isSucesso());
         assertTrue(r.isNaoAutorizado());
     }
+
+    @Test
+    void erroDeConexaoFicaMarcadoSemSerNaoAutorizado() {
+        Resposta<String> r = Resposta.erroDeConexao("sem servidor");
+
+        assertFalse(r.isSucesso());
+        assertTrue(r.isErroDeConexao());
+        assertFalse(r.isNaoAutorizado());
+    }
 }

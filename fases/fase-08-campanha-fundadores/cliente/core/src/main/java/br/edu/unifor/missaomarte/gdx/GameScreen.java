@@ -6,6 +6,7 @@ import br.edu.unifor.missaomarte.application.EventoJogo;
 import br.edu.unifor.missaomarte.application.GameSession;
 import br.edu.unifor.missaomarte.application.MissaoFactory;
 import br.edu.unifor.missaomarte.application.ModoDeJogo;
+import br.edu.unifor.missaomarte.application.RegistroAlternativoNoRankingLocal;
 import br.edu.unifor.missaomarte.application.ResultadoTurno;
 import br.edu.unifor.missaomarte.application.campanha.Campanha;
 import br.edu.unifor.missaomarte.application.campanha.EtapaDaCampanha;
@@ -100,6 +101,7 @@ public class GameScreen extends TelaBase {
     private final Tremor tremor = new Tremor();
     private final RepetidorDeTecla repetidor = new RepetidorDeTecla(0.28f, 0.14f);
     private final ControleDoFimDaPartida controleDoFim = new ControleDoFimDaPartida();
+    private final RegistroAlternativoNoRankingLocal registroAlternativo = new RegistroAlternativoNoRankingLocal();
     private final CameraDaPartida acompanhamentoDaCamera = new CameraDaPartida();
     private final OrthographicCamera cameraDoMundo = new OrthographicCamera();
     private final MundoRenderer mundo;
@@ -581,7 +583,11 @@ public class GameScreen extends TelaBase {
             return;
         }
         envio = Envio.FALHOU;
-        erroDeEnvio = resposta.getMensagem();
+        boolean salvoLocalmente = registroAlternativo.registrarSeNecessario(
+                emCampanha(), session, resposta, jogo.rankingService());
+        erroDeEnvio = salvoLocalmente
+                ? "Sem conexão: salvo no ranking local."
+                : resposta.getMensagem();
         log("falha ao enviar: " + erroDeEnvio);
         if (resposta.isNaoAutorizado()) {
             jogo.sair();
