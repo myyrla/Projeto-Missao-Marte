@@ -25,12 +25,14 @@ import br.edu.unifor.missaomarte.gdx.entrada.ControleDeToque;
 import br.edu.unifor.missaomarte.gdx.camera.CameraDaPartida;
 import br.edu.unifor.missaomarte.gdx.camera.EscalaDaCelula;
 import br.edu.unifor.missaomarte.gdx.hud.HudRenderer;
+import br.edu.unifor.missaomarte.gdx.hud.ApresentacaoDoResultadoDaPartida;
+import br.edu.unifor.missaomarte.gdx.hud.EstadoDoEnvioDoResultado;
 import br.edu.unifor.missaomarte.gdx.hud.JanelaDoRadar;
 import br.edu.unifor.missaomarte.gdx.hud.LayoutDoHud;
 import br.edu.unifor.missaomarte.gdx.hud.LayoutDoResultadoDaPartida;
 import br.edu.unifor.missaomarte.gdx.hud.MapaNaInterface;
 import br.edu.unifor.missaomarte.gdx.hud.MedidasDoHud;
-import br.edu.unifor.missaomarte.gdx.hud.MedidasDoResultadoDaPartida;
+import br.edu.unifor.missaomarte.gdx.hud.ResultadoDaPartidaRenderer;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
@@ -54,11 +56,9 @@ import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
-import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,16 +77,12 @@ import java.util.Set;
  * O HUD e os controles usam {@link LayoutDoHud}; uma câmera independente acompanha o mundo em tela cheia.
  */
 public class GameScreen extends TelaBase {
-    private enum Envio { NAO_ENVIA, ENVIANDO, ENVIADO, FALHOU }
-
     private static final int CELULAS = MissaoMarteGame.MAX - MissaoMarteGame.MIN + 1;
     private static final float VELOCIDADE_VISUAL = 12f;
     private static final float DURACAO_DO_RAIO = 0.18f;
     private static final float DURACAO_DA_MENSAGEM = 2f;
 
     private static final Color DESTAQUE = new Color(1f, 0.85f, 0.3f, 1f);
-    private static final Color VITORIA = Color.valueOf("9EF01A");
-    private static final Color DERROTA = Color.valueOf("FF3B5C");
     private static final Color CAIXA = new Color(0.05f, 0.05f, 0.12f, 1f);
 
     private final GameSession session;
@@ -106,6 +102,7 @@ public class GameScreen extends TelaBase {
     private final OrthographicCamera cameraDoMundo = new OrthographicCamera();
     private final MundoRenderer mundo;
     private final HudRenderer hud;
+    private final ResultadoDaPartidaRenderer resultadoRenderer;
     private final Map<Integer, Acao> setasPorDedo = new HashMap<>();
     private final GlyphLayout medidorDeEtiqueta = new GlyphLayout();
 
@@ -121,7 +118,7 @@ public class GameScreen extends TelaBase {
 
     private List<String> mensagens = new ArrayList<>();
     private float tempoDaMensagem;
-    private Envio envio = Envio.NAO_ENVIA;
+    private EstadoDoEnvioDoResultado envio = EstadoDoEnvioDoResultado.NAO_ENVIA;
     private String erroDeEnvio = "";
     private float anguloNave;
     private float tempoPiscando;
@@ -150,6 +147,8 @@ public class GameScreen extends TelaBase {
                 jogo.fonte(FonteDoJogo.TEXTO), jogo.fonte(FonteDoJogo.ROTULO), jogo.estilo(), mapa);
         this.hud = new HudRenderer(jogo.batch(), jogo.shapes(), jogo.fontes(), jogo.estilo(),
                 campanha, etapaDaCampanha);
+        this.resultadoRenderer = new ResultadoDaPartidaRenderer(
+                jogo.batch(), jogo.shapes(), jogo.fontes(), jogo.estilo());
     }
 
     private LayoutDoHud layoutAtual(Viewport viewport) {
@@ -229,7 +228,7 @@ public class GameScreen extends TelaBase {
     }
 
     private boolean teclaDeFimDePartida(int keycode) {
-        if (keycode == Keys.R && envio == Envio.FALHOU && jogo.sessao() != null) {
+        if (keycode == Keys.R && envio == EstadoDoEnvioDoResultado.FALHOU && jogo.sessao() != null) {
             enviarResultado();
             return true;
         }
@@ -571,7 +570,7 @@ public class GameScreen extends TelaBase {
     }
 
     private void enviarResultado() {
-        envio = Envio.ENVIANDO;
+        envio = EstadoDoEnvioDoResultado.ENVIANDO;
         erroDeEnvio = "";
         log("enviando resultado ao servidor");
         jogo.servidor().enviarPartida(jogo.sessao(), PartidaConcluida.de(session), this::resultadoDoEnvio);
@@ -579,10 +578,10 @@ public class GameScreen extends TelaBase {
 
     private void resultadoDoEnvio(Resposta<Void> resposta) {
         if (resposta.isSucesso()) {
-            envio = Envio.ENVIADO;
+            envio = EstadoDoEnvioDoResultado.ENVIADO;
             return;
         }
-        envio = Envio.FALHOU;
+        envio = EstadoDoEnvioDoResultado.FALHOU;
         boolean salvoLocalmente = registroAlternativo.registrarSeNecessario(
                 emCampanha(), session, resposta, jogo.rankingService());
         erroDeEnvio = salvoLocalmente
@@ -603,7 +602,7 @@ public class GameScreen extends TelaBase {
     }
 
     private void executarAcaoDoFim(ControleDoFimDaPartida.Acao acao) {
-        if (envio == Envio.ENVIANDO) {
+        if (envio == EstadoDoEnvioDoResultado.ENVIANDO) {
             return;
         }
         jogo.sons().tocar(Som.SELECIONAR);
@@ -782,49 +781,9 @@ public class GameScreen extends TelaBase {
             layoutDoResultado = null;
             return;
         }
-        boolean vitoria = session.getEstado() == EstadoPartida.VITORIA;
-        String titulo = vitoria ? "MISSÃO CUMPRIDA" : "MISSÃO FALHOU";
-        String primeiroBotao = "Tentar de novo";
-        String segundoBotao = emCampanha() ? "Campus" : "Menu";
-        BitmapFont fonteDoTitulo = jogo.fonte(FonteDoJogo.TITULO);
-        BitmapFont fonteDoTexto = jogo.fonte(FonteDoJogo.TEXTO);
-        BitmapFont fonteDoRotulo = jogo.fonte(FonteDoJogo.ROTULO);
-        BitmapFont fontePequena = jogo.fonte(FonteDoJogo.PEQUENO);
-        BitmapFont fonteDoBotao = jogo.fonte(FonteDoJogo.SUBTITULO);
-        float larguraDoTitulo = medirLargura(fonteDoTitulo, titulo);
-        float larguraDoPrimeiroBotao = medirLargura(fonteDoBotao, primeiroBotao);
-        float larguraDoSegundoBotao = medirLargura(fonteDoBotao, segundoBotao);
-        MedidasDoResultadoDaPartida preliminares = new MedidasDoResultadoDaPartida(
-                larguraDoTitulo, fonteDoTitulo.getLineHeight(), fonteDoTexto.getLineHeight(),
-                fonteDoRotulo.getLineHeight(), fonteDoTitulo.getLineHeight(),
-                fontePequena.getLineHeight(), larguraDoPrimeiroBotao,
-                larguraDoSegundoBotao, fonteDoBotao.getLineHeight(), jogo.alvoMinimo());
-        LayoutDoResultadoDaPartida preliminar = LayoutDoResultadoDaPartida.calcular(
-                layout.largura(), layout.altura(), jogo.margensSeguras(), preliminares);
-        float alturaDoMotivo = medirAlturaQuebrada(fonteDoTexto, motivoDoFim(vitoria),
-                preliminar.motivo().largura());
-        MedidasDoResultadoDaPartida medidas = new MedidasDoResultadoDaPartida(
-                larguraDoTitulo, fonteDoTitulo.getLineHeight(), alturaDoMotivo,
-                fonteDoRotulo.getLineHeight(), fonteDoTitulo.getLineHeight(),
-                fontePequena.getLineHeight(), larguraDoPrimeiroBotao,
-                larguraDoSegundoBotao, fonteDoBotao.getLineHeight(), jogo.alvoMinimo());
-        layoutDoResultado = LayoutDoResultadoDaPartida.calcular(
-                layout.largura(), layout.altura(), jogo.margensSeguras(), medidas);
-    }
-
-    private float medirLargura(BitmapFont fonte, String texto) {
-        medidorDeEtiqueta.setText(fonte, texto);
-        return medidorDeEtiqueta.width;
-    }
-
-    private float medirAlturaQuebrada(BitmapFont fonte, String texto, float largura) {
-        medidorDeEtiqueta.setText(fonte, texto, Color.WHITE, largura, Align.center, true);
-        if (medidorDeEtiqueta.height <= 0f) {
-            return 0f;
-        }
-        int linhas = Math.max(1,
-                Math.round((medidorDeEtiqueta.height - fonte.getCapHeight()) / fonte.getLineHeight()) + 1);
-        return linhas * fonte.getLineHeight();
+        layoutDoResultado = resultadoRenderer.medirLayout(
+                layout.largura(), layout.altura(), jogo.margensSeguras(),
+                jogo.alvoMinimo(), apresentacaoDoResultado());
     }
 
     private static RetanguloDeTela paraCoordenadasDaJanela(RetanguloDeTela area, Viewport viewport,
@@ -1066,148 +1025,13 @@ public class GameScreen extends TelaBase {
     }
 
     private void desenharFimDePartida() {
-        if (layoutDoResultado != null) {
-            desenharFimDePartidaNoToque();
-            return;
-        }
-        RetanguloDeTela caixa = layout.painelDoFim();
-        float s = layout.escala();
-        boolean vitoria = session.getEstado() == EstadoPartida.VITORIA;
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        jogo.shapes().begin(ShapeType.Filled);
-        jogo.shapes().setColor(0.02f, 0.01f, 0.05f, 0.78f);
-        jogo.shapes().rect(0f, 0f, layout.largura(), layout.altura());
-        jogo.shapes().end();
-        Gdx.gl.glDisable(GL20.GL_BLEND);
-
-        jogo.fontes().comEscalaTemporaria(s, () -> {
-            jogo.batch().begin();
-            try {
-                jogo.estilo().painel(jogo.batch(), caixa);
-                jogo.estilo().botao(jogo.batch(), layout.botaoDoFim(0),
-                        controleDoFim.emFoco(ControleDoFimDaPartida.Acao.TENTAR_DE_NOVO));
-                jogo.estilo().botao(jogo.batch(), layout.botaoDoFim(1),
-                        controleDoFim.emFoco(ControleDoFimDaPartida.Acao.SAIR));
-
-                fonte(FonteDoJogo.TITULO);
-                cor(vitoria ? VITORIA : DERROTA);
-                textoCentralizado(vitoria ? "MISSÃO CUMPRIDA" : "MISSÃO FALHOU",
-                        caixa.centroX(), caixa.topo() - 48f * s);
-                fonte(FonteDoJogo.TEXTO);
-                cor(Color.valueOf("F2EEF7"));
-                textoCentralizado(textoLimitado(motivoDoFim(vitoria), caixa.largura() - 60f * s),
-                        caixa.centroX(), caixa.topo() - 91f * s);
-                fonte(FonteDoJogo.ROTULO);
-                cor(Color.valueOf("B9B2C6"));
-                textoCentralizado("PONTOS", caixa.centroX(), caixa.topo() - 132f * s);
-                fonte(FonteDoJogo.TITULO);
-                cor(Color.valueOf("F2EEF7"));
-                textoCentralizado(String.format("%,d", session.getPontuacao()).replace(',', '.'),
-                        caixa.centroX(), caixa.topo() - 164f * s);
-                fonte(FonteDoJogo.PEQUENO);
-                desenharSituacaoDoEnvio(caixa.centroX(), caixa.y() + 92f * s);
-                desenharRotuloDoBotao("Tentar de novo", layout.botaoDoFim(0),
-                        controleDoFim.emFoco(ControleDoFimDaPartida.Acao.TENTAR_DE_NOVO));
-                desenharRotuloDoBotao(emCampanha() ? "Campus" : "Menu", layout.botaoDoFim(1),
-                        controleDoFim.emFoco(ControleDoFimDaPartida.Acao.SAIR));
-            } finally {
-                jogo.batch().end();
-                for (FonteDoJogo tipo : FonteDoJogo.values()) {
-                    jogo.fonte(tipo).setColor(Color.WHITE);
-                }
-            }
-        });
+        resultadoRenderer.desenhar(
+                apresentacaoDoResultado(), layout, layoutDoResultado, controleDoFim);
     }
 
-    private void desenharFimDePartidaNoToque() {
-        RetanguloDeTela caixa = layoutDoResultado.painel();
-        boolean vitoria = session.getEstado() == EstadoPartida.VITORIA;
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        jogo.shapes().begin(ShapeType.Filled);
-        jogo.shapes().setColor(0.02f, 0.01f, 0.05f, 0.78f);
-        jogo.shapes().rect(0f, 0f, layout.largura(), layout.altura());
-        jogo.shapes().end();
-        Gdx.gl.glDisable(GL20.GL_BLEND);
-
-        jogo.batch().begin();
-        try {
-            jogo.estilo().painel(jogo.batch(), caixa);
-            jogo.estilo().botao(jogo.batch(), layoutDoResultado.botao(0),
-                    controleDoFim.emFoco(ControleDoFimDaPartida.Acao.TENTAR_DE_NOVO));
-            jogo.estilo().botao(jogo.batch(), layoutDoResultado.botao(1),
-                    controleDoFim.emFoco(ControleDoFimDaPartida.Acao.SAIR));
-
-            fonte(FonteDoJogo.TITULO);
-            cor(vitoria ? VITORIA : DERROTA);
-            textoCentralizado(vitoria ? "MISSÃO CUMPRIDA" : "MISSÃO FALHOU",
-                    layoutDoResultado.titulo().centroX(), layoutDoResultado.titulo().centroY());
-            fonte(FonteDoJogo.TEXTO);
-            cor(Color.valueOf("F2EEF7"));
-            desenharTextoQuebradoCentralizado(motivoDoFim(vitoria), layoutDoResultado.motivo());
-            fonte(FonteDoJogo.ROTULO);
-            cor(Color.valueOf("B9B2C6"));
-            textoCentralizado("PONTOS", layoutDoResultado.rotuloDosPontos().centroX(),
-                    layoutDoResultado.rotuloDosPontos().centroY());
-            fonte(FonteDoJogo.TITULO);
-            cor(Color.valueOf("F2EEF7"));
-            textoCentralizado(String.format("%,d", session.getPontuacao()).replace(',', '.'),
-                    layoutDoResultado.pontos().centroX(), layoutDoResultado.pontos().centroY());
-            fonte(FonteDoJogo.PEQUENO);
-            desenharSituacaoDoEnvio(layoutDoResultado.situacao().centroX(),
-                    layoutDoResultado.situacao().centroY());
-            desenharRotuloDoBotao("Tentar de novo", layoutDoResultado.botao(0),
-                    controleDoFim.emFoco(ControleDoFimDaPartida.Acao.TENTAR_DE_NOVO));
-            desenharRotuloDoBotao(emCampanha() ? "Campus" : "Menu", layoutDoResultado.botao(1),
-                    controleDoFim.emFoco(ControleDoFimDaPartida.Acao.SAIR));
-        } finally {
-            jogo.batch().end();
-            for (FonteDoJogo tipo : FonteDoJogo.values()) {
-                jogo.fonte(tipo).setColor(Color.WHITE);
-            }
-        }
-    }
-
-    private void desenharTextoQuebradoCentralizado(String texto, RetanguloDeTela area) {
-        BitmapFont fonte = jogo.fonte(FonteDoJogo.TEXTO);
-        medidorDeEtiqueta.setText(fonte, texto, fonte.getColor(), area.largura(), Align.center, true);
-        fonte.draw(jogo.batch(), medidorDeEtiqueta, area.x(), area.topo());
-    }
-
-    private void desenharRotuloDoBotao(String rotulo, RetanguloDeTela botao, boolean foco) {
-        fonte(FonteDoJogo.SUBTITULO);
-        cor(foco ? Color.valueOf("0A0612") : Color.valueOf("F2EEF7"));
-        textoCentralizado(rotulo, botao.centroX(), botao.centroY());
-    }
-
-    private String motivoDoFim(boolean vitoria) {
-        if (!mensagens.isEmpty()) {
-            return String.join(" ", mensagens);
-        }
-        return vitoria ? "Todos os passageiros retornaram à base." : "A missão foi encerrada.";
-    }
-
-    private void desenharSituacaoDoEnvio(float cx, float y) {
-        switch (envio) {
-            case ENVIANDO:
-                cor(Color.LIGHT_GRAY);
-                textoCentralizado("Enviando o resultado ao servidor...", cx, y);
-                break;
-            case ENVIADO:
-                cor(VITORIA);
-                textoCentralizado("Resultado enviado ao servidor.", cx, y);
-                break;
-            case FALHOU:
-                cor(DERROTA);
-                String resumo = erroDeEnvio.length() > 52 ? erroDeEnvio.substring(0, 49) + "..." : erroDeEnvio;
-                textoCentralizado(resumo, cx, y);
-                if (jogo.sessao() != null && !jogo.modoToque()) {
-                    textoCentralizado("R: reenviar resultado", cx, y - 16f * layout.escala());
-                }
-                break;
-            default:
-                break;
-        }
+    private ApresentacaoDoResultadoDaPartida apresentacaoDoResultado() {
+        return ApresentacaoDoResultadoDaPartida.criar(
+                session.getEstado(), session.getPontuacao(), mensagens, emCampanha(),
+                envio, erroDeEnvio, jogo.sessao() != null, jogo.modoToque());
     }
 }
