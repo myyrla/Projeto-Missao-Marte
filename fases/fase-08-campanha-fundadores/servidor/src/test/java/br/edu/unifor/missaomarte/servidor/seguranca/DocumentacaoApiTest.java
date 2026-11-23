@@ -27,7 +27,9 @@ class DocumentacaoApiTest extends ApiTestSupport {
                 .andReturn();
 
         String corpo = resultado.getResponse().getContentAsString();
-        assertThat(corpo).doesNotContain("senhaHash");
+        assertThat(corpo)
+                .doesNotContain("senhaHash")
+                .doesNotContain("senhaCabeNoBcrypt");
     }
 
     @Test

@@ -1,6 +1,7 @@
 package br.edu.unifor.missaomarte.servidor.usuario;
 
 import br.edu.unifor.missaomarte.servidor.seguranca.Senhas;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -16,6 +17,7 @@ public record CadastroRequisicao(
         @Size(min = 8, message = "A senha deve ter pelo menos 8 caracteres.")
         String senha) {
 
+    @JsonIgnore
     @AssertTrue(message = "A senha deve ter no máximo 72 bytes.")
     public boolean isSenhaCabeNoBcrypt() {
         return senha == null || Senhas.cabeNoBcrypt(senha);

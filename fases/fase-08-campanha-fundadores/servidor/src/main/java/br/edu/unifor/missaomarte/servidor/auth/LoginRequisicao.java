@@ -1,6 +1,7 @@
 package br.edu.unifor.missaomarte.servidor.auth;
 
 import br.edu.unifor.missaomarte.servidor.seguranca.Senhas;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -15,6 +16,7 @@ public record LoginRequisicao(
         @Size(max = 72, message = "Senha muito longa.")
         String senha) {
 
+    @JsonIgnore
     @AssertTrue(message = "Senha muito longa.")
     public boolean isSenhaCabeNoBcrypt() {
         return senha == null || Senhas.cabeNoBcrypt(senha);
