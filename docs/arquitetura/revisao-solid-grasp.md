@@ -11,29 +11,40 @@ A classificação de origem usa a Fase 7 importada como referência. O README da
 ## 2. Resumo executivo
 
 - O servidor não apresenta classes grandes. Sua maior classe tem 94 linhas e a separação Controller, Service, Repository e DTO está clara.
-- O cliente concentra complexidade na camada `gdx`. Sete classes ultrapassam 400 linhas.
-- No diagnóstico inicial, `GameScreen` era o ponto de maior risco, com 1.213 linhas e responsabilidades de entrada, coordenação, câmera, efeitos, ranking, campanha e telas de pausa e resultado. Após as duas refatorações aprovadas, ficou com 1.032 linhas.
-- `GameSession` também é grande, mas a maior parte de sua complexidade representa o caso de uso da partida e está protegida por Strategy, eventos e uma suíte ampla de testes.
-- `LayoutDoHud` é grande, porém puro e coeso em torno da geometria responsiva. Seu tamanho isolado não justifica uma divisão imediata.
-- A equipe já criou boas fronteiras para regras que mudam: pontuação, destaques, ranking, geometria, tipografia, câmera e efeitos da tempestade.
-- A melhor sequência de refatoração começa pelas responsabilidades visuais e de composição que ainda ficaram dentro das telas. Não há refatoração prioritária no servidor.
+- O cliente concentra complexidade na camada `gdx`. Oito classes ultrapassam 400 linhas (antes eram sete).
+- `GameScreen` continua sendo a maior (1.127 linhas). Após as refatorações, desceu para 1.032 e depois subiu com joystick/multitoque/tablet, mas o saldo total ainda é de redução (-7,1%).
+- `LayoutDoHud` (562 linhas) e `CampusLayout` (408 linhas, nova no top 10) acumulam variantes responsivas que fragilizam o OCP. Uma proposta de Strategy de layout está registrada como melhoria futura.
+- As oito classes novas avaliadas (joystick, controles de toque, escala, orientação, layouts e medidas) seguem boas práticas: são puras, pequenas, testáveis e desacopladas do libGDX quando possível. `OrientacaoPorTamanhoDeTela` é a fonte unica do critério de tablet, referenciada por `EscalaDeTela` e `MissaoMarteGame`.
+- `GameSession` não mudou (498 linhas) e continua protegida por Strategy, eventos e testes amplos.
+- A equipe já criou boas fronteiras para regras que mudam: pontuação, destaques, ranking, geometria, tipografia, câmera, efeitos da tempestade, entrada por toque e escala por densidade.
+- A melhor sequência de refatoração começa pelas responsabilidades visuais e de composição que ainda ficaram dentro das telas, seguida pela extração de variantes dos layouts. Não há refatoração prioritária no servidor.
 
 ## 3. Dez maiores classes
 
-A tabela registra o estado encontrado no diagnóstico, antes das refatorações da Etapa 2.
+A tabela registra três momentos: o diagnóstico inicial, o estado após as refatorações da Etapa 2 e o estado atual (após joystick virtual, multitoque, layouts de toque na horizontal, modo tablet e escala por densidade).
 
-| Posição | Classe | Camada | Linhas | Métodos públicos | Métodos privados |
-|---:|---|---|---:|---:|---:|
-| 1 | `GameScreen` | cliente, `gdx` | 1.213 | 2 | 54 |
-| 2 | `HudRenderer` | cliente, `gdx/hud` | 673 | 4 | 36 |
-| 3 | `CampusScreen` | cliente, `gdx` | 520 | 1 | 24 |
-| 4 | `GameSession` | cliente, `application` | 498 | 25 | 11 |
-| 5 | `MundoRenderer` | cliente, `gdx/visual` | 493 | 2 | 20 |
-| 6 | `LayoutDoHud` | cliente, `gdx/hud` | 483 | 46 | 9 |
-| 7 | `MenuScreen` | cliente, `gdx` | 433 | 1 | 23 |
-| 8 | `NovaPartidaScreen` | cliente, `gdx` | 390 | 1 | 19 |
-| 9 | `OpcoesScreen` | cliente, `gdx` | 384 | 1 | 21 |
-| 10 | `TelaBase` | cliente, `gdx` | 331 | 7 | 6 |
+| Posição | Classe | Camada | Diagnóstico | Pós-refatoração | Atual | Variação total |
+|---:|---|---|---:|---:|---:|---|
+| 1 | `GameScreen` | cliente, `gdx` | 1.213 | 1.032 | 1.127 | -86 (-7,1%) |
+| 2 | `HudRenderer` | cliente, `gdx/hud` | 673 | 673 | 732 | +59 (+8,8%) |
+| 3 | `CampusScreen` | cliente, `gdx` | 520 | 520 | 612 | +92 (+17,7%) |
+| 4 | `LayoutDoHud` | cliente, `gdx/hud` | 483 | 483 | 562 | +79 (+16,4%) |
+| 5 | `GameSession` | cliente, `application` | 498 | 498 | 498 | 0 |
+| 6 | `MenuScreen` | cliente, `gdx` | 433 | 433 | 498 | +65 (+15,0%) |
+| 7 | `MundoRenderer` | cliente, `gdx/visual` | 493 | 493 | 493 | 0 |
+| 8 | `CampusLayout` | cliente, `gdx/campanha` | (nova) | (nova) | 408 | nova |
+| 9 | `NovaPartidaScreen` | cliente, `gdx` | 390 | 390 | 390 | 0 |
+| 10 | `OpcoesScreen` | cliente, `gdx` | 384 | 384 | 384 | 0 |
+
+Destaques da mudança:
+
+- `GameScreen` recuou de 1.213 para 1.032 com as refatorações e depois subiu para 1.127 com joystick, multitoque e célula por densidade. A classe continua sendo a maior, mas o saldo total ainda é de redução.
+- `LayoutDoHud` saltou de 483 para 562 (+79) por causa da geometria do toque horizontal (joystick, ações, medidas do jogador com `MedidasDoJogador` e subdivisão do cartão do jogador).
+- `CampusScreen` subiu de 520 para 612 (+92) com o layout horizontal de toque, medição de texto combinado cenário/fundador e o método `medirConteudoHorizontalDoToque`.
+- `CampusLayout` entrou no top 10 (408 linhas) ao ganhar o método `calcularHorizontalToque` (modo tablet).
+- `MenuScreen` subiu de 433 para 498 (+65) com o menu horizontal de toque.
+- `HudRenderer` subiu de 673 para 732 (+59) com a subdivisão do cartão do jogador no modo toque horizontal.
+- `GameSession`, `MundoRenderer`, `NovaPartidaScreen` e `OpcoesScreen` não mudaram.
 
 Nenhuma classe do servidor entra nas dez maiores. As maiores são `Partida`, com 94 linhas, e `SegurancaConfig`, com 87 linhas. Todo o código de produção do servidor soma aproximadamente 880 linhas.
 
@@ -184,22 +195,24 @@ Responsabilidades atuais:
 2. Calcular faixas verticais em `calcularFaixas`.
 3. Calcular layouts de reserva em `calcularReservaPaisagem` e `calcularReservaRetrato`.
 4. Guardar e derivar as áreas de todos os cartões, mapa, controles e fim de partida.
+5. Subdividir o cartão do jogador no modo toque horizontal em `tituloDoJogador`, `linhaDoCasco`, `linhaDosPontos`, `areaDasBarrasDoCasco` e `segmentoDoCasco`.
+6. Subdividir o cartão do jogador no modo compacto (faixas) em `linhaPrincipalDoJogador`, `linhaSecundariaDoJogador` e suas metades.
 
 Princípios respeitados:
 
 - SRP: a responsabilidade é geometria responsiva do HUD.
 - GRASP Pure Fabrication e Information Expert: concentra medidas e relações geométricas sem depender de libGDX.
-- Low Coupling: consome apenas valores, `MargensSeguras`, `MedidasDoHud` e `RetanguloDeTela`.
+- Low Coupling: consome apenas valores, `MargensSeguras`, `MedidasDoHud`, `MedidasDoJogador` e `RetanguloDeTela`.
 - Alta testabilidade: `calcular` é determinístico e seus resultados são comparados diretamente nos testes.
 - Protected Variations: `GameScreen` e `HudRenderer` não precisam conhecer as fórmulas dos modos `COLUNAS`, `FAIXAS` e `RESERVA`.
 
 Princípios fragilizados:
 
-- OCP: cada novo modo responsivo exige alterar a classe e ampliar o enum privado `Modo`.
-- ISP: os 46 métodos públicos formam uma interface de consulta larga, embora sejam getters e projeções imutáveis.
-- SRP no limite: a geometria de fim de partida, por `painelDoFim` e `botaoDoFim`, convive com o HUD mesmo depois da criação de `LayoutDoResultadoDaPartida` para toque.
+- OCP: cada novo modo responsivo exige alterar a classe e ampliar o enum privado `Modo`. Análise detalhada na seção 6.
+- ISP: os 52 métodos públicos (antes 46) formam uma interface de consulta larga, embora sejam getters e projeções imutáveis. As subdivisões do jogador (`tituloDoJogador`, `linhaDoCasco` etc.) adicionaram 6 novos pontos de consulta.
+- SRP no limite: a geometria de fim de partida, por `painelDoFim` e `botaoDoFim`, convive com o HUD mesmo depois da criação de `LayoutDoResultadoDaPartida` para toque. As subdivisões do jogador ampliam esse padrão.
 
-Avaliação: é grande, mas coesa e segura. Dividir apenas para reduzir linhas criaria mais coordenação sem benefício imediato. A retirada futura das áreas do fim de partida pode ser feita junto da extração do renderer correspondente.
+Avaliação: cresceu de 483 para 562 linhas (+16,4%). Continua coesa em torno da geometria responsiva, mas a tendência de crescimento e o acúmulo de variantes justificam a proposta de Strategy registrada na seção 6.3.
 
 ### 4.7 `MenuScreen`
 
@@ -214,7 +227,7 @@ Responsabilidades atuais:
 Princípios respeitados:
 
 - GRASP Controller: recebe eventos da interface e decide a navegação.
-- Indirection: usa `ListaDeBotoes`, `LayoutDoMenu`, `LayoutDoMenuToque`, `RodapeDeTeclas` e `PoliticaDeAtalhos`.
+- Indirection: usa `ListaDeBotoes`, `LayoutDoMenu`, `LayoutDoMenuToque`, `LayoutDoMenuHorizontalToque`, `RodapeDeTeclas` e `PoliticaDeAtalhos`.
 - Separação de responsabilidades já iniciada: cálculos responsivos e seleção de foco são puros e testáveis fora da tela.
 
 Princípios fragilizados:
@@ -223,9 +236,212 @@ Princípios fragilizados:
 - OCP: `executar` e `desenharOpcoes` dependem dos índices fixos das quatro opções.
 - GRASP Creator e Low Coupling: `executar` instancia telas concretas como `CampusScreen`, `NovaPartidaScreen` e `RankingScreen`.
 
-Avaliação: é grande, porém o risco atual é menor que em `GameScreen`. As extrações de layout e foco já contêm as partes mais sujeitas a regressão.
+Avaliação: cresceu de 433 para 498 linhas (+15%) com o menu horizontal de toque. A extração de `LayoutDoMenuHorizontalToque` (106 linhas) conteve parte do crescimento. O risco atual é menor que em `GameScreen`.
 
-## 5. Avaliação do servidor
+## 5. Avaliação das classes introduzidas pelo joystick, multitoque, layouts de toque e modo tablet
+
+### 5.1 `JoystickVirtual` (148 linhas, `gdx/entrada`)
+
+Traduz o arrasto de um ponteiro em comandos de movimento (`Acao`). Mantém o estado do ponteiro ativo, a posição visual do botão e a direção corrente. Devolve `Resultado` com uma lista imutável de `Comando`.
+
+Princípios respeitados:
+
+- SRP: a classe tem uma responsabilidade (traduzir gesto em direção). Não desenha, não toca som, não conhece a partida.
+- GRASP Information Expert: possui centro, raio, zona morta e ponteiro, e decide a direção com base nesses dados (`direcaoDe`).
+- GRASP Pure Fabrication: não existe "joystick" no domínio. A classe é uma fabricação técnica da camada de entrada.
+- Low Coupling: depende apenas de `Acao` (application). Não importa libGDX.
+- Protected Variations: `pressionar`, `arrastar` e `soltar` isolam a mecânica de ponteiros de quem consome as ações.
+- OCP: `Resultado` e `Comando` usam records imutáveis, e `TipoDeComando` permite estender sem editar.
+
+Princípios fragilizados:
+
+- Nenhum ponto significativo. A classe é coesa, pequena e bem limitada.
+
+### 5.2 `ControleDeToque` (312 linhas, `gdx/entrada`)
+
+Monta o layout dos controles virtuais (joystick + botões circulares) para retrato e paisagem, e roteia ponteiros para o joystick ou para o botão tocado.
+
+Princípios respeitados:
+
+- SRP: a classe monta geometria e roteia toques. Não desenha (isso fica em `ControleDeToqueRenderer`).
+- GRASP Creator: cria `JoystickVirtual` e `BotaoVirtual` a partir da área disponível, do modo (dinâmico/clássico) e do alvo mínimo.
+- GRASP Pure Fabrication e Low Coupling: não depende de libGDX. Recebe `RetanguloDeTela` e `MedidasDosRotulos` como dados.
+- Protected Variations: `MedidasDosRotulos` desacopla a medição tipográfica (feita no renderer) do cálculo geométrico.
+- DIP: `acaoDe` converte IDs de string em `Acao` sem depender da tela ou da sessão.
+
+Princípios fragilizados:
+
+- SRP no limite: `montarEmRetrato` e `montarAcoesEmPaisagem` são dois algoritmos de layout na mesma classe. Se um terceiro layout surgir (por exemplo, joystick bilateral para dois jogadores), a classe precisará ser editada (OCP fragilizado).
+- OCP: `acaoDe` usa switch por string. Um botão novo exige editar o switch. O risco é baixo, pois o conjunto de ações é estável.
+
+### 5.3 `ControleDeToqueRenderer` (132 linhas, `gdx/entrada`)
+
+Desenha o joystick e os botões circulares. É a única classe de entrada que depende de libGDX (`SpriteBatch`, `ShapeRenderer`, `FontesDoJogo`).
+
+Princípios respeitados:
+
+- SRP: apenas desenha. Toda decisão de toque está em `ControleDeToque` e `JoystickVirtual`.
+- GRASP Indirection: a classe media entre o libGDX e os dados puros de `ControleDeToque`, separando apresentação de lógica.
+- Low Coupling: recebe `ControleDeToque` pronto, não conhece `GameSession`, `Campanha` nem `GameScreen`.
+- Robustez gráfica: restaura cores das fontes e do `SpriteBatch` em blocos `finally`.
+
+Princípios fragilizados:
+
+- OCP: `desenharRotulo` decide a cor do texto por comparação de ID (`ATIRAR`/`EMBARCAR`). Um botão com cor especial exigiria editar o método. O risco é baixo dado o conjunto fixo de botões.
+
+### 5.4 `OrientacaoPorTamanhoDeTela` (18 linhas, `gdx/plataforma`)
+
+Enum com dois valores (`RETRATO`, `PAISAGEM`) e fonte de verdade unica do critério "é tablet" (`smallestScreenWidthDp >= 600`).
+
+Princípios respeitados:
+
+- SRP: uma responsabilidade (classificar tela por tamanho).
+- GRASP Information Expert: possui a constante `MENOR_LARGURA_DE_TABLET_DP` e decide tanto orientação quanto `eTablet`.
+- DIP e Protected Variations: `EscalaDeTela` e `MissaoMarteGame` consultam `eTablet` em vez de duplicar o limiar.
+- OCP: adicionar um terceiro limiar (por exemplo, "é dobrável") pode ser feito com novo método, sem alterar `eTablet` nem `paraMenorLarguraDp`.
+
+Princípios fragilizados:
+
+- Nenhum. A classe é mínima e estável.
+
+### 5.5 `EscalaDeTela` (70 linhas, `gdx/layout`)
+
+Utilitária de conversão dp para mundo, fator de texto e alvo mínimo de toque. Classe final com construtor privado.
+
+Princípios respeitados:
+
+- SRP: todas as funções giram em torno de uma unica responsabilidade (escala entre dp, pixels e unidades do mundo).
+- GRASP Pure Fabrication: não corresponde a nenhuma entidade do domínio.
+- DIP: o método `fatorDeTexto(Plataforma, float, float, int)` recebe `Plataforma` como abstração, e delega o critério de tablet a `OrientacaoPorTamanhoDeTela.eTablet`, evitando duplicar regras.
+- OCP: a constante `FATOR_DE_TEXTO_PARA_TABLET` é nomeada e documentada com a conta física. Trocar o valor não exige entender a fórmula.
+- Low Coupling: não depende de libGDX. Recebe primitivos e `Plataforma`.
+
+Princípios fragilizados:
+
+- OCP no limite: se um terceiro perfil de densidade surgir (por exemplo, fator especifico para dobráveis), será necessário outro `if` no método com quatro parâmetros. A progressão natural seria uma Strategy de fator, mas neste momento o custo supera o benefício.
+
+### 5.6 `LayoutDoMenuHorizontalToque` (106 linhas, `gdx/ui`)
+
+Geometria pura das opções e do rodapé do menu horizontal de toque. Calcula posição dos quatro botões, rótulos, detalhe da campanha, conta e instrução.
+
+Princípios respeitados:
+
+- SRP: a classe calcula exclusivamente a geometria horizontal do menu de toque.
+- GRASP Pure Fabrication: não corresponde a nenhuma entidade do domínio.
+- Low Coupling: depende apenas de `MargensSeguras`, `RetanguloDeTela` e `MedidasDoMenuHorizontalToque`, sem libGDX.
+- Protected Variations: isola `MenuScreen` das fórmulas responsivas. A tela apenas consulta `botao(i)`, `rotulo(i)`, etc.
+- Alta testabilidade: a saída é determinística a partir de largura, altura, margens e medidas.
+
+Princípios fragilizados:
+
+- SRP no limite: o cálculo decide se o detalhe da campanha fica em linha ou abaixo do primeiro botão. Uma variante do layout exigiria editar a mesma classe (OCP).
+
+### 5.7 `MedidasDoJogador` (9 linhas, `gdx/hud`)
+
+Record com três medidas tipográficas do cartão do jogador (`alturaDoTitulo`, `alturaDaLinha`, `larguraDoRotuloDoCasco`) e um factory method `padrao(escala)`.
+
+Princípios respeitados:
+
+- SRP: encapsula um unico conceito (métricas do jogador para o HUD).
+- GRASP Information Expert: possui as medidas e sabe calculá-las a partir de uma escala.
+- ISP: a interface é mínima, três campos e um factory.
+- Imutabilidade: record garante que ninguém altera os valores depois da construção.
+
+Princípios fragilizados:
+
+- Nenhum. A classe é um dado puro.
+
+### 5.8 `MedidasDoCampusHorizontalToque` (22 linhas, `gdx/campanha`)
+
+Record com métricas do layout horizontal de toque do campus: conteudo (`MedidasDoCampus`), larguras das etapas (`LargurasDaEtapa` com cenário e fundador), largura mínima do painel, alturas do título/subtítulo/botão e alvo mínimo.
+
+Princípios respeitados:
+
+- SRP: encapsula métricas tipográficas medidas pela tela e consumidas pelo layout puro.
+- GRASP Protected Variations: desacopla `CampusLayout.calcularHorizontalToque` da medição real de texto (que usa `BitmapFont` no libGDX).
+- Validação no construtor compacto: exige exatamente três etapas, falhando rápido.
+- Imutabilidade: record com `List.copyOf`.
+
+Princípios fragilizados:
+
+- OCP: o construtor rejeita listas que não tenham exatamente 3 etapas. Se a campanha ganhar uma quarta etapa, a classe precisa mudar. O risco é baixo, pois o numero de etapas é uma regra de negócio estável.
+
+## 6. Acúmulo de variantes em `LayoutDoHud` e `CampusLayout`
+
+### 6.1 Situação atual
+
+`LayoutDoHud` (562 linhas, 52 métodos públicos) possui cinco variantes internas, selecionadas pelo enum privado `Modo`:
+
+| Variante | Método | Quando |
+|---|---|---|
+| Colunas horizontais | `calcularColunas` | paisagem com espaço lateral suficiente |
+| Faixas verticais | `calcularFaixas` | retrato com espaço vertical suficiente |
+| Reserva paisagem | `calcularReservaPaisagem` | paisagem quando colunas não cabem |
+| Reserva retrato | `calcularReservaRetrato` | retrato quando faixas não cabem |
+| Reserva (despacho) | `calcularReserva` | delega para paisagem ou retrato |
+
+Desde a revisão anterior, a classe cresceu 79 linhas com medidas do jogador (`MedidasDoJogador`), subdivisão do cartão em linhas (`tituloDoJogador`, `linhaDoCasco`, `linhaDosPontos`, `areaDasBarrasDoCasco`, `segmentoDoCasco`) e subdivisão compacta para faixas (`linhaPrincipalDoJogador`, `linhaSecundariaDoJogador` etc.). Essas subdivisões ficam nos getters, não nas fábricas, mas a API pública saltou de 46 para 52 métodos.
+
+`CampusLayout` (408 linhas, 28 métodos públicos) possui quatro variantes:
+
+| Variante | Método | Quando |
+|---|---|---|
+| Horizontal (desktop) | `horizontal` | paisagem sem toque |
+| Vertical (retrato) | `vertical` | retrato com toque |
+| Horizontal de toque | `calcularHorizontalToque` | paisagem com toque (tablets) |
+| Padrão | `padrao` | 800x600, atalho |
+
+A variante `calcularHorizontalToque` foi acrescentada inteira neste ciclo e é a maior (100 linhas), responsável pelo crescimento da classe.
+
+### 6.2 Avaliação frente ao OCP
+
+Ambas as classes acumulam variantes de forma que fere o princípio aberto/fechado:
+
+- **Cada novo modo responsivo exige editar a classe.** Se surgisse um modo "colunas empilhadas para dobráveis" em `LayoutDoHud` ou "campus em duas colunas" em `CampusLayout`, o novo código entraria na mesma classe, ampliando o enum `Modo` ou adicionando mais um factory estático.
+- **Os getters derivados crescem junto.** `LayoutDoHud.fichaDoObjetivo` já contém um `if` por `Modo`, e `tituloDoJogador`/`linhaDoCasco` verificam `toqueHorizontal()`. Cada variante nova pode exigir novos ramos nesses métodos.
+- **Os construtores são pesados.** `LayoutDoHud` tem 24 parâmetros e `CampusLayout` tem 21. Variantes futuras ampliam essa assinatura.
+
+Pontos atenuantes:
+
+- Os dois objetos são imutáveis e puros (sem libGDX), o que limita o impacto de uma mudança a uma classe bem testada.
+- O contrato público (retângulos por nome) é estável: quem consome `LayoutDoHud` não precisa saber qual variante foi escolhida.
+- Na prática, novas variantes responsivas são raras. As cinco de `LayoutDoHud` já cobrem celular retrato, celular paisagem, tablet paisagem e desktop.
+
+### 6.3 Proposta de solução (sem implementar)
+
+Extrair a seleção de variante para um padrão Strategy de layout:
+
+```java
+// Contrato da Strategy
+public interface EstrategiaDeLayoutDoHud {
+    LayoutDoHud calcular(float largura, float altura, int celulas,
+            boolean toque, MargensSeguras margens, RetanguloDeTela mapa,
+            MedidasDoHud medidas);
+}
+
+// Cada variante vira uma classe pequena e fechada
+public final class LayoutEmColunas implements EstrategiaDeLayoutDoHud { ... }
+public final class LayoutEmFaixas implements EstrategiaDeLayoutDoHud { ... }
+public final class LayoutDeReserva implements EstrategiaDeLayoutDoHud { ... }
+```
+
+`LayoutDoHud` continuaria como o objeto imutável com getters, mas perderia os factories. A seleção entre estratégias ficaria em um `SeletorDeLayoutDoHud` que testa cada uma em cascata (como o `calcular` público já faz hoje).
+
+Benefícios:
+
+- OCP: adicionar uma variante é criar uma classe, sem editar `LayoutDoHud`.
+- SRP: cada estratégia contém um unico algoritmo de posicionamento.
+- Testabilidade: cada estratégia pode ser testada isoladamente.
+
+Riscos e custo:
+
+- Os getters derivados (`fichaDoObjetivo`, `tituloDoJogador`) ainda precisariam do `Modo` ou de um campo para decidir a variante. A Strategy não elimina esse if, apenas move-o.
+- O construtor de 24 parâmetros poderia usar um Builder, mas acrescentaria uma camada sem reduzir a complexidade real.
+- Prioridade baixa: o numero de variantes é estável e novas variantes responsivas não estão previstas.
+
+A mesma abordagem se aplica a `CampusLayout`, com `EstrategiaDeCampusLayout` e implementações `CampusHorizontal`, `CampusVertical` e `CampusHorizontalToque`.
+
+## 7. Avaliação do servidor
 
 O servidor apresenta uma estrutura mais equilibrada que o cliente:
 
@@ -241,39 +457,39 @@ O servidor apresenta uma estrutura mais equilibrada que o cliente:
 
 Não há classe do servidor acima de 100 linhas nem dependência do servidor para o cliente. A única alteração de produção da equipe na cópia da Fase 8 foi esconder `isSenhaCabeNoBcrypt` do JSON e do OpenAPI com `@JsonIgnore`. Não há justificativa para uma refatoração estrutural do servidor nesta etapa.
 
-## 6. Pontos fortes do projeto
+## 8. Pontos fortes do projeto
 
-### 6.1 Strategy e Decorator de pontuação
+### 8.1 Strategy e Decorator de pontuação
 
 `GameSession` depende de `RegraDePontuacao`, não de números específicos. `RegraDePontuacaoPadrao` preserva a partida rápida. `RegraDePontuacaoDaCampanha` decora outra regra, multiplica seus valores e acrescenta somente os bônus da campanha. Isso respeita OCP, DIP e Strategy. Os testes `RegraDePontuacaoPadraoTest`, `RegraDePontuacaoDaCampanhaTest` e `GameSessionPontuacaoTest` protegem a decisão.
 
-### 6.2 Eventos sem dependência da interface
+### 8.2 Eventos sem dependência da interface
 
 `GameSession` devolve `ResultadoTurno` com uma lista de `EventoJogo`. A aplicação emite `COLISAO`, `ENTREGA`, `NAMI_ATIVADA` e outros eventos, enquanto `GameScreen.reagirAosEventos` decide som, tremor e efeitos. É uma aplicação simples de Observer, Low Coupling e Protected Variations. `GameSessionEventosTest` e `GameSessionCampanhaTest` cobrem o contrato.
 
-### 6.3 Política pura de destaque
+### 8.3 Política pura de destaque
 
 `PoliticaDeDestaque.decidir` escolhe o alvo, opacidades e zonas sem usar libGDX. `posicionarEtiqueta` recebe retângulos e devolve uma posição opcional. A mesma instância de `AlvoDoObjetivo` alimenta HUD e mapa, eliminando cálculos divergentes. Isso aplica Pure Fabrication, Information Expert e alta testabilidade. `PoliticaDeDestaqueTest` cobre seleção, resgatados, alcance, colisão com HUD e nave.
 
-### 6.4 Política de ranking explícita
+### 8.4 Política de ranking explícita
 
 `PoliticaDeRegistroNoRanking.destino` centraliza a decisão entre `NENHUM`, `LOCAL` e `GLOBAL`. A campanha não entra em ranking, o convidado registra vitória local e o jogador autenticado usa o servidor. `RegistroAlternativoNoRankingLocal` trata a falha de conexão uma única vez. Isso reduz condicionais espalhadas e aplica Pure Fabrication e Protected Variations. `PoliticaDeRegistroNoRankingTest` e `RegistroAlternativoNoRankingLocalTest` protegem os casos.
 
-### 6.5 Layouts puros e medidos
+### 8.5 Layouts puros e medidos
 
-`LayoutDoHud`, `CampusLayout`, `LayoutDoMenu`, `LayoutDaNovaPartida` e `LayoutDoResultadoDaPartida` não dependem de libGDX. As medidas tipográficas entram como objetos de dados calculados com a escala ativa, por exemplo `MedidasDoHud` e `MedidasDoCampus`. Isso aplica Pure Fabrication, Low Coupling e Information Expert. Os testes de layout verificam tamanhos, áreas úteis, não sobreposição, modo reserva e fatores de texto diferentes.
+`LayoutDoHud`, `CampusLayout`, `LayoutDoMenu`, `LayoutDaNovaPartida`, `LayoutDoResultadoDaPartida`, `LayoutDoMenuHorizontalToque` e `ControleDeToque` não dependem de libGDX. As medidas tipográficas entram como objetos de dados calculados com a escala ativa, por exemplo `MedidasDoHud`, `MedidasDoCampus`, `MedidasDoCampusHorizontalToque`, `MedidasDoJogador` e `MedidasDosRotulos`. Isso aplica Pure Fabrication, Low Coupling e Information Expert. Os testes de layout verificam tamanhos, áreas úteis, não sobreposição, modo reserva e fatores de texto diferentes.
 
-### 6.6 Separação `domain`, `application` e `gdx`
+### 8.6 Separação `domain`, `application` e `gdx`
 
 O domínio possui `Missao`, `Nave`, passageiros, perigos e `EstacaoNami`, sem importar libGDX. A aplicação coordena casos de uso, pontuação, campanha, eventos e portas. `gdx` traduz entrada e desenha. O servidor possui processo e modelo independentes do cliente e usa DTOs na API. Essa separação aplica DIP, Indirection e Protected Variations.
 
-### 6.7 Pequenas classes de geometria e efeitos
+### 8.7 Pequenas classes de geometria e efeitos
 
-`CameraDaPartida`, `EscalaDaCelula`, `MascaraDaTempestade`, `ParticulasDaTempestade`, `CenaVisivelDaTempestade`, `GeometriaDoRastro`, `AparenciaDaNami` e `RecorteDoMundo` retiram decisões dos renderers. São classes puras, pequenas e cobertas por testes diretos.
+`CameraDaPartida`, `EscalaDaCelula`, `EscalaDeTela`, `OrientacaoPorTamanhoDeTela`, `JoystickVirtual`, `MascaraDaTempestade`, `ParticulasDaTempestade`, `CenaVisivelDaTempestade`, `GeometriaDoRastro`, `AparenciaDaNami` e `RecorteDoMundo` retiram decisões dos renderers e das telas. São classes puras, pequenas e cobertas por testes diretos. `EscalaDeTela` centraliza a conversão dp/mundo e o fator de texto, `OrientacaoPorTamanhoDeTela` é a fonte unica do critério de tablet, e `JoystickVirtual` traduz gestos em comandos sem depender de libGDX.
 
-## 7. Dívida herdada e dívida criada pela equipe
+## 9. Dívida herdada e dívida criada pela equipe
 
-### 7.1 Dívida herdada da base do professor
+### 9.1 Dívida herdada da base do professor
 
 | Dívida | Evidência na Fase 7 | Situação na Fase 8 |
 |---|---|---|
@@ -285,21 +501,23 @@ O domínio possui `Missao`, `Nave`, passageiros, perigos e `EstacaoNami`, sem im
 
 O comentário de `SimboloParaImagem` afirma OCP, mas a inclusão da NAMI exigiu editar o `switch`. A classe evita `instanceof`, porém não está fechada para novos símbolos. A dívida é herdada; a extensão `H` feita pela equipe apenas evidencia a limitação.
 
-### 7.2 Dívida criada ou ampliada pela equipe
+### 9.2 Dívida criada ou ampliada pela equipe
 
 | Dívida | Evidência | Consequência |
 |---|---|---|
-| Crescimento de `GameScreen` | novos métodos de câmera, recorte, destaques, campanha, rede e resultado | maior risco de regressão ao alterar qualquer parte da partida |
-| Crescimento de `HudRenderer` | radar, cartões, status, avisos e medição na mesma classe | mudanças independentes disputam o mesmo estado gráfico |
+| Crescimento de `GameScreen` | novos métodos de joystick, multitoque, câmera, recorte, destaques, campanha, rede e resultado. Subiu de 1.032 para 1.127 desde a refatoração | maior risco de regressão ao alterar qualquer parte da partida |
+| Crescimento de `HudRenderer` | radar, cartões, status, avisos, subdivisão do jogador e medição. Subiu de 673 para 732 | mudanças independentes disputam o mesmo estado gráfico |
+| Acúmulo de variantes em `LayoutDoHud` e `CampusLayout` | 5 variantes em `LayoutDoHud` (562 linhas, 52 métodos) e 4 em `CampusLayout` (408 linhas). Cada nova variante exige editar a mesma classe | OCP fragilizado; getters derivados com `if` por modo crescem junto (seção 6) |
+| `CampusScreen` reúne medição, controle e desenho | 612 linhas (+92), `layoutHorizontalDoToque`, `medirConteudoHorizontalDoToque`, `tratarTecla` e `desenharCampus` | SRP e High Cohesion ficam fragilizados |
 | Composição da partida dentro de `CampusScreen` | `iniciarMissao` instancia duas regras de pontuação e `GameSession` | apresentação conhece detalhes de criação da aplicação |
-| `CampusScreen` reúne medição, controle e desenho | `layoutAtual`, `tratarTecla`, `iniciarMissao` e `desenharCampus` | SRP e High Cohesion ficam fragilizados |
 | `MundoRenderer` incorpora todas as camadas visuais novas | tempestade, rastro, alcance, NAMI, pulsos e etiquetas | ordem de desenho e restauração de estado ficam centralizadas e frágeis |
 | Mapeamento de tipo repetido na apresentação | `PoliticaDeDestaque.Tipo.de`, `HudRenderer.corDoPassageiro` e cores de fundador | novo tipo visual exige alterações em vários pontos |
 | `LayoutDoHud` mantém também o resultado horizontal | `painelDoFim` e `botaoDoFim` coexistem com `LayoutDoResultadoDaPartida` | responsabilidade residual e API pública maior |
+| Dois modos de layout em `ControleDeToque` | `montarEmRetrato` e `montarAcoesEmPaisagem` na mesma classe (312 linhas) | um terceiro layout exigiria editar a classe (OCP no limite) |
 
-Também há dívida reduzida pela própria equipe: `PoliticaDeDestaque`, layouts puros, classes de tempestade e políticas de ranking impediram que toda a lógica nova permanecesse dentro das telas.
+Também há dívida reduzida pela própria equipe: `PoliticaDeDestaque`, layouts puros, classes de entrada desacopladas (`JoystickVirtual`, `ControleDeToque` sem libGDX), `EscalaDeTela` como ponto unico de conversão, `OrientacaoPorTamanhoDeTela` como fonte unica do critério de tablet, classes de tempestade e políticas de ranking impediram que toda a lógica nova permanecesse dentro das telas.
 
-## 8. Refatorações propostas e situação
+## 10. Refatorações propostas e situação
 
 As propostas estão ordenadas pelo equilíbrio entre benefício e risco. Nenhuma altera regra, texto, protocolo ou visual.
 
@@ -309,8 +527,10 @@ As propostas estão ordenadas pelo equilíbrio entre benefício e risco. Nenhuma
 | 2 | Extrair a preparação da partida de `CampusScreen` | alto | médio | concluída |
 | 3 | Extrair o radar de `HudRenderer` | médio | baixo | melhoria futura |
 | 4 | Extrair a tempestade de `MundoRenderer` | médio | médio | melhoria futura |
+| 5 | Extrair variantes de `LayoutDoHud` em Strategies | médio | médio | melhoria futura |
+| 6 | Extrair variantes de `CampusLayout` em Strategies | baixo | médio | melhoria futura |
 
-### 8.1 Extrair `ResultadoDaPartidaRenderer` (concluída)
+### 10.1 Extrair `ResultadoDaPartidaRenderer` (concluída)
 
 Extrair de `GameScreen` os métodos `atualizarLayoutDoResultado`, `medirLargura`, `medirAlturaQuebrada`, `desenharFimDePartida`, `desenharFimDePartidaNoToque`, `desenharTextoQuebradoCentralizado`, `desenharRotuloDoBotao`, `motivoDoFim` e `desenharSituacaoDoEnvio`.
 
@@ -330,7 +550,7 @@ Testes de segurança:
 - Novo teste puro do modelo visual do resultado, cobrindo vitória, derrota, campanha, erro e sucesso de envio.
 - `./gradlew clean build` do cliente e conferência das duas orientações com fator 1,6.
 
-### 8.2 Extrair `PreparadorDaPartidaDaCampanha` (concluída)
+### 10.2 Extrair `PreparadorDaPartidaDaCampanha` (concluída)
 
 Extrair de `CampusScreen.iniciarMissao` e do reinício da campanha em `GameScreen` a criação de `PreparacaoDaEtapa`, `RegraDePontuacaoPadrao`, `RegraDePontuacaoDaCampanha` e `GameSession`.
 
@@ -350,7 +570,7 @@ Testes de segurança:
 - `CampusTest` e `CampusLayoutTest` para provar que progresso e visual não mudaram.
 - `./gradlew clean build` do cliente.
 
-### 8.3 Extrair `RadarRenderer` (melhoria futura)
+### 10.3 Extrair `RadarRenderer` (melhoria futura)
 
 Extrair de `HudRenderer` os métodos `desenharRadar`, `ponto`, `quadrado`, `desenharJanelaVisivel`, `linhaTracejadaHorizontal` e `linhaTracejadaVertical`.
 
@@ -370,7 +590,7 @@ Testes de segurança:
 - Novo teste do modelo de marcadores, cobrindo nave, base, passageiros, inimigos, NAMI e tempestade.
 - `LayoutDoHudTest`, `HudRendererTextoTest` e `./gradlew clean build`.
 
-### 8.4 Extrair `TempestadeRenderer` (melhoria futura)
+### 10.4 Extrair `TempestadeRenderer` (melhoria futura)
 
 Extrair de `MundoRenderer` os métodos `desenharEscuridao`, `desenharPoeira` e `desenharParticulas`, além das cores e constantes exclusivas da tempestade.
 
@@ -391,20 +611,25 @@ Testes de segurança:
 - Novo teste do plano de camadas da tempestade, fixando a ordem de composição e a restauração da cor.
 - `./gradlew clean build` e comparação visual nas etapas 2 e 3.
 
-### 8.5 Resultado das refatorações aprovadas
+### 10.5 Resultado das refatorações aprovadas
 
 | Momento | Linhas de `GameScreen` |
 |---|---:|
 | Antes das refatorações | 1.213 |
 | Após `ResultadoDaPartidaRenderer` | 1.037 |
 | Após `PreparadorDaPartidaDaCampanha` | 1.032 |
+| Após joystick, multitoque, layouts e modo tablet | 1.127 |
 
-As duas extrações reduziram `GameScreen` em 181 linhas, aproximadamente 14,9%, sem transferir regras de negócio para a camada `gdx`. A primeira concentrou a apresentação do resultado em `gdx/hud`. A segunda concentrou a montagem da sessão de campanha em `application/campanha` e passou a ser usada tanto no início da missão quanto na tentativa de novo.
+As duas extrações reduziram `GameScreen` em 181 linhas. Depois, o joystick virtual, multitoque, célula por densidade e integração com `ControleDeToque` acrescentaram 95 linhas. O saldo total é de redução de 86 linhas (-7,1%).
 
-As propostas 3 e 4 permanecem registradas somente como melhorias futuras. Elas não fazem parte do escopo aprovado da Etapa 2.
+As propostas 3 a 6 permanecem registradas somente como melhorias futuras. Elas não fazem parte do escopo aprovado.
 
-## 9. Conclusão
+## 11. Conclusão
 
-A Fase 8 preserva uma base arquitetural sólida: regras fora do libGDX, servidor independente, DTOs, portas, Strategies, eventos e políticas puras. A principal dívida está na quantidade de responsabilidades reunidas em algumas classes de apresentação.
+A Fase 8 preserva uma base arquitetural sólida: regras fora do libGDX, servidor independente, DTOs, portas, Strategies, eventos e políticas puras. As oito classes novas avaliadas nesta revisão (joystick, controles de toque, escala, orientação, layouts e medidas) seguem os mesmos padrões: são puras, pequenas, testáveis e desacopladas do libGDX quando não precisam dele.
 
-Não é recomendável dividir `GameSession` ou `LayoutDoHud` somente pelo número de linhas. As duas refatorações aprovadas retiraram blocos com fronteiras visíveis e boa cobertura. Radar e tempestade continuam como possibilidades futuras, sem autorização de implementação nesta etapa.
+A principal dívida está no acúmulo de variantes responsivas dentro de `LayoutDoHud` e `CampusLayout`. Ambas cresceram significativamente (562 e 408 linhas) e cada nova variante exige editar a mesma classe, fragilizando o OCP. A proposta de Strategies de layout (seção 6.3) oferece uma saída, mas o custo supera o benefício enquanto o conjunto de variantes permanecer estável.
+
+`GameScreen` continua sendo a classe mais complexa, mas com saldo de redução (-7,1% desde o diagnóstico). As classes de entrada (`JoystickVirtual`, `ControleDeToque`) e de escala (`EscalaDeTela`, `OrientacaoPorTamanhoDeTela`) retiraram decisões da tela e concentraram regras em pontos testáveis.
+
+Não é recomendável dividir `GameSession` somente pelo número de linhas. As refatorações concluídas retiraram blocos com fronteiras visíveis e boa cobertura. Radar, tempestade e Strategies de layout continuam como possibilidades futuras, sem autorização de implementação nesta etapa.
