@@ -32,7 +32,7 @@ Não há Gradle nem bibliotecas externas nesta fase. O teste sinaliza falhas por
 
 ## Estrutura e decisões
 
-`model` contém entidades; `engine` contém aplicação e `engine/port` suas interfaces; `ui` lê e apresenta; `persistence` adapta arquivos; `app/Main` monta dependências. Consulte o [tutorial](docs/fase-01-tutorial.md), o [diagnóstico](../../docs/diagnostico.md) e as [ADRs](../../docs/adr/ADR-002-camadas-e-portas.md).
+`model` contém entidades; `engine` contém aplicação e `engine/port` suas interfaces; `ui` lê e apresenta; `persistence` adapta arquivos; `app/Main` monta dependências. Consulte o [tutorial](docs/fase-01-tutorial.md), o [diagnóstico](../../docs/arquitetura/diagnostico.md) e as [ADRs](../../docs/adr/ADR-002-camadas-e-portas.md).
 
 ## Persistência e limitações
 

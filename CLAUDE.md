@@ -103,10 +103,14 @@ JogoMissaoMarte/                      raiz do repositório Git
   README.md                           índice das fases, como executar cada uma, origem do código
   .gitignore                          build/, .gradle/, out/, *.iml locais, local.properties, ranking*.json, dados H2
   docs/
-    diagnostico.md                    gerado na Etapa 1
+    arquitetura/                      diagnósticos e revisões arquiteturais
+      diagnostico.md                  gerado na Etapa 1
     adr/                              decisões arquiteturais (ADR-001, ADR-002...)
-    relatorio-tecnico.md              entregável final (2 a 4 páginas)
-    retrospectiva.md
+    servidor/                         demonstração e publicação do servidor
+    validacao/                        registros históricos de validação
+    relatorio/
+      relatorio-tecnico.md            entregável final (2 a 4 páginas)
+      retrospectiva.md
   fases/
     fase-00-original/                 jogo de console original (cópia de fase-0-oopuro da base)
     fase-01-refatoracao/              código DA EQUIPE (hoje em MissaoMarte/src), com SOLID e GRASP
@@ -169,7 +173,7 @@ Aceite: `git status` limpo depois do commit; README com o índice; nenhum artefa
 ### Etapa 1 · Fase 0 e Fase 1 da equipe (Sprint 2, issues MM-01 e MM-02)
 
 1. Copiar `fase-0-oopuro` da base para `fases/fase-00-original/` (é o jogo de console original, ponto de comparação).
-2. Gerar `docs/diagnostico.md` sobre o código da equipe (`MissaoMarte/src/missao`):
+2. Gerar `docs/arquitetura/diagnostico.md` sobre o código da equipe (`MissaoMarte/src/missao`):
    - classes, responsabilidades e dependências entre pacotes (diagrama Mermaid de pacotes e de classes);
    - fluxo de uma partida (diagrama de sequência Mermaid);
    - comparação com `fase-01-refatoracao` da base: o que está igual, o que falta, o que a equipe fez diferente e por quê;
@@ -296,8 +300,8 @@ Aceite da Fase 8: `./gradlew clean build` verde no cliente; campanha jogável do
 ### Etapa 5 · Fechamento (Sprint 5)
 
 1. Revisar todos os comandos do README rodando-os do zero.
-2. `docs/relatorio-tecnico.md` (2 a 4 páginas): arquitetura e decisões com trechos de código; padrões e princípios (tabela da seção 6 com classes reais); testes e resultados (números); dificuldades, limitações (incluindo: o servidor não valida se a pontuação é legítima, a pontuação da campanha fica somente no progresso local) e melhorias futuras; origem do código; participação de cada integrante.
-3. `docs/retrospectiva.md`; Kanban com todas as issues fechadas ou justificadas.
+2. `docs/relatorio/relatorio-tecnico.md` (2 a 4 páginas): arquitetura e decisões com trechos de código; padrões e princípios (tabela da seção 6 com classes reais); testes e resultados (números); dificuldades, limitações (incluindo: o servidor não valida se a pontuação é legítima, a pontuação da campanha fica somente no progresso local) e melhorias futuras; origem do código; participação de cada integrante.
+3. `docs/relatorio/retrospectiva.md`; Kanban com todas as issues fechadas ou justificadas.
 
 ## 8. Fora do escopo agora
 

@@ -5,7 +5,7 @@
 - Revisão da base: `4b43e59eacfa57798d55b68c5d018015c804193e`; pasta `missaoMarteUnifor/projetoExtensaoFinal/exercicio10/fases/fase-02-gradle`.
 - Alterações da equipe: aviso de origem, comandos e caminhos deste README adaptados para macOS e permissão de execução dos scripts `gradlew`. Fontes, testes, assets, dependências e versões dos Wrappers preservados.
 - O link do tutorial para a referência geral de Gradle/libGDX foi apontado para a revisão acima no GitHub, pois o arquivo fica fora das fases importadas.
-- Validação em 12/11/2026: build interrompido no download do Gradle por `UnknownHostException: services.gradle.org`. Compilação, testes e execução do jogo não foram realizados nesta sessão. Veja o [registro da Etapa 2](../../docs/validacao-etapa-02.md).
+- Validação em 12/11/2026: build interrompido no download do Gradle por `UnknownHostException: services.gradle.org`. Compilação, testes e execução do jogo não foram realizados nesta sessão. Veja o [registro da Etapa 2](../../docs/validacao/validacao-etapa-02.md).
 
 **Leitura da documentação herdada:** as contagens de testes e os relatos de verificações abaixo pertencem à base do professor; não são resultados da equipe nesta importação. As referências a fases anteriores também descrevem a sequência do professor, que usa pacotes e regras diferentes da Fase 1 da equipe.
 

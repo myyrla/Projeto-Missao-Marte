@@ -1,137 +1,183 @@
 # Missão Marte Unifor
 
-Projeto Integrador da disciplina Projeto e Arquitetura de Sistemas da UNIFOR, Grupo 01.
+Projeto Integrador da disciplina Projeto e Arquitetura de Sistemas da Universidade de Fortaleza. O repositório registra a evolução de um jogo Java de console até um jogo libGDX para desktop e Android, integrado a um servidor Spring Boot de autenticação e ranking.
 
-**Equipe:** Myrla Rodrigues, Cristiano Gonçalves e Iandeyara Farias.
+## Equipe
 
-O projeto evolui um jogo Java de console para um jogo libGDX desktop e Android, com servidor independente de ranking em Spring Boot e a melhoria da equipe: Campanha dos Fundadores.
+Grupo 01:
 
-## Situação atual
+- Myrla Rodrigues
+- Cristiano Gonçalves
+- Iandeyara Farias
 
-A Etapa 0 foi registrada no commit `6330869`. A Etapa 1 implementa o console da equipe em `fases/fase-01-refatoracao/` e preserva a Fase 0 em `fases/fase-00-original/`. Veja o [diagnóstico](docs/diagnostico.md), as [decisões](docs/adr/ADR-001-trilha-de-evolucao.md) e o [tutorial](fases/fase-01-refatoracao/docs/fase-01-tutorial.md).
+O planejamento e o acompanhamento da Sprint estão no [Kanban do projeto](https://github.com/users/myyrla/projects/3).
 
-A Etapa 1 está registrada nos commits `36af8b6` e `8842ac4`, presentes em `main` e na referência local `origin/main`. A Etapa 2 foi aprovada: as Fases 2 a 7 foram importadas, com documentação de origem e comandos para macOS. Os nove builds tentados pararam no download do Gradle por falha de DNS (`services.gradle.org`), antes da compilação e dos testes. Os commits da Etapa 2 estão pendentes pela restrição de escrita em `.git` nesta sessão. Consulte a [validação da Etapa 2](docs/validacao-etapa-02.md).
+## Mapa das fases
 
-## Comportamento de referência para a Fase 1
+Cada fase é independente e mantém seu próprio código, README e, quando aplicável, Gradle Wrapper. As pastas preservam o histórico didático da evolução.
 
-A referência é a Fase 0 do professor (`fase-0-oopuro`). Os três fundadores representam os **tipos** Professor, Engenheiro e Astronauta, não a quantidade de passageiros de uma partida. O mapa tem 4 passageiros no fácil e 5 no médio ou difícil; a capacidade da nave é 5.
-
-| Dificuldade | Passageiros | Asteroides | Inimigos | Pontuação inicial |
-|---|---:|---:|---:|---:|
-| Fácil | 4 | 1 | 1 | 30 |
-| Médio | 5 | 2 | 2 | 20 |
-| Difícil | 5 | 3 | 3 | 45 |
-
-Controles: `w`, `a`, `s`, `d` para mover; `c` para embarcar; `q` para abortar. Ranking Top 5; nave com 3 vidas; vitória ao resgatar todos e retornar à plataforma `L` em `(0,0)`. Professor, Engenheiro e Astronauta valem, respectivamente, 10, 15 e 20 pontos.
-
-Esses valores foram aplicados à Fase 1. Mapas pequenos demais para a dificuldade são recusados antes do sorteio, conforme correção aprovada.
-
-## Índice das fases
-
-Fases 0 a 7 estão disponíveis. A Fase 8 permanece planejada e não foi iniciada. Nas Fases 2 a 7, compilação e testes ainda dependem da resolução do bloqueio de download.
-
-| Fase | Pasta | Situação | Origem |
+| Fase | Conteúdo | Tecnologia principal | Origem |
 |---|---|---|---|
-| 00: original | `fases/fase-00-original/` | Importada; fontes preservados | Professor: `fase-0-oopuro` |
-| 01: refatoração | `fases/fase-01-refatoracao/` | Console implementado; seis grupos de testes | Equipe |
-| 02: Gradle | `fases/fase-02-gradle/` | Importada; build bloqueado no download | Base do professor |
-| 03: libGDX | `fases/fase-03-libgdx/` | Importada; build bloqueado no download | Base do professor |
-| 04: interface gráfica | `fases/fase-04-interface-grafica/` | Importada; build bloqueado no download | Base do professor |
-| 05: servidor e ranking | `fases/fase-05-servidor-ranking/` | Importada; build bloqueado no download | Base do professor |
-| 06: Android | `fases/fase-06-android/` | Importada; build bloqueado no download | Base do professor |
-| 07: evolução livre | `fases/fase-07-evolucao-livre/` | Importada; build bloqueado no download | Base do professor |
-| 08: Campanha dos Fundadores | `fases/fase-08-campanha-fundadores/` | Prevista na Etapa 3 | Equipe, a partir da Fase 7 |
+| [00: jogo original](fases/fase-00-original/README.md) | Referência inicial do jogo de console | Java puro | Base do professor |
+| [01: refatoração](fases/fase-01-refatoracao/README.md) | Refatoração do console com camadas, portas, SOLID e GRASP | Java puro | Equipe |
+| [02: Gradle](fases/fase-02-gradle/README.md) | Automação do build e testes | Gradle | Base do professor |
+| [03: libGDX](fases/fase-03-libgdx/README.md) | Primeira versão desktop com libGDX | libGDX e LWJGL3 | Base do professor |
+| [04: interface gráfica](fases/fase-04-interface-grafica/README.md) | Telas, recursos visuais, áudio e entrada gráfica | libGDX | Base do professor |
+| [05: servidor e ranking](fases/fase-05-servidor-ranking/README.md) | Cadastro, login, partidas e ranking remoto | Spring Boot e H2 | Base do professor |
+| [06: Android](fases/fase-06-android/README.md) | Cliente Android, toque e publicação do servidor | Android e libGDX | Base do professor |
+| [07: evolução livre](fases/fase-07-evolucao-livre/README.md) | Modo dinâmico, tiro, perseguidores e layout responsivo | libGDX | Base do professor |
+| [08: Campanha dos Fundadores](fases/fase-08-campanha-fundadores/README.md) | Campanha, Campus UNIFOR Marte, NAMI, tempestade, nova pontuação e interface própria | libGDX, Android e Spring Boot | Equipe, a partir da Fase 7 |
 
-## Ambiente
+A Fase 8 é a entrega principal da equipe e deve ser usada nas demonstrações atuais.
 
-- JDK **17** para compilar e executar.
-- macOS e IntelliJ IDEA usados pela equipe.
-- Gradle: usar o Wrapper de cada fase, sem trocar versões.
-- Android SDK: opcional; sua ausência deve ser registrada ao validar o módulo Android.
+## Requisitos
 
-Confira e selecione o JDK no terminal:
+- JDK 17 para todos os projetos.
+- OpenGL 2.0 ou superior para o cliente desktop.
+- Android SDK com plataforma 35 e Build Tools 34.0.0 para gerar o APK.
+- Gradle Wrapper da própria fase. Não é necessário instalar Gradle globalmente.
+- `openssl` para gerar o segredo temporário do servidor nos exemplos abaixo.
+
+No macOS, confira o JDK ativo:
 
 ```bash
 /usr/libexec/java_home -V
 export JAVA_HOME=$(/usr/libexec/java_home -v 17)
-export PATH="$JAVA_HOME/bin:$PATH"
 java -version
-javac -version
 ```
 
-Confirme que ambos mostram 17 antes de compilar. No IntelliJ, selecione o mesmo JDK no projeto e no Gradle JVM, quando aplicável.
+## Início rápido da Fase 8
 
-## Compilação e execução
+### Modos disponíveis
 
-### Fase 0
+A **partida rápida** preserva o comportamento do jogo original e registra vitórias no ranking local ou global, conforme o login e a disponibilidade do servidor. A **Campanha dos Fundadores** é a evolução criada pela equipe: possui três etapas, progresso do campus e pontuação própria, e suas partidas não entram em nenhum ranking.
 
-Na pasta `fases/fase-00-original/`:
+### Cliente desktop
 
 ```bash
-mkdir -p out
-find src -name '*.java' -print0 | xargs -0 javac --release 17 -encoding UTF-8 -d out
-java -cp out Main
+cd fases/fase-08-campanha-fundadores/cliente
+./gradlew clean build
+./gradlew :lwjgl3:run --console=plain
 ```
 
-A Fase 0 não possui suíte automatizada. Use mapa de tamanho 5; a limitação de mapas pequenos foi preservada nessa fase.
+O servidor é opcional para jogar. Sem login ou sem conexão, o cliente continua disponível e usa o ranking local nas partidas rápidas.
 
-### Fase 1 da equipe
+### Opções de desenvolvimento
 
-Na pasta `fases/fase-01-refatoracao/`:
+As opções são propriedades da JVM repassadas pelo launcher desktop:
+
+| Propriedade | Exemplo | Efeito |
+|---|---|---|
+| `missaomarte.campanha.etapa` | `-Dmissaomarte.campanha.etapa=2` | Abre a campanha na etapa indicada, de 1 a 3, com progresso de desenvolvimento |
+| `missaomarte.campanha.concluida` | `-Dmissaomarte.campanha.concluida=true` | Abre o campus com uma campanha concluída em memória, sem apagar o progresso salvo |
+| `missaomarte.toque` | `-Dmissaomarte.toque=true` | Ativa no desktop a interface e os controles de toque |
+| `missaomarte.janela` | `-Dmissaomarte.janela=540x1200` | Define o tamanho da janela para reproduzir telas de celular |
+| `missaomarte.fatorTexto` | `-Dmissaomarte.fatorTexto=1.6` | Força a escala de texto informada no desktop |
+
+Exemplo para reproduzir a interface vertical do Android e abrir a etapa da NAMI:
 
 ```bash
-mkdir -p out
-find src tests -name '*.java' -print0 | xargs -0 javac --release 17 -encoding UTF-8 -d out
-java -ea -cp out missao.TodosOsTestes
-java -cp out missao.app.Main
+./gradlew :lwjgl3:run --console=plain \
+  -Dmissaomarte.toque=true \
+  -Dmissaomarte.janela=540x1200 \
+  -Dmissaomarte.fatorTexto=1.6 \
+  -Dmissaomarte.campanha.etapa=2
 ```
 
-Os testes usam Java puro e incluem domínio, fábrica, motor, ranking, persistência e console. Execute o jogo dentro da pasta de cada fase para manter seus rankings separados.
+Exemplo para conferir a inauguração do campus em uma janela horizontal:
 
-### Fases 2 a 7 importadas
+```bash
+./gradlew :lwjgl3:run --console=plain \
+  -Dmissaomarte.campanha.concluida=true
+```
 
-Os nove projetos Gradle receberam a tentativa de `./gradlew clean build --console=plain --no-daemon` com JDK 17. Todos retornaram código 1 ao baixar o Wrapper, sem executar tarefas ou testes. Os comandos abaixo permitem retomar a validação em um ambiente com acesso às distribuições e dependências. Execute cada um no diretório indicado. Cliente e servidor são builds independentes.
+### Android
 
-| Fase | Diretório de execução | Build e testes | Execução |
-|---|---|---|---|
-| 02 | `fases/fase-02-gradle` | `./gradlew build` e `./gradlew test` | `./gradlew run` |
-| 03 | `fases/fase-03-libgdx` | `./gradlew build` e `./gradlew test` | `./gradlew :lwjgl3:run` |
-| 04 | `fases/fase-04-interface-grafica` | `./gradlew build` e `./gradlew test` | `./gradlew :lwjgl3:run` |
-| 05 | `fases/fase-05-servidor-ranking/cliente` e `servidor` | `./gradlew build` e `./gradlew test`, em cada subprojeto | Cliente: `./gradlew :lwjgl3:run`; servidor: `./gradlew bootRun` |
-| 06 | `fases/fase-06-android/cliente` e `servidor` | `./gradlew build` e `./gradlew test`, em cada subprojeto | Cliente: `./gradlew :lwjgl3:run`; servidor: `./gradlew bootRun` |
-| 07 | `fases/fase-07-evolucao-livre/cliente` e `servidor` | `./gradlew build` e `./gradlew test`, em cada subprojeto | Cliente: `./gradlew :lwjgl3:run`; servidor: `./gradlew bootRun` |
+Configure o SDK em `cliente/local.properties`, que é ignorado pelo Git:
 
-Os nove scripts `gradlew` importados estão executáveis. Os cinco módulos `lwjgl3` já configuram `-XstartOnFirstThread` no macOS; nenhuma alteração de build foi necessária. Nas Fases 6 e 7, use `./gradlew :android:assembleDebug` no cliente somente com Android SDK configurado. Não foi encontrado SDK configurado nesta sessão e nenhum APK foi gerado. A janela desktop e a API também não foram executadas, pois dependem do build.
+```properties
+sdk.dir=/Users/SEU_USUARIO/Library/Android/sdk
+```
 
-As fases importadas preservam as regras do professor: embarque com `e` no console ou `E` no modo clássico e ranking Top 10. A Fase 7 também tem modo dinâmico com embarque automático. Esses comportamentos diferem do `c` e Top 5 da Fase 1 da equipe; a importação não altera nenhuma das duas trilhas.
+Gere o APK de depuração:
 
-O servidor usa as variáveis de ambiente `MISSAOMARTE_JWT_SEGREDO` e `MISSAOMARTE_DADOS`. A configuração detalhada deve seguir o README da fase importada; nunca versionar segredos ou dados locais.
+```bash
+cd fases/fase-08-campanha-fundadores/cliente
+./gradlew :android:assembleDebug
+```
+
+O arquivo será gerado em `android/build/outputs/apk/debug/android-debug.apk`. O aplicativo da Fase 8 usa orientação retrato e a interface de toque.
+
+### Servidor
+
+Em outro terminal:
+
+```bash
+cd fases/fase-08-campanha-fundadores/servidor
+export MISSAOMARTE_JWT_SEGREDO=$(openssl rand -base64 48)
+./gradlew test
+./gradlew bootRun --console=plain
+```
+
+O servidor escuta por padrão em `127.0.0.1:8080`. O Swagger fica em [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html). O segredo gerado muda a cada execução, portanto tokens e logins anteriores deixam de valer após a troca.
+
+Para acesso pela rede, HTTPS, persistência, backup e Docker, consulte o [guia de publicação](docs/servidor/publicacao-servidor.md). Para uma apresentação passo a passo, consulte o [roteiro de demonstração](docs/servidor/demonstracao-servidor.md).
+
+## Outras fases
+
+As Fases 0 e 1 usam Java puro. Seus READMEs contêm os comandos de compilação com `javac` e execução dos testes. As Fases 2 a 7 possuem Wrappers próprios e devem ser executadas a partir da pasta indicada na tabela.
+
+Exemplo geral de uma fase com projeto Gradle único:
+
+```bash
+cd fases/fase-03-libgdx
+./gradlew clean build
+./gradlew :lwjgl3:run
+```
+
+Nas Fases 5 a 8, cliente e servidor são projetos Gradle independentes. Execute os comandos dentro de `cliente/` ou `servidor/`, nunca na pasta pai da fase.
+
+## Documentação
+
+| Área | Documento | Conteúdo |
+|---|---|---|
+| Arquitetura | [Diagnóstico da Fase 1](docs/arquitetura/diagnostico.md) | Estado inicial, dependências, violações e decisões da refatoração do console |
+| Arquitetura | [Revisão SOLID e GRASP da Fase 8](docs/arquitetura/revisao-solid-grasp.md) | Responsabilidades, pontos fortes, dívida e refatorações aprovadas |
+| Decisão | [ADR-001](docs/adr/ADR-001-trilha-de-evolucao.md) | Trilha de evolução e uso da base do professor |
+| Decisão | [ADR-002](docs/adr/ADR-002-camadas-e-portas.md) | Organização em camadas e portas |
+| Decisão | [ADR-003](docs/adr/ADR-003-remocao-do-rover.md) | Remoção da mecânica do rover |
+| Servidor | [Demonstração](docs/servidor/demonstracao-servidor.md) | Cadastro, login, envio de partida, ranking e comportamento offline |
+| Servidor | [Publicação](docs/servidor/publicacao-servidor.md) | Pacote executável, variáveis, rede, HTTPS, H2, Docker e clientes |
+| Validação | [Etapa 2](docs/validacao/validacao-etapa-02.md) | Registro histórico da importação e validação das Fases 2 a 7 |
+
+Os relatórios da Sprint 5 serão reunidos em `docs/relatorio/`. Os tutoriais e enunciados específicos permanecem dentro da pasta `docs/` de cada fase.
 
 ## Origem do código
 
-- **Equipe:** código em `fases/fase-01-refatoracao/src/missao/` e sua refatoração; documentação específica da equipe. A melhoria da Fase 8 está planejada.
-- **Professor:** Fase 0 e Fases 2 a 7 importadas do [repositório do Prof. Marcelo Bezerra](https://github.com/marcelobezerra-dotcom/T200-ProjArqSist/tree/main/missaoMarteUnifor/projetoExtensaoFinal), com uso autorizado em sala conforme registrado nas instruções do projeto.
-- Fases 2 a 7 copiadas da revisão `4b43e59eacfa57798d55b68c5d018015c804193e`, de `exercicio10/fases/`. Cada README contém o aviso de origem e a lista de adaptações da equipe. Fontes, assets, testes e configurações de build foram preservados.
-- Os commits de importação por fase e os commits separados de adaptação estão previstos no [registro da Etapa 2](docs/validacao-etapa-02.md#commits-pendentes). Eles não puderam ser criados nesta sessão.
+- Fase 1: refatoração do console desenvolvida pela equipe.
+- Fases 0 e 2 a 7: base do repositório do Prof. Marcelo Bezerra, com uso autorizado em sala.
+- Fase 8: evolução da equipe construída sobre a Fase 7, com Campanha dos Fundadores, campus, mecânicas, pontuação, interface e documentação próprias.
 
-A base deve ficar fora deste repositório, em `../base-professor/missaoMarteUnifor/projetoExtensaoFinal/`, somente para leitura, sem submódulo. Para preparar a consulta, se o clone ainda não existir:
+A base de comparação fica fora deste repositório, em `../base-professor/missaoMarteUnifor/projetoExtensaoFinal/`, e deve permanecer somente para leitura. A medição detalhada de arquivos e linhas por fase será registrada em `docs/relatorio/origem-do-codigo.md` na Parte B da Sprint 5.
 
-```bash
-git clone https://github.com/marcelobezerra-dotcom/T200-ProjArqSist.git ../base-professor
-git -C ../base-professor rev-parse HEAD
+## Estrutura principal
+
+```text
+JogoMissaoMarte/
+  AGENTS.md
+  CLAUDE.md
+  README.md
+  docs/
+    arquitetura/
+    adr/
+    servidor/
+    validacao/
+    relatorio/              criado durante a Sprint 5
+  fases/
+    fase-00-original/
+    fase-01-refatoracao/
+    ...
+    fase-08-campanha-fundadores/
 ```
 
-## Organização e próximos passos
-
-As instruções de trabalho estão em [CLAUDE.md](CLAUDE.md) e [AGENTS.md](AGENTS.md), na raiz. Ambos registram os três tipos de passageiro e o comportamento da Fase 0 aprovado para a Fase 1 da equipe. Cada etapa exige aprovação própria. As Etapas 1 e 2 foram aprovadas; a Etapa 1 foi registrada no Git e a Etapa 2 está importada, com os bloqueios de validação e de commits documentados. A Etapa 3 exige autorização própria.
-
-Commits seguem `tipo(escopo): descrição`, em português, com referência à issue quando identificada. A issue de organização ainda não foi informada. Não fazer push sem solicitação da equipe.
-
-### Validação local da Etapa 1 (12/11/2026)
-
-- JDK Temurin 17.0.21 selecionado explicitamente por JAVA_HOME e PATH.
-- Compilação das duas fases e execução de seis grupos de testes da Fase 1.
-- Comparação com a Fase 0: 150 cenários e 3000 turnos de inimigos idênticos.
-- Fontes importados da Fase 0 comparados com a base, sem alterações.
-- Base externa na revisão `4b43e59eacfa57798d55b68c5d018015c804193e`, mantida somente para leitura.
-- Registro posterior da equipe: `36af8b6` (código) e `8842ac4` (documentação), confirmados no histórico local e na referência local `origin/main` antes da Etapa 2.
+Artefatos de build, dados locais, configurações de IDE, bancos H2, rankings locais e `local.properties` não são versionados.

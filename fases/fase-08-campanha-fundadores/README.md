@@ -4,7 +4,7 @@
 
 - Revisão da base: `4b43e59eacfa57798d55b68c5d018015c804193e`; pasta `missaoMarteUnifor/projetoExtensaoFinal/exercicio10/fases/fase-07-evolucao-livre`.
 - Alterações da equipe: aviso de origem, comandos e caminhos deste README adaptados para macOS e permissão de execução dos scripts `gradlew`. Fontes, testes, assets, dependências e versões dos Wrappers preservados.
-- Validação em 12/11/2026: build interrompido no download do Gradle por `UnknownHostException: services.gradle.org`. Compilação, testes e execução do jogo não foram realizados nesta sessão. Veja o [registro da Etapa 2](../../docs/validacao-etapa-02.md).
+- Validação em 12/11/2026: build interrompido no download do Gradle por `UnknownHostException: services.gradle.org`. Compilação, testes e execução do jogo não foram realizados nesta sessão. Veja o [registro da Etapa 2](../../docs/validacao/validacao-etapa-02.md).
 
 ## Arte e tipografia da Fase 8
 

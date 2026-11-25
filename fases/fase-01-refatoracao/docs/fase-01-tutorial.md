@@ -16,7 +16,7 @@ GRASP Creator aparece em MissaoFactory; Controller em GameEngine; Information Ex
 
 ## 4. Problemas encontrados no código original
 
-No código da equipe, Main, motor, fábrica e console eram vazios. Nave não limitava movimento; difícil estava configurado com 6 passageiros e 15 pontos; Passageiro não implementava EntidadeMapa; ranking não guardava duração e o parser separava vírgulas dentro de nomes. Veja as linhas históricas no [diagnóstico](../../../docs/diagnostico.md).
+No código da equipe, Main, motor, fábrica e console eram vazios. Nave não limitava movimento; difícil estava configurado com 6 passageiros e 15 pontos; Passageiro não implementava EntidadeMapa; ranking não guardava duração e o parser separava vírgulas dentro de nomes. Veja as linhas históricas no [diagnóstico](../../../docs/arquitetura/diagnostico.md).
 
 O original do professor tinha funcionalidades, mas concentrava menu, regras e persistência em Main. Sua Fase 1 separou responsabilidades e também mudou regras. Por isso ela foi usada como referência de arquitetura, não como substituição do comportamento.
 
@@ -125,7 +125,7 @@ classDiagram
     RankingService --> RankingRepository
 ```
 
-O diagrama de sequência da partida está no [diagnóstico](../../../docs/diagnostico.md#fluxo-antes-e-depois).
+O diagrama de sequência da partida está no [diagnóstico](../../../docs/arquitetura/diagnostico.md#fluxo-antes-e-depois).
 
 ## 10. Como executar e testar
 
