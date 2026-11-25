@@ -149,6 +149,7 @@ Nas Fases 5 a 8, cliente e servidor são projetos Gradle independentes. Execute 
 | Servidor | [Demonstração](docs/servidor/demonstracao-servidor.md) | Cadastro, login, envio de partida, ranking e comportamento offline |
 | Servidor | [Publicação](docs/servidor/publicacao-servidor.md) | Pacote executável, variáveis, rede, HTTPS, H2, Docker e clientes |
 | Validação | [Etapa 2](docs/validacao/validacao-etapa-02.md) | Registro histórico da importação e validação das Fases 2 a 7 |
+| Relatório | [Origem do código](docs/relatorio/origem-do-codigo.md) | Comparação quantitativa de arquivos e linhas com a base do professor |
 
 Os relatórios da Sprint 5 serão reunidos em `docs/relatorio/`. Os tutoriais e enunciados específicos permanecem dentro da pasta `docs/` de cada fase.
 
@@ -158,7 +159,7 @@ Os relatórios da Sprint 5 serão reunidos em `docs/relatorio/`. Os tutoriais e 
 - Fases 0 e 2 a 7: base do repositório do Prof. Marcelo Bezerra, com uso autorizado em sala.
 - Fase 8: evolução da equipe construída sobre a Fase 7, com Campanha dos Fundadores, campus, mecânicas, pontuação, interface e documentação próprias.
 
-A base de comparação fica fora deste repositório, em `../base-professor/missaoMarteUnifor/projetoExtensaoFinal/`, e deve permanecer somente para leitura. A medição detalhada de arquivos e linhas por fase será registrada em `docs/relatorio/origem-do-codigo.md` na Parte B da Sprint 5.
+A base de comparação fica fora deste repositório, em `../base-professor/missaoMarteUnifor/projetoExtensaoFinal/`, e deve permanecer somente para leitura. A medição detalhada está no relatório [Origem do código](docs/relatorio/origem-do-codigo.md).
 
 ## Estrutura principal
 
@@ -172,7 +173,7 @@ JogoMissaoMarte/
     adr/
     servidor/
     validacao/
-    relatorio/              criado durante a Sprint 5
+    relatorio/
   fases/
     fase-00-original/
     fase-01-refatoracao/
