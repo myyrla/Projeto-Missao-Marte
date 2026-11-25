@@ -26,6 +26,7 @@ public final class CampusLayout {
     private final RetanguloDeTela confirmacao;
     private final RetanguloDeTela botaoConfirmar;
     private final RetanguloDeTela botaoCancelar;
+    private final boolean cenarioEFundadorCombinados;
 
     private CampusLayout(float largura, float altura, boolean vertical, RetanguloDeTela titulo,
             RetanguloDeTela mapa, RetanguloDeTela progresso, RetanguloDeTela rodape,
@@ -35,7 +36,7 @@ public final class CampusLayout {
             RetanguloDeTela[] fundadoresDasEtapas, RetanguloDeTela cartaoDaProximaMissao,
             RetanguloDeTela botaoPrincipal, RetanguloDeTela botaoVoltar,
             RetanguloDeTela confirmacao, RetanguloDeTela botaoConfirmar,
-            RetanguloDeTela botaoCancelar) {
+            RetanguloDeTela botaoCancelar, boolean cenarioEFundadorCombinados) {
         this.largura = largura;
         this.altura = altura;
         this.vertical = vertical;
@@ -56,6 +57,7 @@ public final class CampusLayout {
         this.confirmacao = confirmacao;
         this.botaoConfirmar = botaoConfirmar;
         this.botaoCancelar = botaoCancelar;
+        this.cenarioEFundadorCombinados = cenarioEFundadorCombinados;
     }
 
     public static CampusLayout padrao() {
@@ -197,7 +199,7 @@ public final class CampusLayout {
         return new CampusLayout(largura, altura, false, titulo, mapa, progresso, rodape,
                 fundadores, pontuacao, demonstracao, etapas, titulos, cenarios,
                 fundadoresDasEtapas, cartao, principal, voltar,
-                confirmacao, confirmar, cancelar);
+                confirmacao, confirmar, cancelar, true);
     }
 
     private static CampusLayout horizontal(float largura, float altura, MedidasDoCampus medidas) {
@@ -259,7 +261,8 @@ public final class CampusLayout {
         return new CampusLayout(largura, altura, false,
                 new RetanguloDeTela(32f, 471f, 496f, 70f), mapa, progresso, rodape,
                 fundadores, pontuacao, demonstracao, etapas, titulos, cenarios,
-                fundadoresDasEtapas, cartao, principal, voltar, confirmacao, confirmar, cancelar);
+                fundadoresDasEtapas, cartao, principal, voltar, confirmacao, confirmar, cancelar,
+                false);
     }
 
     private static RetanguloDeTela linhaAbaixoDoCursor(float x, float largura, float cursor,
@@ -365,7 +368,7 @@ public final class CampusLayout {
         return new CampusLayout(largura, altura, true, titulo, mapa, progresso, rodape,
                 fundadores, pontuacao, demonstracao, etapas, titulos, cenarios,
                 fundadoresDasEtapas, cartao,
-                principal, voltar, confirmacao, confirmar, cancelar);
+                principal, voltar, confirmacao, confirmar, cancelar, true);
     }
 
     private static float menorAlturaVisivel(MedidasDoCampus medidas) {
@@ -399,4 +402,7 @@ public final class CampusLayout {
     public RetanguloDeTela confirmacao() { return confirmacao; }
     public RetanguloDeTela botaoConfirmar() { return botaoConfirmar; }
     public RetanguloDeTela botaoCancelar() { return botaoCancelar; }
+
+    /** True quando cenario e fundador de cada etapa estao combinados ("local · fundador") numa unica area. */
+    public boolean cenarioEFundadorCombinados() { return cenarioEFundadorCombinados; }
 }

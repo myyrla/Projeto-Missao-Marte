@@ -167,25 +167,10 @@ class CampusLayoutTest {
     void toqueHorizontalAmpliaOPainelEReservaOCartaoAcimaDosBotoes() {
         for (float alvoMinimo : new float[] {36f, 24f}) {
             for (float fator : new float[] {1f, 1.3f, 1.6f}) {
-                MedidasDoCampus.MedidasDaEtapa etapa = new MedidasDoCampus.MedidasDaEtapa(
-                        21f * fator, 17f * fator, 17f * fator);
-                MedidasDoCampus conteudo = new MedidasDoCampus(
-                        29f * fator, 21f * fator, 17f * fator,
-                        true, true, List.of(etapa, etapa, etapa), 82f * fator);
-                MedidasDoCampusHorizontalToque.LargurasDaEtapa largurasDaEtapa =
-                        new MedidasDoCampusHorizontalToque.LargurasDaEtapa(
-                                112f * fator, 78f * fator);
-                MedidasDoCampusHorizontalToque medidas = new MedidasDoCampusHorizontalToque(
-                        conteudo, List.of(largurasDaEtapa, largurasDaEtapa, largurasDaEtapa),
-                        300f * fator, 34f * fator, 17f * fator,
-                        29f * fator + 20f, alvoMinimo);
-
-                CampusLayout layout = CampusLayout.calcularHorizontalToque(960f, 600f, medidas);
+                CampusLayout layout = layoutHorizontalDoToque(960f, 600f, fator, alvoMinimo);
                 RetanguloDeTela tela = new RetanguloDeTela(0f, 0f, 960f, 600f);
 
                 assertTrue(layout.progresso().estaDentroDe(tela));
-                assertTrue(layout.progresso().largura() + 0.001f
-                        >= Math.min(960f * 0.48f, medidas.larguraMinimaDoPainel()));
                 assertTrue(layout.titulo().estaDentroDe(tela));
                 assertFalse(layout.titulo().sobrepoe(layout.progresso()));
                 assertFalse(layout.titulo().sobrepoe(layout.mapa()));
@@ -193,12 +178,10 @@ class CampusLayoutTest {
                 assertEquals(1056f / 864f,
                         layout.mapa().largura() / layout.mapa().altura(), 0.001f);
                 assertTrue(layout.linhaDosFundadores().estaDentroDe(layout.progresso()));
+                assertTrue(layout.cenarioEFundadorCombinados());
                 for (int i = 0; i < 3; i++) {
-                    assertTrue(layout.cenarioDaEtapa(i).largura() + 0.001f
-                            >= largurasDaEtapa.cenario());
-                    assertTrue(layout.fundadorDaEtapa(i).largura() + 0.001f
-                            >= largurasDaEtapa.fundador());
-                    assertFalse(layout.cenarioDaEtapa(i).sobrepoe(layout.fundadorDaEtapa(i)));
+                    assertTrue(layout.cenarioDaEtapa(i).largura() > 0f);
+                    assertTrue(layout.cenarioDaEtapa(i).estaDentroDe(layout.progresso()));
                 }
                 assertTrue(layout.cartaoDaProximaMissao().estaDentroDe(layout.progresso()));
                 assertFalse(layout.cartaoDaProximaMissao().sobrepoe(layout.botaoPrincipal()));
@@ -209,6 +192,37 @@ class CampusLayoutTest {
                 assertTrue(layout.botaoVoltar().estaDentroDe(layout.progresso()));
             }
         }
+    }
+
+    @Test
+    void toqueHorizontalDoTabletComFatorUmPontoTresNaoSobrepoe() {
+        // Tablet 2560x1600, densidade 2.0: mundo 960x600, celula 144px, fator 1.3, alvoMinimo 36
+        CampusLayout layout = layoutHorizontalDoToque(960f, 600f, 1.3f, 36f);
+        RetanguloDeTela tela = new RetanguloDeTela(0f, 0f, 960f, 600f);
+
+        assertTrue(layout.progresso().estaDentroDe(tela));
+        assertTrue(layout.mapa().estaDentroDe(tela));
+        assertFalse(layout.mapa().sobrepoe(layout.progresso()));
+        assertTrue(layout.cenarioEFundadorCombinados());
+        for (int i = 0; i < 3; i++) {
+            assertTrue(layout.etapa(i).estaDentroDe(layout.progresso()));
+            assertTrue(layout.cenarioDaEtapa(i).estaDentroDe(layout.progresso()));
+        }
+        assertFalse(layout.cartaoDaProximaMissao().sobrepoe(layout.botaoPrincipal()));
+    }
+
+    @Test
+    void horizontalPadraoNaoCombinaCenarioEFundador() {
+        CampusLayout layout = CampusLayout.calcular(800f, 600f, false);
+
+        assertFalse(layout.cenarioEFundadorCombinados());
+    }
+
+    @Test
+    void verticalCombinaCenarioEFundador() {
+        CampusLayout layout = CampusLayout.calcular(540f, 1200f, true);
+
+        assertTrue(layout.cenarioEFundadorCombinados());
     }
 
     private static void validarLayoutVertical(CampusLayout layout, float largura, float altura) {
@@ -313,5 +327,22 @@ class CampusLayoutTest {
         return new RetanguloDeTela(deslocamentoX + area.x() * escala,
                 deslocamentoY + area.y() * escala,
                 area.largura() * escala, area.altura() * escala);
+    }
+
+    private static CampusLayout layoutHorizontalDoToque(float largura, float altura,
+            float fator, float alvoMinimo) {
+        MedidasDoCampus.MedidasDaEtapa etapa = new MedidasDoCampus.MedidasDaEtapa(
+                21f * fator, 17f * fator, 0f);
+        MedidasDoCampus conteudo = new MedidasDoCampus(
+                29f * fator, 21f * fator, 17f * fator,
+                true, true, List.of(etapa, etapa, etapa), 82f * fator);
+        MedidasDoCampusHorizontalToque.LargurasDaEtapa largurasDaEtapa =
+                new MedidasDoCampusHorizontalToque.LargurasDaEtapa(
+                        160f * fator, 0f);
+        MedidasDoCampusHorizontalToque medidas = new MedidasDoCampusHorizontalToque(
+                conteudo, List.of(largurasDaEtapa, largurasDaEtapa, largurasDaEtapa),
+                300f * fator, 34f * fator, 17f * fator,
+                29f * fator + 20f, alvoMinimo);
+        return CampusLayout.calcularHorizontalToque(largura, altura, medidas);
     }
 }

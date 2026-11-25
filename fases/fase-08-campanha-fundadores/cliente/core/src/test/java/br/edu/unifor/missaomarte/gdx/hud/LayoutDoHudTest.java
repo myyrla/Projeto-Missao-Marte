@@ -310,6 +310,27 @@ class LayoutDoHudTest {
         assertFalse(layout.aviso().sobrepoe(layout.controles()));
     }
 
+    @Test
+    void toqueHorizontalDoTabletComCelulaGrandeNaoSobrepoeHudNemControles() {
+        // Tablet 2560x1600, densidade 2.0: mundo 960x600, celula 144px, mapa 1584px.
+        // Em unidades do mundo: 1584 / (2560/960) = 594; centrado: x = (960-594)/2 = 183, y = 3.
+        RetanguloDeTela mapa = new RetanguloDeTela(183f, 3f, 594f, 594f);
+        // alvoMinimo para tablet: 48dp * 2.0 / (2560/960) = 36
+        for (float fator : new float[] {1f, 1.3f, 1.6f}) {
+            MedidasDoHud medidas = medidasDoToqueHorizontal(fator, 36f);
+            LayoutDoHud layout = calcular(960f, 600f, mapa, true, medidas);
+
+            assertFalse(layout.emRetrato());
+            assertFalse(layout.usaReserva(), "reserva no fator " + fator);
+            assertTrue(layout.controles().direita() <= layout.mapa().x(),
+                    "controles cobrem o mapa no fator " + fator);
+            assertTrue(layout.acoes().x() >= layout.mapa().direita(),
+                    "acoes cobrem o mapa no fator " + fator);
+            assertSemSobreposicaoComMapa(layout);
+            assertAreasDoHudNaoSeSobrepoem(layout);
+        }
+    }
+
     private static LayoutDoHud calcular(float largura, float altura, RetanguloDeTela mapa, boolean toque) {
         return LayoutDoHud.calcular(largura, altura, CELULAS, toque, MargensSeguras.NENHUMA, mapa);
     }

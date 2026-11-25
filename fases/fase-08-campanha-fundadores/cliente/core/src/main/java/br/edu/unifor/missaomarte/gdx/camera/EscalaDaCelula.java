@@ -16,6 +16,21 @@ public final class EscalaDaCelula {
         return Math.max(MINIMA, Math.min(MAXIMA, desejada));
     }
 
+    /**
+     * Escala o limite maximo pela densidade da tela, para que o mapa ocupe a mesma fracao
+     * da tela em dp que ocupa no desktop em pixels. No desktop (densidade 1) o resultado e
+     * identico ao de {@link #calcular(float, int)}.
+     */
+    public static float calcularComDensidade(float alturaDaJanela, int linhas, float densidade) {
+        if (alturaDaJanela <= 0f || linhas <= 0 || densidade <= 0f) {
+            throw new IllegalArgumentException(
+                    "A altura da janela, as linhas e a densidade precisam ser positivas.");
+        }
+        float maxima = MAXIMA * Math.max(1f, densidade);
+        float desejada = alturaDaJanela / linhas;
+        return Math.max(MINIMA, Math.min(maxima, desejada));
+    }
+
     /** No toque em retrato, o mapa usa toda a largura livre e a camera resolve somente a falta de altura. */
     public static float calcularNoToqueVertical(float larguraUtil, int colunas) {
         if (larguraUtil <= 0f || colunas <= 0) {

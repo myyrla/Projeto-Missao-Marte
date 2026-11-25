@@ -825,7 +825,8 @@ public class GameScreen extends TelaBase {
 
         float celula = toqueVertical
                 ? EscalaDaCelula.calcularNoToqueVertical(areaUtilEmPixels.largura(), CELULAS)
-                : EscalaDaCelula.calcular(alturaDaTela, CELULAS);
+                : EscalaDaCelula.calcularComDensidade(alturaDaTela, CELULAS,
+                        Gdx.graphics.getDensity());
         mapa = new MapaGeometria(MissaoMarteGame.MIN, MissaoMarteGame.MAX, celula, 0f, 0f);
         mundo.definirMapa(mapa);
 

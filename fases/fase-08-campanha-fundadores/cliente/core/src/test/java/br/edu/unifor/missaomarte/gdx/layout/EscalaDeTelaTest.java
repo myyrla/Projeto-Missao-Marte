@@ -53,4 +53,26 @@ class EscalaDeTelaTest {
         assertEquals(EscalaDeTela.FATOR_MAXIMO_DE_TEXTO,
                 EscalaDeTela.fatorDeTexto(Plataforma.android(), 4f, 0.5f), 0f);
     }
+
+    @Test
+    void tabletAndroidComDensidadeDoisProduzeUmPontoTres() {
+        // 2560x1600, densidade 2.0: ppu = 2.667; menorLarguraDp = 800
+        assertEquals(EscalaDeTela.FATOR_DE_TEXTO_PARA_TABLET,
+                EscalaDeTela.fatorDeTexto(Plataforma.android(), 2f, 2.667f, 800), 0f);
+    }
+
+    @Test
+    void celularAndroidNaoUsaOFatorDeTablet() {
+        // 1080x2340, densidade 2.6: menorLarguraDp = 415
+        float esperado = EscalaDeTela.fatorDeTexto(Plataforma.android(), 2.6f, 1.35f);
+
+        assertEquals(esperado,
+                EscalaDeTela.fatorDeTexto(Plataforma.android(), 2.6f, 1.35f, 415), 0f);
+    }
+
+    @Test
+    void desktopIgnoraOFatorDeTabletMesmoComMenorLarguraAlta() {
+        assertEquals(1f,
+                EscalaDeTela.fatorDeTexto(Plataforma.desktop(), 2f, 2.667f, 800), 0f);
+    }
 }

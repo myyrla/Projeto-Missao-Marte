@@ -112,14 +112,15 @@ public class CampusScreen extends TelaBase {
                 larguraDoTitulo);
         BitmapFont fonteDoBotao = jogo.fonte(FonteDoJogo.TEXTO);
         float alturaDoBotao = fonteDoBotao.getLineHeight() + 20f;
-        MedidasDoCampus medidasDoConteudo = medirConteudoHorizontal(
+        MedidasDoCampus medidasDoConteudo = medirConteudoHorizontalDoToque(
                 larguraDoPainel, resumo, alturaDoCartao);
         List<MedidasDoCampusHorizontalToque.LargurasDaEtapa> largurasDasEtapas =
                 new ArrayList<>();
         for (ResumoVisualDaCampanha.Etapa etapa : resumo.etapas()) {
             largurasDasEtapas.add(new MedidasDoCampusHorizontalToque.LargurasDaEtapa(
-                    medirLargura(FonteDoJogo.PEQUENO, etapa.local()),
-                    medirLargura(FonteDoJogo.PEQUENO, etapa.fundador())));
+                    medirLargura(FonteDoJogo.PEQUENO,
+                            etapa.local() + " \u00B7 " + etapa.fundador()),
+                    0f));
         }
         return CampusLayout.calcularHorizontalToque(largura, altura,
                 new MedidasDoCampusHorizontalToque(
@@ -142,9 +143,8 @@ public class CampusScreen extends TelaBase {
         for (ResumoVisualDaCampanha.Etapa etapa : resumo.etapas()) {
             maior = Math.max(maior, 28f + medirLargura(
                     FonteDoJogo.TEXTO, "Etapa " + etapa.numero()));
-            maior = Math.max(maior, 28f
-                    + medirLargura(FonteDoJogo.PEQUENO, etapa.local()) + 8f
-                    + medirLargura(FonteDoJogo.PEQUENO, etapa.fundador()));
+            maior = Math.max(maior, 28f + medirLargura(FonteDoJogo.PEQUENO,
+                    etapa.local() + " \u00B7 " + etapa.fundador()));
         }
         maior = Math.max(maior, medirLargura(FonteDoJogo.ROTULO, conteudo.titulo()));
         float larguraDosBotoes = medirLargura(FonteDoJogo.TEXTO, resumo.rotuloDaAcao())
@@ -172,6 +172,30 @@ public class CampusScreen extends TelaBase {
                     medirAltura(FonteDoJogo.TEXTO, "Etapa " + etapa.numero(), larguraDaEtapa),
                     medirAltura(FonteDoJogo.PEQUENO, etapa.local(), larguraDaEtapa),
                     medirAltura(FonteDoJogo.PEQUENO, etapa.fundador(), larguraDaEtapa)));
+        }
+        boolean exibePontuacao = resumo.exibePontuacaoNoCabecalho();
+        boolean exibeDemonstracao = jogo.demonstracaoDaCampanha();
+        return new MedidasDoCampus(
+                medirAltura(FonteDoJogo.SUBTITULO,
+                        "Fundadores: " + resumo.fundadoresResgatados() + "/3", largura),
+                exibePontuacao ? medirAltura(FonteDoJogo.TEXTO,
+                        "Pontuação: " + resumo.pontuacaoTotal(), largura) : 0f,
+                exibeDemonstracao ? medirAltura(FonteDoJogo.PEQUENO,
+                        "Modo demonstração", largura) : 0f,
+                exibePontuacao, exibeDemonstracao, etapas, alturaDoCartao);
+    }
+
+    private MedidasDoCampus medirConteudoHorizontalDoToque(float larguraDoPainel,
+            ResumoVisualDaCampanha resumo, float alturaDoCartao) {
+        float largura = larguraDoPainel - 24f;
+        float larguraDaEtapa = largura - 28f;
+        List<MedidasDoCampus.MedidasDaEtapa> etapas = new ArrayList<>();
+        for (ResumoVisualDaCampanha.Etapa etapa : resumo.etapas()) {
+            etapas.add(new MedidasDoCampus.MedidasDaEtapa(
+                    medirAltura(FonteDoJogo.TEXTO, "Etapa " + etapa.numero(), larguraDaEtapa),
+                    medirAltura(FonteDoJogo.PEQUENO,
+                            etapa.local() + " \u00B7 " + etapa.fundador(), larguraDaEtapa),
+                    0f));
         }
         boolean exibePontuacao = resumo.exibePontuacaoNoCabecalho();
         boolean exibeDemonstracao = jogo.demonstracaoDaCampanha();
@@ -443,10 +467,15 @@ public class CampusScreen extends TelaBase {
             desenharIndicador(etapa, layout.etapa(indice).x(), layout.tituloDaEtapa(indice).topo());
             desenharTextoNaArea("Etapa " + etapa.numero(), layout.tituloDaEtapa(indice),
                     FonteDoJogo.TEXTO, corDaEtapa(etapa.numero()));
-            desenharTextoNaArea(etapa.local(), layout.cenarioDaEtapa(indice),
-                    FonteDoJogo.PEQUENO, SECUNDARIO);
-            desenharTextoNaArea(etapa.fundador(), layout.fundadorDaEtapa(indice),
-                    FonteDoJogo.PEQUENO, SECUNDARIO);
+            if (layout.cenarioEFundadorCombinados()) {
+                desenharTextoNaArea(etapa.local() + " \u00B7 " + etapa.fundador(),
+                        layout.cenarioDaEtapa(indice), FonteDoJogo.PEQUENO, SECUNDARIO);
+            } else {
+                desenharTextoNaArea(etapa.local(), layout.cenarioDaEtapa(indice),
+                        FonteDoJogo.PEQUENO, SECUNDARIO);
+                desenharTextoNaArea(etapa.fundador(), layout.fundadorDaEtapa(indice),
+                        FonteDoJogo.PEQUENO, SECUNDARIO);
+            }
             indice++;
         }
     }

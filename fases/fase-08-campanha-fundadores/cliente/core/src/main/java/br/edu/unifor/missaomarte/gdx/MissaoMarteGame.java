@@ -152,14 +152,23 @@ public class MissaoMarteGame extends Game {
         if (!plataforma.usaDensidadeDaTela()) {
             return 1f;
         }
-        return fatorDeTexto(plataforma, Gdx.graphics.getDensity(), pixelsPorUnidade());
+        float densidade = Gdx.graphics.getDensity();
+        int menorLarguraDp = menorLarguraDp(densidade);
+        return fatorDeTexto(plataforma, densidade, pixelsPorUnidade(), menorLarguraDp);
     }
 
-    static float fatorDeTexto(Plataforma plataforma, float densidade, float pixelsPorUnidade) {
+    static float fatorDeTexto(Plataforma plataforma, float densidade,
+            float pixelsPorUnidade, int menorLarguraDp) {
         if (plataforma.fatorDeTextoForcado() > 0f) {
             return plataforma.fatorDeTextoForcado();
         }
-        return EscalaDeTela.fatorDeTexto(plataforma, densidade, pixelsPorUnidade);
+        return EscalaDeTela.fatorDeTexto(plataforma, densidade, pixelsPorUnidade,
+                menorLarguraDp);
+    }
+
+    private int menorLarguraDp(float densidade) {
+        float menorLado = Math.min(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        return (int) (menorLado / Math.max(1f, densidade));
     }
 
     /** Menor lado de um botao tocavel (48 dp) em unidades do mundo; 0 fora do modo toque. */

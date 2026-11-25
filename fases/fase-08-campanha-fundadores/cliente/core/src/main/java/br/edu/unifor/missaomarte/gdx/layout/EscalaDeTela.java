@@ -1,5 +1,6 @@
 package br.edu.unifor.missaomarte.gdx.layout;
 
+import br.edu.unifor.missaomarte.gdx.plataforma.OrientacaoPorTamanhoDeTela;
 import br.edu.unifor.missaomarte.gdx.plataforma.Plataforma;
 
 /**
@@ -15,6 +16,13 @@ public final class EscalaDeTela {
     /** Tamanho minimo do texto, em dp. */
     public static final float TEXTO_MINIMO_DP = 12f;
     public static final float FATOR_MAXIMO_DE_TEXTO = 1.6f;
+
+    /**
+     * Fator de texto para tablets. No notebook a 110 PPI, 15 unidades x 1.33 ppu = 20 px = 4,6 mm.
+     * No tablet a ~300 PPI (2560x1600 densidade 2), 15 un. x 2.67 ppu = 40 px = 3,4 mm.
+     * Com fator 1.3: 40 x 1.3 = 52 px = 4,4 mm, igualando o tamanho fisico do notebook.
+     */
+    public static final float FATOR_DE_TEXTO_PARA_TABLET = 1.3f;
 
     private EscalaDeTela() {
     }
@@ -40,6 +48,20 @@ public final class EscalaDeTela {
     public static float fatorDeTexto(Plataforma plataforma, float densidade, float pixelsPorUnidade) {
         return plataforma.usaDensidadeDaTela()
                 ? fatorDeTexto(densidade, pixelsPorUnidade) : 1f;
+    }
+
+    /**
+     * Variante que aplica o piso de tablet quando {@code menorLarguraDp} atinge o limiar
+     * de {@link OrientacaoPorTamanhoDeTela#MENOR_LARGURA_DE_TABLET_DP}.
+     */
+    public static float fatorDeTexto(Plataforma plataforma, float densidade,
+            float pixelsPorUnidade, int menorLarguraDp) {
+        float fator = fatorDeTexto(plataforma, densidade, pixelsPorUnidade);
+        if (plataforma.usaDensidadeDaTela()
+                && OrientacaoPorTamanhoDeTela.eTablet(menorLarguraDp)) {
+            fator = Math.max(fator, FATOR_DE_TEXTO_PARA_TABLET);
+        }
+        return Math.min(FATOR_MAXIMO_DE_TEXTO, fator);
     }
 
     public static float pixelsParaMundo(float pixels, float pixelsPorUnidade) {
