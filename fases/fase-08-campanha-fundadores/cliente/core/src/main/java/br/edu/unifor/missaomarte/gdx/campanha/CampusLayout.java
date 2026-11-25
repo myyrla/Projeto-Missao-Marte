@@ -87,6 +87,119 @@ public final class CampusLayout {
         return horizontal(largura, altura, medidas);
     }
 
+    public static float larguraDoPainelHorizontalToque(float largura,
+            float larguraMinimaDoPainel) {
+        return Math.min(largura * 0.48f, Math.max(244f, larguraMinimaDoPainel));
+    }
+
+    public static float larguraDoTituloHorizontalToque(float largura,
+            float larguraDoPainel) {
+        return Math.max(1f, largura - 44f - larguraDoPainel);
+    }
+
+    public static CampusLayout calcularHorizontalToque(float largura, float altura,
+            MedidasDoCampusHorizontalToque medidas) {
+        float margem = 8f;
+        float espaco = 8f;
+        float larguraDoPainel = larguraDoPainelHorizontalToque(
+                largura, medidas.larguraMinimaDoPainel());
+        RetanguloDeTela progresso = new RetanguloDeTela(
+                largura - margem - larguraDoPainel, margem,
+                larguraDoPainel, altura - 2f * margem);
+        float larguraDaEsquerda = progresso.x() - 2f * espaco;
+        float alturaDoTitulo = medidas.alturaDoTitulo() + 4f
+                + medidas.alturaDoSubtitulo();
+        RetanguloDeTela titulo = new RetanguloDeTela(16f,
+                altura - margem - alturaDoTitulo,
+                Math.max(1f, larguraDaEsquerda - 16f), alturaDoTitulo);
+        float larguraDisponivelDoMapa = Math.max(1f, larguraDaEsquerda - 2f * margem);
+        float alturaDisponivelDoMapa = Math.max(1f, titulo.y() - 2f * margem);
+        float larguraDoMapa = Math.min(larguraDisponivelDoMapa,
+                alturaDisponivelDoMapa * PROPORCAO_DO_MAPA);
+        float alturaDoMapa = larguraDoMapa / PROPORCAO_DO_MAPA;
+        RetanguloDeTela mapa = new RetanguloDeTela(
+                margem + (larguraDisponivelDoMapa - larguraDoMapa) / 2f,
+                margem + (alturaDisponivelDoMapa - alturaDoMapa) / 2f,
+                larguraDoMapa, alturaDoMapa);
+
+        float alturaDoBotao = Math.max(medidas.alvoMinimo(), medidas.alturaDoBotao());
+        float baseDosBotoes = progresso.y() + 12f;
+        float larguraVoltar = Math.min(150f, progresso.largura() * 0.34f);
+        float larguraPrincipal = progresso.largura() - 24f - espaco - larguraVoltar;
+        RetanguloDeTela principal = new RetanguloDeTela(
+                progresso.x() + 12f, baseDosBotoes,
+                larguraPrincipal, alturaDoBotao);
+        RetanguloDeTela voltar = new RetanguloDeTela(
+                principal.direita() + espaco, baseDosBotoes,
+                larguraVoltar, alturaDoBotao);
+        RetanguloDeTela rodape = new RetanguloDeTela(progresso.x(), progresso.y(),
+                progresso.largura(), alturaDoBotao + 24f);
+
+        MedidasDoCampus conteudo = medidas.conteudo();
+        float x = progresso.x() + 12f;
+        float larguraDoConteudo = progresso.largura() - 24f;
+        float cursor = progresso.topo() - 12f;
+        RetanguloDeTela fundadores = linhaAbaixoDoCursor(
+                x, larguraDoConteudo, cursor, conteudo.alturaDosFundadores());
+        cursor = fundadores.y() - 3f;
+        RetanguloDeTela pontuacao = conteudo.exibePontuacao()
+                ? linhaAbaixoDoCursor(x, larguraDoConteudo, cursor,
+                        conteudo.alturaDaPontuacao())
+                : linhaVazia(x, cursor);
+        if (conteudo.exibePontuacao()) {
+            cursor = pontuacao.y() - 3f;
+        }
+        RetanguloDeTela demonstracao = conteudo.exibeDemonstracao()
+                ? linhaAbaixoDoCursor(x, larguraDoConteudo, cursor,
+                        conteudo.alturaDaDemonstracao())
+                : linhaVazia(x, cursor);
+        if (conteudo.exibeDemonstracao()) {
+            cursor = demonstracao.y() - 4f;
+        }
+        cursor -= 4f;
+
+        RetanguloDeTela[] etapas = new RetanguloDeTela[3];
+        RetanguloDeTela[] titulos = new RetanguloDeTela[3];
+        RetanguloDeTela[] cenarios = new RetanguloDeTela[3];
+        RetanguloDeTela[] fundadoresDasEtapas = new RetanguloDeTela[3];
+        for (int i = 0; i < etapas.length; i++) {
+            MedidasDoCampus.MedidasDaEtapa medida = conteudo.etapas().get(i);
+            float topoDaEtapa = cursor;
+            titulos[i] = linhaAbaixoDoCursor(x + 28f, larguraDoConteudo - 28f,
+                    cursor, medida.alturaDoTitulo());
+            float alturaDoSubtitulo = Math.max(
+                    medida.alturaDoCenario(), medida.alturaDoFundador());
+            cursor = titulos[i].y() - 1f;
+            MedidasDoCampusHorizontalToque.LargurasDaEtapa larguras =
+                    medidas.largurasDasEtapas().get(i);
+            float larguraDoCenario = larguras.cenario();
+            cenarios[i] = linhaAbaixoDoCursor(x + 28f, larguraDoCenario,
+                    cursor, alturaDoSubtitulo);
+            fundadoresDasEtapas[i] = linhaAbaixoDoCursor(
+                    cenarios[i].direita() + 8f,
+                    larguras.fundador(),
+                    cursor, alturaDoSubtitulo);
+            cursor = cenarios[i].y();
+            etapas[i] = new RetanguloDeTela(x, cursor, larguraDoConteudo,
+                    topoDaEtapa - cursor);
+            cursor -= 4f;
+        }
+
+        cursor -= 4f;
+        RetanguloDeTela cartao = linhaAbaixoDoCursor(x, larguraDoConteudo,
+                cursor, conteudo.alturaDoCartao());
+        RetanguloDeTela confirmacao = new RetanguloDeTela(
+                (largura - 460f) / 2f, (altura - 220f) / 2f, 460f, 220f);
+        RetanguloDeTela cancelar = new RetanguloDeTela(
+                confirmacao.x() + 50f, confirmacao.y() + 20f, 150f, 54f);
+        RetanguloDeTela confirmar = new RetanguloDeTela(
+                confirmacao.direita() - 200f, confirmacao.y() + 20f, 150f, 54f);
+        return new CampusLayout(largura, altura, false, titulo, mapa, progresso, rodape,
+                fundadores, pontuacao, demonstracao, etapas, titulos, cenarios,
+                fundadoresDasEtapas, cartao, principal, voltar,
+                confirmacao, confirmar, cancelar);
+    }
+
     private static CampusLayout horizontal(float largura, float altura, MedidasDoCampus medidas) {
         float alturaDoMapa = 400f;
         float larguraDoMapa = alturaDoMapa * PROPORCAO_DO_MAPA;

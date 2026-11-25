@@ -81,6 +81,16 @@ public final class HudRenderer {
             BitmapFont rotulo = fontes.obter(FonteDoJogo.ROTULO);
             BitmapFont texto = fontes.obter(FonteDoJogo.TEXTO);
             BitmapFont pequena = fontes.obter(FonteDoJogo.PEQUENO);
+            float larguraDoJogador = Math.max(1f,
+                    referencia.jogador().largura() - 32f * referencia.escala());
+            medidor.setText(rotulo,
+                    tituloDoPiloto(session.getPiloto(), session.getDificuldade()),
+                    TEXTO, larguraDoJogador, Align.left, true);
+            float alturaDoTituloDoJogador = alturaEmLinhas(
+                    medidor.height, rotulo.getCapHeight(), rotulo.getLineHeight());
+            medidor.setText(rotulo, "CASCO");
+            MedidasDoJogador medidasDoJogador = new MedidasDoJogador(
+                    alturaDoTituloDoJogador, rotulo.getLineHeight(), medidor.width);
             float margemHorizontal = 32f * referencia.escala();
             medidor.setText(texto, fraseDoObjetivo(), TEXTO,
                     Math.max(1f, referencia.objetivo().largura() - margemHorizontal), Align.left, true);
@@ -106,7 +116,8 @@ public final class HudRenderer {
             resultado[0] = new MedidasDoHud(rotulo.getLineHeight(), alturaDoObjetivo, alturaDoStatus,
                     AtalhosDoRodape.para(session.getModo()).size(), alturaDoAviso,
                     !mensagens.isEmpty(), tempestadeAtiva,
-                    texto.getLineHeight(), pequena.getLineHeight(), 0f);
+                    texto.getLineHeight(), pequena.getLineHeight(), 0f)
+                    .comJogador(medidasDoJogador);
         });
         return resultado[0];
     }
@@ -159,17 +170,29 @@ public final class HudRenderer {
             for (int i = 0; i < vidasMaximas; i++) {
                 float x;
                 float y;
-                if (layout.compacto()) {
+                float largura;
+                float altura;
+                if (layout.toqueHorizontal()) {
+                    RetanguloDeTela segmento = layout.segmentoDoCasco(i, vidasMaximas);
+                    x = segmento.x();
+                    y = segmento.y();
+                    largura = segmento.largura();
+                    altura = segmento.altura();
+                } else if (layout.compacto()) {
                     BitmapFont rotulo = fontes.obter(FonteDoJogo.ROTULO);
                     medidor.setText(rotulo, "CASCO");
                     RetanguloDeTela linha = layout.inicioDaLinhaSecundariaDoJogador();
                     x = linha.x() + medidor.width + 8f * s + i * 40f * s;
                     y = linha.centroY() - 6f * s;
+                    largura = 34f * s;
+                    altura = 12f * s;
                 } else {
                     x = jogador.x() + (88f + i * 40f) * s;
                     y = jogador.y() + 61f * s;
+                    largura = 34f * s;
+                    altura = 12f * s;
                 }
-                estilo.segmento(batch, new RetanguloDeTela(x, y, 34f * s, 12f * s),
+                estilo.segmento(batch, new RetanguloDeTela(x, y, largura, altura),
                         i < nave.getVidas() ? CIANO : VIDA_PERDIDA);
             }
         });
@@ -303,6 +326,10 @@ public final class HudRenderer {
             desenharPilotoCompacto(session, segundos);
             return;
         }
+        if (layout.toqueHorizontal()) {
+            desenharPilotoHorizontalDeToque(session);
+            return;
+        }
         rotulo(tituloDoPiloto(session.getPiloto(), session.getDificuldade()),
                 painel.x() + 16f * s, painel.topo() - 17f * s);
         rotulo("CASCO", painel.x() + 16f * s, painel.topo() - 51f * s);
@@ -314,6 +341,28 @@ public final class HudRenderer {
         medidor.setText(titulo, pontos);
         titulo.draw(batch, medidor, painel.direita() - 16f * s - medidor.width,
                 painel.y() + 15f * s + medidor.height);
+    }
+
+    private void desenharPilotoHorizontalDeToque(GameSession session) {
+        BitmapFont rotulo = fontes.obter(FonteDoJogo.ROTULO);
+        rotulo.setColor(TEXTO);
+        RetanguloDeTela titulo = layout.tituloDoJogador();
+        medidor.setText(rotulo,
+                tituloDoPiloto(session.getPiloto(), session.getDificuldade()),
+                TEXTO, titulo.largura(), Align.left, true);
+        rotulo.draw(batch, medidor, titulo.x(), titulo.topo());
+
+        RetanguloDeTela casco = layout.linhaDoCasco();
+        medidor.setText(rotulo, "CASCO");
+        rotulo.draw(batch, medidor, casco.x(), casco.centroY() + medidor.height / 2f);
+
+        RetanguloDeTela pontos = layout.linhaDosPontos();
+        medidor.setText(rotulo, "PONTOS");
+        rotulo.draw(batch, medidor, pontos.x(), pontos.centroY() + medidor.height / 2f);
+        String valor = String.format("%,d", session.getPontuacao()).replace(',', '.');
+        medidor.setText(rotulo, valor);
+        rotulo.draw(batch, medidor, pontos.direita() - medidor.width,
+                pontos.centroY() + medidor.height / 2f);
     }
 
     private void desenharPilotoCompacto(GameSession session, long segundos) {
@@ -636,6 +685,16 @@ public final class HudRenderer {
     static String tituloDoPiloto(String piloto, br.edu.unifor.missaomarte.domain.Dificuldade dificuldade) {
         String nome = "Piloto".equalsIgnoreCase(piloto) ? "CONVIDADO" : "PILOTO " + piloto.toUpperCase();
         return nome + " · " + nomeDaDificuldade(dificuldade);
+    }
+
+    private static float alturaEmLinhas(float alturaDoLayout, float alturaDaMaiuscula,
+            float alturaDaLinha) {
+        if (alturaDoLayout <= 0f || alturaDaLinha <= 0f) {
+            return 0f;
+        }
+        int linhas = Math.max(1,
+                Math.round((alturaDoLayout - alturaDaMaiuscula) / alturaDaLinha) + 1);
+        return linhas * alturaDaLinha;
     }
 
     private static String nomeDaDificuldade(br.edu.unifor.missaomarte.domain.Dificuldade dificuldade) {

@@ -8,8 +8,10 @@ import br.edu.unifor.missaomarte.gdx.recursos.FonteDoJogo;
 import br.edu.unifor.missaomarte.gdx.recursos.Imagem;
 import br.edu.unifor.missaomarte.gdx.recursos.Som;
 import br.edu.unifor.missaomarte.gdx.ui.LayoutDoMenu;
+import br.edu.unifor.missaomarte.gdx.ui.LayoutDoMenuHorizontalToque;
 import br.edu.unifor.missaomarte.gdx.ui.LayoutDoMenuToque;
 import br.edu.unifor.missaomarte.gdx.ui.ListaDeBotoes;
+import br.edu.unifor.missaomarte.gdx.ui.MedidasDoMenuHorizontalToque;
 import br.edu.unifor.missaomarte.gdx.ui.MedidasDoMenuToque;
 import br.edu.unifor.missaomarte.gdx.ui.RodapeDeTeclas;
 import br.edu.unifor.missaomarte.gdx.ui.RodapeDeTeclas.Atalho;
@@ -25,6 +27,8 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Menu principal no estilo Switch: quatro acoes, foco por teclado e selecao por clique ou toque. */
 public class MenuScreen extends TelaBase {
@@ -42,6 +46,7 @@ public class MenuScreen extends TelaBase {
     private final GlyphLayout medidor = new GlyphLayout();
     private LayoutDoMenu layout;
     private LayoutDoMenuToque layoutDoToque;
+    private LayoutDoMenuHorizontalToque layoutHorizontalDoToque;
     private boolean confirmandoSaida;
 
     public MenuScreen(MissaoMarteGame jogo) {
@@ -90,7 +95,11 @@ public class MenuScreen extends TelaBase {
     }
 
     private RetanguloDeTela botaoDoMenu(int indice) {
-        return layoutDoToque != null ? layoutDoToque.botao(indice) : layout.botaoMenu(indice);
+        if (layoutDoToque != null) {
+            return layoutDoToque.botao(indice);
+        }
+        return layoutHorizontalDoToque != null
+                ? layoutHorizontalDoToque.botao(indice) : layout.botaoMenu(indice);
     }
 
     private static BotaoVirtual botaoVirtual(String id, RetanguloDeTela area) {
@@ -239,10 +248,17 @@ public class MenuScreen extends TelaBase {
     }
 
     private void atualizarLayoutDoToque() {
-        if (!jogo.modoToque() || !layout.emRetrato()) {
+        if (!jogo.modoToque()) {
             layoutDoToque = null;
+            layoutHorizontalDoToque = null;
             return;
         }
+        if (!layout.emRetrato()) {
+            layoutDoToque = null;
+            atualizarLayoutHorizontalDoToque();
+            return;
+        }
+        layoutHorizontalDoToque = null;
         BitmapFont rotulo = jogo.fonte(FonteDoJogo.ROTULO);
         BitmapFont display = jogo.fonte(FonteDoJogo.DISPLAY);
         BitmapFont texto = jogo.fonte(FonteDoJogo.TEXTO);
@@ -259,6 +275,34 @@ public class MenuScreen extends TelaBase {
                 opcao.getLineHeight(), pequeno.getLineHeight(), jogo.alvoMinimo());
         layoutDoToque = LayoutDoMenuToque.calcular(layout.largura(), layout.altura(),
                 jogo.margensSeguras(), medidas);
+        atualizarAreasDeAcao();
+    }
+
+    private void atualizarLayoutHorizontalDoToque() {
+        BitmapFont opcao = jogo.fonte(FonteDoJogo.SUBTITULO);
+        BitmapFont pequena = jogo.fonte(FonteDoJogo.PEQUENO);
+        String[] rotulos = {rotuloDaCampanha(), "Partida rápida", "Ranking", "Opções"};
+        List<Float> larguras = new ArrayList<>();
+        for (String rotulo : rotulos) {
+            medidor.setText(opcao, rotulo);
+            larguras.add(medidor.width);
+        }
+        String detalhe = detalheDaCampanha();
+        float larguraDoDetalhe = 0f;
+        if (detalhe != null) {
+            medidor.setText(pequena, detalhe);
+            larguraDoDetalhe = medidor.width;
+        }
+        medidor.setText(pequena, textoDaConta());
+        float larguraDaConta = medidor.width;
+        medidor.setText(pequena, "Toque em uma opção para selecionar");
+        float larguraDaInstrucao = medidor.width;
+        MedidasDoMenuHorizontalToque medidas = new MedidasDoMenuHorizontalToque(
+                larguras, larguraDoDetalhe, opcao.getLineHeight(), pequena.getLineHeight(),
+                pequena.getLineHeight(), larguraDaConta, larguraDaInstrucao,
+                jogo.alvoMinimo());
+        layoutHorizontalDoToque = LayoutDoMenuHorizontalToque.calcular(
+                layout.largura(), layout.altura(), jogo.margensSeguras(), medidas);
         atualizarAreasDeAcao();
     }
 
@@ -336,13 +380,23 @@ public class MenuScreen extends TelaBase {
             BitmapFont fonte = jogo.fonte(FonteDoJogo.SUBTITULO);
             fonte.setColor(foco ? FUNDO : TEXTO);
             medidor.setText(fonte, rotulos[i]);
-            fonte.draw(jogo.batch(), medidor, area.x() + 20f * layout.escala(), area.centroY() + medidor.height / 2f);
+            RetanguloDeTela areaDoRotulo = layoutHorizontalDoToque == null
+                    ? area : layoutHorizontalDoToque.rotulo(i);
+            float xDoRotulo = layoutHorizontalDoToque == null
+                    ? area.x() + 20f * layout.escala() : areaDoRotulo.x();
+            fonte.draw(jogo.batch(), medidor, xDoRotulo,
+                    areaDoRotulo.centroY() + medidor.height / 2f);
             if (i == 0 && detalhe != null) {
                 BitmapFont pequena = jogo.fonte(FonteDoJogo.PEQUENO);
                 pequena.setColor(foco ? FUNDO : SECUNDARIO);
                 medidor.setText(pequena, detalhe);
-                pequena.draw(jogo.batch(), medidor, area.direita() - 18f * layout.escala() - medidor.width,
-                        area.centroY() + medidor.height / 2f);
+                RetanguloDeTela areaDoDetalhe = layoutHorizontalDoToque == null
+                        ? area : layoutHorizontalDoToque.detalheDaCampanha();
+                float xDoDetalhe = layoutHorizontalDoToque == null
+                        ? area.direita() - 18f * layout.escala() - medidor.width
+                        : areaDoDetalhe.x();
+                pequena.draw(jogo.batch(), medidor, xDoDetalhe,
+                        areaDoDetalhe.centroY() + medidor.height / 2f);
             }
         }
     }
@@ -369,8 +423,14 @@ public class MenuScreen extends TelaBase {
     private void desenharRodape() {
         BitmapFont pequena = jogo.fonte(FonteDoJogo.PEQUENO);
         pequena.setColor(SECUNDARIO);
-        String conta = jogo.sessao() == null ? "Convidado · ranking local"
-                : jogo.sessao().getNome() + " · ranking global";
+        String conta = textoDaConta();
+        if (layoutHorizontalDoToque != null) {
+            desenharLinhaEsquerda(conta, FonteDoJogo.PEQUENO, SECUNDARIO,
+                    layoutHorizontalDoToque.conta());
+            desenharLinhaEsquerda("Toque em uma opção para selecionar", FonteDoJogo.PEQUENO,
+                    SECUNDARIO, layoutHorizontalDoToque.instrucao());
+            return;
+        }
         if (layoutDoToque != null) {
             desenharLinhaEsquerda(conta, FonteDoJogo.PEQUENO, SECUNDARIO, layoutDoToque.conta());
             desenharLinhaEsquerda("Toque em uma opção para selecionar", FonteDoJogo.PEQUENO,
@@ -386,6 +446,11 @@ public class MenuScreen extends TelaBase {
         }
         rodape.desenhar(jogo.batch(), jogo.estilo(), layout.xDaReferencia(96f), 28f * layout.escala(),
                 new Atalho("Setas", "Navegar"), new Atalho("Enter", "Selecionar"), new Atalho("Esc", "Sair"));
+    }
+
+    private String textoDaConta() {
+        return jogo.sessao() == null ? "Convidado · ranking local"
+                : jogo.sessao().getNome() + " · ranking global";
     }
 
     private void desenharConfirmacao() {

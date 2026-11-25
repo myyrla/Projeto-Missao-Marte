@@ -8,6 +8,7 @@ import java.util.List;
 /** Geometria responsiva do HUD e do modal de fim, sem dependencias do libGDX. */
 public final class LayoutDoHud {
     public static final float LARGURA_MINIMA_DA_COLUNA = 220f;
+    public static final float LARGURA_MINIMA_DA_COLUNA_DE_TOQUE = 200f;
 
     private static final float LARGURA_DE_REFERENCIA = 1280f;
     private static final float ALTURA_DE_REFERENCIA = 720f;
@@ -36,6 +37,8 @@ public final class LayoutDoHud {
     private final RetanguloDeTela aviso;
     private final RetanguloDeTela seloDaTempestade;
     private final RetanguloDeTela controles;
+    private final RetanguloDeTela acoes;
+    private final MedidasDoJogador medidasDoJogador;
     private final RetanguloDeTela painelDoFim;
     private final RetanguloDeTela[] botoesDoFim;
 
@@ -45,7 +48,8 @@ public final class LayoutDoHud {
             RetanguloDeTela radarInterno, RetanguloDeTela mapa, RetanguloDeTela areaUtilDoMapa,
             RetanguloDeTela rodapeEsquerdo,
             RetanguloDeTela rodapeDireito, RetanguloDeTela aviso, RetanguloDeTela seloDaTempestade,
-            RetanguloDeTela controles, RetanguloDeTela painelDoFim, RetanguloDeTela[] botoesDoFim) {
+            RetanguloDeTela controles, RetanguloDeTela acoes, MedidasDoJogador medidasDoJogador,
+            RetanguloDeTela painelDoFim, RetanguloDeTela[] botoesDoFim) {
         this.largura = largura;
         this.altura = altura;
         this.celulas = celulas;
@@ -66,6 +70,8 @@ public final class LayoutDoHud {
         this.aviso = aviso;
         this.seloDaTempestade = seloDaTempestade;
         this.controles = controles;
+        this.acoes = acoes;
+        this.medidasDoJogador = medidasDoJogador;
         this.painelDoFim = painelDoFim;
         this.botoesDoFim = botoesDoFim;
     }
@@ -94,34 +100,42 @@ public final class LayoutDoHud {
 
     private static LayoutDoHud calcularColunas(float largura, float altura, int celulas, boolean toque,
             MargensSeguras margens, RetanguloDeTela mapa, MedidasDoHud medidas) {
-        if (toque) {
-            return null;
-        }
         float escala = Math.min(largura / LARGURA_DE_REFERENCIA, altura / ALTURA_DE_REFERENCIA);
         float margem = MARGEM * escala;
         float espaco = ESPACO * escala;
         float livreEsquerda = mapa.x() - margens.esquerda() - margem - espaco;
         float livreDireita = largura - margens.direita() - margem - mapa.direita() - espaco;
         float coluna = Math.min(livreEsquerda, livreDireita);
-        if (coluna < LARGURA_MINIMA_DA_COLUNA * escala) {
+        float larguraMinima = (toque ? LARGURA_MINIMA_DA_COLUNA_DE_TOQUE : LARGURA_MINIMA_DA_COLUNA) * escala;
+        if (coluna < larguraMinima) {
             return null;
         }
 
         float base = margens.baixo() + margem;
         float topo = altura - margens.cima() - margem;
-        float alturaPiloto = 116f * escala + 8f * escala + medidas.alturaDoStatus() + 16f * escala;
+        float alturaDoJogador = toque
+                ? Math.max(116f * escala, 16f * escala
+                        + medidas.jogador().alturaDoTitulo()
+                        + 2f * 4f * escala
+                        + 2f * medidas.jogador().alturaDaLinha())
+                : 116f * escala;
+        float alturaPiloto = alturaDoJogador + (toque ? 4f : 8f) * escala
+                + medidas.alturaDoStatus() + (toque ? 12f : 16f) * escala;
         float alturaObjetivo = 16f * escala + medidas.alturaDoRotulo() + 8f * escala
                 + medidas.alturaDoTextoDoObjetivo() + 12f * escala
                 + 3f * 52f * escala + 2f * 8f * escala + 16f * escala;
-        if (alturaPiloto + alturaObjetivo + espaco > topo - base) {
+        float alturaMinimaDoJoystick = toque
+                ? Math.max(96f * escala, medidas.alvoMinimo() + 24f * escala) : 0f;
+        if (alturaPiloto + alturaObjetivo + espaco + alturaMinimaDoJoystick > topo - base) {
             return null;
         }
 
         float xEsquerda = margens.esquerda() + margem;
         RetanguloDeTela piloto = new RetanguloDeTela(xEsquerda, topo - alturaPiloto, coluna, alturaPiloto);
-        RetanguloDeTela jogador = new RetanguloDeTela(xEsquerda, piloto.topo() - 116f * escala,
-                coluna, 116f * escala);
-        RetanguloDeTela status = new RetanguloDeTela(xEsquerda, piloto.y() + 16f * escala,
+        RetanguloDeTela jogador = new RetanguloDeTela(xEsquerda,
+                piloto.topo() - alturaDoJogador, coluna, alturaDoJogador);
+        RetanguloDeTela status = new RetanguloDeTela(xEsquerda,
+                piloto.y() + (toque ? 12f : 16f) * escala,
                 coluna, medidas.alturaDoStatus());
         RetanguloDeTela objetivo = new RetanguloDeTela(xEsquerda,
                 piloto.y() - espaco - alturaObjetivo, coluna, alturaObjetivo);
@@ -129,6 +143,10 @@ public final class LayoutDoHud {
         RetanguloDeTela textoDoObjetivo = new RetanguloDeTela(objetivo.x() + 16f * escala,
                 topoDoTexto - medidas.alturaDoTextoDoObjetivo(), objetivo.largura() - 32f * escala,
                 medidas.alturaDoTextoDoObjetivo());
+        RetanguloDeTela controles = toque
+                ? new RetanguloDeTela(xEsquerda, base, coluna,
+                        Math.max(0f, objetivo.y() - espaco - base))
+                : vazio(largura, altura);
 
         float xDireita = mapa.direita() + espaco;
         RetanguloDeTela radar = new RetanguloDeTela(xDireita, topo - 150f * escala, coluna, 150f * escala);
@@ -136,25 +154,34 @@ public final class LayoutDoHud {
         RetanguloDeTela radarInterno = new RetanguloDeTela(radar.x() + margemRadar,
                 radar.y() + margemRadar, radar.largura() - 2f * margemRadar,
                 radar.altura() - 50f * escala);
-        float alturaDosAtalhos = 24f * escala + medidas.quantidadeDeAtalhos() * 24f * escala
+        float alturaDosAtalhos = toque ? 0f : 24f * escala + medidas.quantidadeDeAtalhos() * 24f * escala
                 + Math.max(0, medidas.quantidadeDeAtalhos() - 1) * 14f * escala;
-        RetanguloDeTela atalhos = new RetanguloDeTela(xDireita,
+        RetanguloDeTela atalhos = toque ? vazio(largura, altura) : new RetanguloDeTela(xDireita,
                 radar.y() - espaco - alturaDosAtalhos, coluna, alturaDosAtalhos);
+        float topoAbaixoDoRadar = radar.y() - espaco;
         float alturaDoAviso = medidas.avisoVisivel()
                 ? Math.max(38f * escala, medidas.alturaDoAviso() + 24f * escala) : 0f;
         RetanguloDeTela aviso = alturaDoAviso > 0f
-                ? new RetanguloDeTela(xDireita, atalhos.y() - espaco - alturaDoAviso, coluna, alturaDoAviso)
+                ? new RetanguloDeTela(xDireita,
+                        (toque ? topoAbaixoDoRadar : atalhos.y() - espaco) - alturaDoAviso,
+                        coluna, alturaDoAviso)
                 : vazio(largura, altura);
-        float topoDoSelo = alturaDoAviso > 0f ? aviso.y() - espaco : atalhos.y() - espaco;
+        float topoDoSelo = alturaDoAviso > 0f ? aviso.y() - espaco
+                : toque ? topoAbaixoDoRadar : atalhos.y() - espaco;
         RetanguloDeTela selo = new RetanguloDeTela(xDireita,
                 topoDoSelo - 34f * escala, coluna, 34f * escala);
-        RetanguloDeTela ultimo = medidas.tempestadeVisivel() ? selo : alturaDoAviso > 0f ? aviso : atalhos;
+        RetanguloDeTela ultimo = medidas.tempestadeVisivel() ? selo
+                : alturaDoAviso > 0f ? aviso : toque ? radar : atalhos;
         if (ultimo.y() < base) {
             return null;
         }
+        RetanguloDeTela acoes = toque
+                ? new RetanguloDeTela(xDireita, base, coluna,
+                        Math.max(0f, ultimo.y() - espaco - base))
+                : vazio(largura, altura);
         return montarComAreas(largura, altura, celulas, escala, false, Modo.COLUNAS, coluna,
                 piloto, jogador, objetivo, textoDoObjetivo, radar, radarInterno, mapa, mapa,
-                status, atalhos, aviso, selo, vazio(largura, altura));
+                status, atalhos, aviso, selo, controles, acoes, medidas.jogador());
     }
 
     private static LayoutDoHud calcularFaixas(float largura, float altura, int celulas, boolean toque,
@@ -221,7 +248,7 @@ public final class LayoutDoHud {
                 : vazio(largura, altura);
         return montarComAreas(largura, altura, celulas, escala, true, Modo.FAIXAS, 0f,
                 piloto, jogador, objetivo, textoDoObjetivo, vazio, vazio, mapa, areaUtil,
-                status, vazio, aviso, selo, controles);
+                status, vazio, aviso, selo, controles, controles, medidas.jogador());
     }
 
     private static LayoutDoHud calcularReserva(float largura, float altura, int celulas, boolean toque,
@@ -310,7 +337,8 @@ public final class LayoutDoHud {
                 14f * escala);
         return montarComAreas(largura, altura, celulas, escala, emRetrato, modo, larguraDaColuna,
                 piloto, piloto, objetivo, textoDoObjetivo, radar, radarInterno, mapa, mapa,
-                rodapeEsquerdo, rodapeDireito, aviso, seloDaTempestade, controles);
+                rodapeEsquerdo, rodapeDireito, aviso, seloDaTempestade, controles, controles,
+                MedidasDoJogador.padrao(escala));
     }
 
     private static LayoutDoHud montarComAreas(float largura, float altura, int celulas, float escala,
@@ -318,7 +346,9 @@ public final class LayoutDoHud {
             RetanguloDeTela jogador, RetanguloDeTela objetivo, RetanguloDeTela textoDoObjetivo,
             RetanguloDeTela radar, RetanguloDeTela radarInterno, RetanguloDeTela mapa,
             RetanguloDeTela areaUtilDoMapa, RetanguloDeTela rodapeEsquerdo, RetanguloDeTela rodapeDireito,
-            RetanguloDeTela aviso, RetanguloDeTela seloDaTempestade, RetanguloDeTela controles) {
+            RetanguloDeTela aviso, RetanguloDeTela seloDaTempestade,
+            RetanguloDeTela controles, RetanguloDeTela acoes,
+            MedidasDoJogador medidasDoJogador) {
         float larguraDoPainel = Math.min(480f * escala, largura - 24f * escala);
         float alturaDoPainel = Math.min(300f * escala, altura - 24f * escala);
         RetanguloDeTela painel = new RetanguloDeTela((largura - larguraDoPainel) / 2f,
@@ -334,7 +364,8 @@ public final class LayoutDoHud {
         };
         return new LayoutDoHud(largura, altura, celulas, escala, emRetrato, modo, larguraDaColuna,
                 piloto, jogador, objetivo, textoDoObjetivo, radar, radarInterno, mapa, areaUtilDoMapa,
-                rodapeEsquerdo, rodapeDireito, aviso, seloDaTempestade, controles, painel, botoes);
+                rodapeEsquerdo, rodapeDireito, aviso, seloDaTempestade,
+                controles, acoes, medidasDoJogador, painel, botoes);
     }
 
     private static RetanguloDeTela vazio(float largura, float altura) {
@@ -353,6 +384,47 @@ public final class LayoutDoHud {
     public float larguraDaColuna() { return larguraDaColuna; }
     public RetanguloDeTela piloto() { return piloto; }
     public RetanguloDeTela jogador() { return jogador; }
+    public boolean toqueHorizontal() {
+        return modo == Modo.COLUNAS && controles.largura() > 0f && controles.altura() > 0f;
+    }
+    public RetanguloDeTela tituloDoJogador() {
+        if (!toqueHorizontal()) return jogador;
+        float margemHorizontal = 16f * escala;
+        float margemVertical = 8f * escala;
+        return new RetanguloDeTela(jogador.x() + margemHorizontal,
+                jogador.topo() - margemVertical - medidasDoJogador.alturaDoTitulo(),
+                Math.max(0f, jogador.largura() - 2f * margemHorizontal),
+                medidasDoJogador.alturaDoTitulo());
+    }
+    public RetanguloDeTela linhaDoCasco() {
+        if (!toqueHorizontal()) return jogador;
+        RetanguloDeTela titulo = tituloDoJogador();
+        return new RetanguloDeTela(titulo.x(),
+                titulo.y() - 4f * escala - medidasDoJogador.alturaDaLinha(),
+                titulo.largura(), medidasDoJogador.alturaDaLinha());
+    }
+    public RetanguloDeTela linhaDosPontos() {
+        if (!toqueHorizontal()) return jogador;
+        RetanguloDeTela casco = linhaDoCasco();
+        return new RetanguloDeTela(casco.x(),
+                casco.y() - 4f * escala - medidasDoJogador.alturaDaLinha(),
+                casco.largura(), medidasDoJogador.alturaDaLinha());
+    }
+    public RetanguloDeTela areaDasBarrasDoCasco() {
+        RetanguloDeTela casco = linhaDoCasco();
+        float x = casco.x() + medidasDoJogador.larguraDoRotuloDoCasco() + 8f * escala;
+        return new RetanguloDeTela(x, casco.y(), Math.max(0f, casco.direita() - x), casco.altura());
+    }
+    public RetanguloDeTela segmentoDoCasco(int indice, int quantidade) {
+        RetanguloDeTela area = areaDasBarrasDoCasco();
+        int total = Math.max(1, quantidade);
+        float espaco = 4f * escala;
+        float largura = Math.min(34f * escala,
+                Math.max(0f, (area.largura() - (total - 1) * espaco) / total));
+        float altura = Math.min(12f * escala, area.altura());
+        return new RetanguloDeTela(area.x() + indice * (largura + espaco),
+                area.centroY() - altura / 2f, largura, altura);
+    }
     public RetanguloDeTela linhaPrincipalDoJogador() {
         if (!compacto()) return jogador;
         float margem = 8f * escala;
@@ -419,6 +491,7 @@ public final class LayoutDoHud {
     public RetanguloDeTela aviso() { return aviso; }
     public RetanguloDeTela seloDaTempestade() { return seloDaTempestade; }
     public RetanguloDeTela controles() { return controles; }
+    public RetanguloDeTela acoes() { return acoes; }
     public RetanguloDeTela painelDoFim() { return painelDoFim; }
     public RetanguloDeTela botaoDoFim(int indice) { return botoesDoFim[indice]; }
 
@@ -432,7 +505,13 @@ public final class LayoutDoHud {
         if (avisoVisivel) adicionarSeVisivel(areas, aviso);
         if (tempestadeVisivel) adicionarSeVisivel(areas, seloDaTempestade);
         adicionarSeVisivel(areas, controles);
+        if (!mesmaArea(controles, acoes)) adicionarSeVisivel(areas, acoes);
         return List.copyOf(areas);
+    }
+
+    private static boolean mesmaArea(RetanguloDeTela primeira, RetanguloDeTela segunda) {
+        return primeira.x() == segunda.x() && primeira.y() == segunda.y()
+                && primeira.largura() == segunda.largura() && primeira.altura() == segunda.altura();
     }
 
     private static void adicionarSeVisivel(List<RetanguloDeTela> areas, RetanguloDeTela area) {

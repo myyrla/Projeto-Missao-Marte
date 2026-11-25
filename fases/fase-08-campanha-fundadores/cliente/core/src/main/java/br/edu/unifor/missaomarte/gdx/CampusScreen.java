@@ -10,6 +10,7 @@ import br.edu.unifor.missaomarte.gdx.campanha.ConteudoDoCartaoDaCampanha;
 import br.edu.unifor.missaomarte.gdx.campanha.ControleDoCampus;
 import br.edu.unifor.missaomarte.gdx.campanha.MedidasDoCartao;
 import br.edu.unifor.missaomarte.gdx.campanha.MedidasDoCampus;
+import br.edu.unifor.missaomarte.gdx.campanha.MedidasDoCampusHorizontalToque;
 import br.edu.unifor.missaomarte.gdx.campanha.MetricasTipograficasDoCampus;
 import br.edu.unifor.missaomarte.gdx.campanha.ResumoVisualDaCampanha;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
@@ -56,7 +57,7 @@ public class CampusScreen extends TelaBase {
 
     @Override
     protected boolean usaMundoInteiro() {
-        return jogo.modoToque() && jogo.viewport().getWorldHeight() > jogo.viewport().getWorldWidth();
+        return jogo.modoToque();
     }
 
     @Override
@@ -69,10 +70,10 @@ public class CampusScreen extends TelaBase {
         float largura;
         float altura;
         boolean vertical;
-        if (jogo.modoToque() && jogo.viewport().getWorldHeight() > jogo.viewport().getWorldWidth()) {
+        if (jogo.modoToque()) {
             largura = jogo.viewport().getWorldWidth();
             altura = jogo.viewport().getWorldHeight();
-            vertical = true;
+            vertical = altura > largura;
         } else {
             largura = MissaoMarteGame.LARGURA;
             altura = MissaoMarteGame.ALTURA;
@@ -82,6 +83,9 @@ public class CampusScreen extends TelaBase {
         ResumoVisualDaCampanha resumo = ResumoVisualDaCampanha.de(campanha);
         ConteudoDoCartaoDaCampanha conteudo = ConteudoDoCartaoDaCampanha.de(
                 resumo, jogo.demonstracaoDaCampanha());
+        if (jogo.modoToque() && !vertical) {
+            return layoutHorizontalDoToque(largura, altura, resumo, conteudo);
+        }
         float alturaDoCartao = medirCartao(
                 base.cartaoDaProximaMissao().largura(), conteudo).alturaTotal();
         if (vertical) {
@@ -92,9 +96,75 @@ public class CampusScreen extends TelaBase {
                 medirConteudoHorizontal(base, resumo, alturaDoCartao));
     }
 
+    private CampusLayout layoutHorizontalDoToque(float largura, float altura,
+            ResumoVisualDaCampanha resumo, ConteudoDoCartaoDaCampanha conteudo) {
+        float larguraMinimaDoPainel = medirLarguraMinimaDoPainel(resumo, conteudo);
+        float larguraDoPainel = CampusLayout.larguraDoPainelHorizontalToque(
+                largura, larguraMinimaDoPainel);
+        float larguraDoConteudo = larguraDoPainel - 24f;
+        float alturaDoCartao = medirCartao(larguraDoConteudo, conteudo).alturaTotal();
+        float larguraDoTitulo = CampusLayout.larguraDoTituloHorizontalToque(
+                largura, larguraDoPainel);
+        float alturaDoTitulo = medirAltura(
+                FonteDoJogo.TITULO, "CAMPUS UNIFOR MARTE", larguraDoTitulo);
+        float alturaDoSubtitulo = medirAltura(FonteDoJogo.PEQUENO,
+                "Mapa autoral inspirado na disposição do campus de Fortaleza",
+                larguraDoTitulo);
+        BitmapFont fonteDoBotao = jogo.fonte(FonteDoJogo.TEXTO);
+        float alturaDoBotao = fonteDoBotao.getLineHeight() + 20f;
+        MedidasDoCampus medidasDoConteudo = medirConteudoHorizontal(
+                larguraDoPainel, resumo, alturaDoCartao);
+        List<MedidasDoCampusHorizontalToque.LargurasDaEtapa> largurasDasEtapas =
+                new ArrayList<>();
+        for (ResumoVisualDaCampanha.Etapa etapa : resumo.etapas()) {
+            largurasDasEtapas.add(new MedidasDoCampusHorizontalToque.LargurasDaEtapa(
+                    medirLargura(FonteDoJogo.PEQUENO, etapa.local()),
+                    medirLargura(FonteDoJogo.PEQUENO, etapa.fundador())));
+        }
+        return CampusLayout.calcularHorizontalToque(largura, altura,
+                new MedidasDoCampusHorizontalToque(
+                        medidasDoConteudo, largurasDasEtapas, larguraMinimaDoPainel,
+                        alturaDoTitulo, alturaDoSubtitulo,
+                        alturaDoBotao, jogo.alvoMinimo()));
+    }
+
+    private float medirLarguraMinimaDoPainel(ResumoVisualDaCampanha resumo,
+            ConteudoDoCartaoDaCampanha conteudo) {
+        float maior = medirLargura(FonteDoJogo.SUBTITULO,
+                "Fundadores: " + resumo.fundadoresResgatados() + "/3");
+        if (resumo.exibePontuacaoNoCabecalho()) {
+            maior = Math.max(maior, medirLargura(
+                    FonteDoJogo.TEXTO, "Pontuação: " + resumo.pontuacaoTotal()));
+        }
+        if (jogo.demonstracaoDaCampanha()) {
+            maior = Math.max(maior, medirLargura(FonteDoJogo.PEQUENO, "Modo demonstração"));
+        }
+        for (ResumoVisualDaCampanha.Etapa etapa : resumo.etapas()) {
+            maior = Math.max(maior, 28f + medirLargura(
+                    FonteDoJogo.TEXTO, "Etapa " + etapa.numero()));
+            maior = Math.max(maior, 28f
+                    + medirLargura(FonteDoJogo.PEQUENO, etapa.local()) + 8f
+                    + medirLargura(FonteDoJogo.PEQUENO, etapa.fundador()));
+        }
+        maior = Math.max(maior, medirLargura(FonteDoJogo.ROTULO, conteudo.titulo()));
+        float larguraDosBotoes = medirLargura(FonteDoJogo.TEXTO, resumo.rotuloDaAcao())
+                + medirLargura(FonteDoJogo.TEXTO, "Voltar") + 68f;
+        return Math.max(maior + 24f, larguraDosBotoes);
+    }
+
+    private float medirLargura(FonteDoJogo fonte, String texto) {
+        medidor.setText(jogo.fonte(fonte), texto);
+        return medidor.width;
+    }
+
     private MedidasDoCampus medirConteudoHorizontal(CampusLayout base,
             ResumoVisualDaCampanha resumo, float alturaDoCartao) {
-        float largura = base.progresso().largura() - 24f;
+        return medirConteudoHorizontal(base.progresso().largura(), resumo, alturaDoCartao);
+    }
+
+    private MedidasDoCampus medirConteudoHorizontal(float larguraDoPainel,
+            ResumoVisualDaCampanha resumo, float alturaDoCartao) {
+        float largura = larguraDoPainel - 24f;
         float larguraDaEtapa = largura - 28f;
         List<MedidasDoCampus.MedidasDaEtapa> etapas = new ArrayList<>();
         for (ResumoVisualDaCampanha.Etapa etapa : resumo.etapas()) {
@@ -269,6 +339,8 @@ public class CampusScreen extends TelaBase {
                 || atual.largura() != layout.largura() || atual.altura() != layout.altura()
                 || atual.cartaoDaProximaMissao().altura()
                         != layout.cartaoDaProximaMissao().altura()
+                || atual.progresso().largura() != layout.progresso().largura()
+                || atual.titulo().altura() != layout.titulo().altura()
                 || atual.linhaDaPontuacao().altura() != layout.linhaDaPontuacao().altura()
                 || atual.linhaDaDemonstracao().altura() != layout.linhaDaDemonstracao().altura()
                 || atual.etapa(0).altura() != layout.etapa(0).altura()) {

@@ -1,5 +1,6 @@
 package br.edu.unifor.missaomarte.android;
 
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import br.edu.unifor.missaomarte.application.MissaoFactory;
 import br.edu.unifor.missaomarte.application.RankingService;
@@ -11,6 +12,7 @@ import br.edu.unifor.missaomarte.application.servidor.ConfiguracaoInvalidaExcept
 import br.edu.unifor.missaomarte.application.servidor.EnderecoDoServidor;
 import br.edu.unifor.missaomarte.application.servidor.RepositorioDeConfiguracaoDoServidor;
 import br.edu.unifor.missaomarte.gdx.MissaoMarteGame;
+import br.edu.unifor.missaomarte.gdx.plataforma.OrientacaoPorTamanhoDeTela;
 import br.edu.unifor.missaomarte.gdx.plataforma.Plataforma;
 import br.edu.unifor.missaomarte.gdx.plataforma.PreferenciasComoArmazem;
 import br.edu.unifor.missaomarte.gdx.rede.ServidorHttp;
@@ -28,6 +30,11 @@ import java.util.Random;
 public class AndroidLauncher extends AndroidApplication {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        OrientacaoPorTamanhoDeTela orientacao = OrientacaoPorTamanhoDeTela.paraMenorLarguraDp(
+                getResources().getConfiguration().smallestScreenWidthDp);
+        setRequestedOrientation(orientacao == OrientacaoPorTamanhoDeTela.PAISAGEM
+                ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                : ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
         super.onCreate(savedInstanceState);
 
         ConfiguracaoDoServidor padrao;

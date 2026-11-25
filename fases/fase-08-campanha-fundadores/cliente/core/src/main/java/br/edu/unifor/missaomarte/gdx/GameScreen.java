@@ -117,6 +117,7 @@ public class GameScreen extends TelaBase {
     private ControleDeToque controles;
     private ControleDeToque.MedidasDosRotulos medidasDosControles;
     private RetanguloDeTela areaDosControles;
+    private RetanguloDeTela areaDasAcoes;
     private float alvoDosControles = -1f;
     private boolean controlesEmRetrato;
 
@@ -216,8 +217,7 @@ public class GameScreen extends TelaBase {
     @Override
     protected boolean desenhaBotoesVirtuais() {
         return session.getEstado() == EstadoPartida.EM_ANDAMENTO
-                && (!jogo.modoToque() || layout == null || !layout.emRetrato()
-                        || dinamico && session.isPausada());
+                && (!jogo.modoToque() || dinamico && session.isPausada());
     }
 
     // ---------------------------------------------------------------- entrada: modo classico
@@ -322,7 +322,7 @@ public class GameScreen extends TelaBase {
 
     @Override
     protected boolean aoPressionar(float x, float y, int ponteiro) {
-        if (!usaJoystickVertical()) {
+        if (!usaJoystickDeToque()) {
             return false;
         }
         ControleDeToque.ResultadoDaPressao resultado = controles.pressionar(ponteiro, x, y);
@@ -333,7 +333,7 @@ public class GameScreen extends TelaBase {
 
     @Override
     protected boolean aoArrastar(float x, float y, int ponteiro) {
-        if (!usaJoystickVertical()) {
+        if (!usaJoystickDeToque()) {
             return false;
         }
         JoystickVirtual.Resultado resultado = controles.arrastar(ponteiro, x, y);
@@ -432,15 +432,18 @@ public class GameScreen extends TelaBase {
         RetanguloDeTela m = layout.mapa();
         if (session.getEstado() == EstadoPartida.EM_ANDAMENTO && !(dinamico && session.isPausada())) {
             RetanguloDeTela area = layout.controles();
+            RetanguloDeTela acoes = layout.acoes();
             float alvo = jogo.alvoMinimo();
-            ControleDeToque.MedidasDosRotulos medidas = layout.emRetrato()
-                    ? controleDeToqueRenderer.medirRotulos(dinamico)
-                    : ControleDeToque.MedidasDosRotulos.vazias();
+            ControleDeToque.MedidasDosRotulos medidas = controleDeToqueRenderer.medirRotulos(dinamico);
             if (controles == null || alvo != alvoDosControles || controlesEmRetrato != layout.emRetrato()
-                    || !mesmoRetangulo(area, areaDosControles) || !medidas.equals(medidasDosControles)) {
+                    || !mesmoRetangulo(area, areaDosControles)
+                    || !mesmoRetangulo(acoes, areaDasAcoes)
+                    || !medidas.equals(medidasDosControles)) {
                 liberarJoystick();
-                controles = new ControleDeToque(area, layout.emRetrato(), dinamico, alvo, medidas);
+                controles = new ControleDeToque(
+                        area, acoes, layout.emRetrato(), dinamico, alvo, medidas);
                 areaDosControles = area;
+                areaDasAcoes = acoes;
                 alvoDosControles = alvo;
                 controlesEmRetrato = layout.emRetrato();
                 medidasDosControles = medidas;
@@ -469,8 +472,8 @@ public class GameScreen extends TelaBase {
         return b != null && a.x() == b.x() && a.y() == b.y() && a.largura() == b.largura() && a.altura() == b.altura();
     }
 
-    private boolean usaJoystickVertical() {
-        return jogo.modoToque() && layout != null && layout.emRetrato()
+    private boolean usaJoystickDeToque() {
+        return jogo.modoToque() && layout != null
                 && controles != null && session.getEstado() == EstadoPartida.EM_ANDAMENTO
                 && !(dinamico && session.isPausada());
     }
@@ -780,7 +783,7 @@ public class GameScreen extends TelaBase {
         boolean fim = session.getEstado() != EstadoPartida.EM_ANDAMENTO;
         hud.desenhar(session, mensagens, mudo, segundos, janelaDoRadar, tempestadeAtiva, destaques);
 
-        if (!fim && usaJoystickVertical()) {
+        if (!fim && usaJoystickDeToque()) {
             controleDeToqueRenderer.desenhar(controles);
         }
 
@@ -859,14 +862,17 @@ public class GameScreen extends TelaBase {
     }
 
     private void atualizarLayoutDoResultado() {
-        if (session.getEstado() == EstadoPartida.EM_ANDAMENTO
-                || !jogo.modoToque() || !layout.emRetrato()) {
+        if (!usaLayoutMedidoDoResultado(jogo.modoToque(), session.getEstado())) {
             layoutDoResultado = null;
             return;
         }
         layoutDoResultado = resultadoRenderer.medirLayout(
                 layout.largura(), layout.altura(), jogo.margensSeguras(),
                 jogo.alvoMinimo(), apresentacaoDoResultado());
+    }
+
+    static boolean usaLayoutMedidoDoResultado(boolean modoToque, EstadoPartida estado) {
+        return modoToque && estado != EstadoPartida.EM_ANDAMENTO;
     }
 
     private static RetanguloDeTela paraCoordenadasDaJanela(RetanguloDeTela area, Viewport viewport,

@@ -12,6 +12,36 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 class LayoutDoResultadoDaPartidaTest {
     @ParameterizedTest
+    @CsvSource({"1280,800,36", "1920,1200,24"})
+    void toqueHorizontalMantemTextosEBotoesDentroDoPainel(
+            float larguraFisica, float alturaFisica, float alvoMinimo) {
+        float largura = 960f;
+        float altura = largura * alturaFisica / larguraFisica;
+        for (float fator : new float[] {1f, 1.3f, 1.6f}) {
+            MedidasDoResultadoDaPartida medidas = new MedidasDoResultadoDaPartida(
+                    268f * fator, 44.5f * fator, 21f * fator,
+                    20f * fator, 44.5f * fator, 16.5f * fator,
+                    149f * fator, 72f * fator, 29f * fator, alvoMinimo);
+
+            LayoutDoResultadoDaPartida layout = LayoutDoResultadoDaPartida.calcular(
+                    largura, altura, MargensSeguras.NENHUMA, medidas);
+
+            RetanguloDeTela tela = new RetanguloDeTela(0f, 0f, largura, altura);
+            assertTrue(layout.painel().estaDentroDe(tela));
+            assertTrue(layout.titulo().estaDentroDe(layout.painel()));
+            assertTrue(layout.motivo().estaDentroDe(layout.painel()));
+            assertTrue(layout.botao(0).estaDentroDe(layout.painel()));
+            assertTrue(layout.botao(1).estaDentroDe(layout.painel()));
+            assertTrue(layout.botao(0).largura() >= medidas.larguraDoPrimeiroBotao() + 32f);
+            assertTrue(layout.botao(1).largura() >= medidas.larguraDoSegundoBotao() + 32f);
+            assertFalse(layout.botao(0).sobrepoe(layout.botao(1)));
+            assertSemSobreposicao(List.of(layout.titulo(), layout.motivo(),
+                    layout.rotuloDosPontos(), layout.pontos(), layout.situacao(),
+                    layout.botao(0), layout.botao(1)));
+        }
+    }
+
+    @ParameterizedTest
     @CsvSource({"540,1200", "540,895"})
     void toqueComFatorUmPontoSeisMantemTituloEBotoesInteirosNoPainel(
             float larguraFisica, float alturaFisica) {

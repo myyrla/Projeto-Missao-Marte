@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.edu.unifor.missaomarte.application.Acao;
+import br.edu.unifor.missaomarte.gdx.hud.LayoutDoHud;
+import br.edu.unifor.missaomarte.gdx.hud.MedidasDoHud;
 import br.edu.unifor.missaomarte.gdx.layout.LayoutDaPartida;
 import br.edu.unifor.missaomarte.gdx.layout.MargensSeguras;
 import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
@@ -41,6 +43,22 @@ class ControleDeToqueTest {
                 ControleDeToque.PAUSA, new ControleDeToque.MedidaDoRotulo(40f * fator, altura),
                 ControleDeToque.SOM, new ControleDeToque.MedidaDoRotulo(28f * fator, altura),
                 ControleDeToque.ABORTAR, new ControleDeToque.MedidaDoRotulo(57f * fator, altura)));
+    }
+
+    private static LayoutDoHud layoutHorizontal(RetanguloDeTela mapa, float fator, float alvoMinimo) {
+        float rotulo = 13.5f * fator;
+        float texto = 14.2f * fator;
+        MedidasDoHud medidas = new MedidasDoHud(rotulo, 2f * texto, 6f * rotulo,
+                0, texto, true, true, texto, 11.1f * fator, alvoMinimo);
+        return LayoutDoHud.calcular(960f, 600f, 11, true,
+                MargensSeguras.NENHUMA, mapa, medidas);
+    }
+
+    private static ControleDeToque controlesHorizontais(RetanguloDeTela mapa, float fator,
+            boolean dinamico, float alvoMinimo) {
+        LayoutDoHud layout = layoutHorizontal(mapa, fator, alvoMinimo);
+        return new ControleDeToque(layout.controles(), layout.acoes(), false,
+                dinamico, alvoMinimo, medidasDosRotulos(fator));
     }
 
     private static BotaoVirtual botao(ControleDeToque c, String id) {
@@ -83,21 +101,26 @@ class ControleDeToqueTest {
     }
 
     @Test
-    void modoDinamicoTemSetasTiroPausaSomEAbortarMasNaoEmbarcar() {
-        ControleDeToque c = controles(MUNDOS[2], true, 53f);
+    void modoDinamicoHorizontalTemJoystickTiroPausaSomEAbortarMasNaoEmbarcar() {
+        ControleDeToque c = controlesHorizontais(
+                new RetanguloDeTela(183f, 3f, 594f, 594f), 1.3f, true, 36f);
 
-        assertEquals(8, c.getBotoes().size());
-        for (String id : new String[] {"cima", "baixo", "esquerda", "direita", "atirar", "pausa", "som", "abortar"}) {
+        assertEquals(4, c.getBotoes().size());
+        for (String id : new String[] {"atirar", "pausa", "som", "abortar"}) {
             assertNotNull(botao(c, id), id);
         }
+        assertTrue(c.joystick().isPresent());
+        assertNull(botao(c, "cima"));
         assertNull(botao(c, "embarcar"));
     }
 
     @Test
-    void modoClassicoTemEmbarcarEMantemAsFuncoesDaFase6() {
-        ControleDeToque c = controles(MUNDOS[2], false, 53f);
+    void modoClassicoHorizontalTemJoystickEmbarcarSomEAbortar() {
+        ControleDeToque c = controlesHorizontais(
+                new RetanguloDeTela(183f, 3f, 594f, 594f), 1.3f, false, 36f);
 
-        assertEquals(7, c.getBotoes().size());
+        assertEquals(3, c.getBotoes().size());
+        assertTrue(c.joystick().isPresent());
         assertNotNull(botao(c, "embarcar"));
         assertNull(botao(c, "atirar"));
         assertNull(botao(c, "pausa"));
@@ -167,18 +190,40 @@ class ControleDeToqueTest {
     }
 
     @Test
-    void asSetasContinuamEmCruzNaPaisagemAteASegundaEtapa() {
-        ControleDeToque c = controles(MUNDOS[2], true, 53f);
-        BotaoVirtual cima = botao(c, "cima");
-        BotaoVirtual baixo = botao(c, "baixo");
-        BotaoVirtual esquerda = botao(c, "esquerda");
-        BotaoVirtual direita = botao(c, "direita");
+    void joystickEAcoesHorizontaisFicamNasColunasSemSobreposicao() {
+        RetanguloDeTela[] mapas = {
+            new RetanguloDeTela(183f, 3f, 594f, 594f),
+            new RetanguloDeTela(282f, 102f, 396f, 396f)
+        };
+        float[] alvos = {36f, 24f};
+        for (int cenario = 0; cenario < mapas.length; cenario++) {
+            for (float fator : new float[] {1f, 1.3f, 1.6f}) {
+                LayoutDoHud layout = layoutHorizontal(mapas[cenario], fator, alvos[cenario]);
+                ControleDeToque controle = new ControleDeToque(
+                        layout.controles(), layout.acoes(), false, true,
+                        alvos[cenario], medidasDosRotulos(fator));
+                JoystickVirtual joystick = controle.joystick().orElseThrow();
+                RetanguloDeTela base = new RetanguloDeTela(
+                        joystick.centroX() - joystick.raio(), joystick.centroY() - joystick.raio(),
+                        2f * joystick.raio(), 2f * joystick.raio());
 
-        assertTrue(cima.getY() > esquerda.getY() && esquerda.getY() > baixo.getY());
-        assertEquals(cima.getX(), baixo.getX(), 0.001f);
-        assertEquals(esquerda.getY(), direita.getY(), 0.001f);
-        assertTrue(esquerda.getX() < cima.getX() && cima.getX() < direita.getX());
-        assertTrue(c.joystick().isEmpty());
+                assertTrue(base.estaDentroDe(layout.controles()), "joystick no fator " + fator);
+                for (BotaoVirtual atual : controle.getBotoes()) {
+                    assertTrue(retangulo(atual).estaDentroDe(layout.acoes()),
+                            atual.getId() + " no fator " + fator);
+                    ControleDeToque.MedidaDoRotulo medida = medidasDosRotulos(fator).de(atual.getId());
+                    float diagonal = (float) Math.hypot(medida.largura(), medida.altura());
+                    assertTrue(diagonal * controle.escalaDoRotulo(atual.getId()) + 20f
+                            <= atual.getLargura() + 0.001f, atual.getId());
+                }
+                for (int i = 0; i < controle.getBotoes().size(); i++) {
+                    for (int j = i + 1; j < controle.getBotoes().size(); j++) {
+                        assertFalse(retangulo(controle.getBotoes().get(i))
+                                .sobrepoe(retangulo(controle.getBotoes().get(j))));
+                    }
+                }
+            }
+        }
     }
 
     @Test
@@ -319,7 +364,8 @@ class ControleDeToqueTest {
         ControleDeToque c = controles(MUNDOS[2], true, 53f);
         BotaoVirtual atirar = botao(c, "atirar");
 
-        assertEquals("atirar", c.em(atirar.getX() + 5f, atirar.getY() + 5f).getId());
+        assertEquals("atirar", c.em(centroX(atirar), centroY(atirar)).getId());
+        assertNull(c.em(atirar.getX(), atirar.getY()));
         assertNull(c.em(0f, 0f));
     }
 

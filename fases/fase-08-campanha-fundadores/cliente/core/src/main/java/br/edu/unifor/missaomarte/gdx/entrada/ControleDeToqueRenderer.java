@@ -93,13 +93,7 @@ public final class ControleDeToqueRenderer {
         batch.begin();
         try {
             for (BotaoVirtual botao : controle.getBotoes()) {
-                boolean principal = ControleDeToque.ATIRAR.equals(botao.getId())
-                        || ControleDeToque.EMBARCAR.equals(botao.getId());
-                BitmapFont fonte = fontes.obter(FonteDoJogo.PEQUENO);
-                fonte.setColor(principal ? TEXTO_ESCURO : Color.WHITE);
-                medidor.setText(fonte, botao.getRotulo());
-                fonte.draw(batch, medidor, centroX(botao) - medidor.width / 2f,
-                        centroY(botao) + medidor.height / 2f);
+                desenharRotulo(controle, botao);
             }
         } finally {
             batch.end();
@@ -107,6 +101,24 @@ public final class ControleDeToqueRenderer {
                 fontes.obter(tipo).setColor(Color.WHITE);
             }
             batch.setColor(Color.WHITE);
+        }
+    }
+
+    private void desenharRotulo(ControleDeToque controle, BotaoVirtual botao) {
+        boolean principal = ControleDeToque.ATIRAR.equals(botao.getId())
+                || ControleDeToque.EMBARCAR.equals(botao.getId());
+        BitmapFont fonte = fontes.obter(FonteDoJogo.PEQUENO);
+        float escalaX = fonte.getData().scaleX;
+        float escalaY = fonte.getData().scaleY;
+        try {
+            float fator = controle.escalaDoRotulo(botao.getId());
+            fonte.getData().setScale(escalaX * fator, escalaY * fator);
+            fonte.setColor(principal ? TEXTO_ESCURO : Color.WHITE);
+            medidor.setText(fonte, botao.getRotulo());
+            fonte.draw(batch, medidor, centroX(botao) - medidor.width / 2f,
+                    centroY(botao) + medidor.height / 2f);
+        } finally {
+            fonte.getData().setScale(escalaX, escalaY);
         }
     }
 

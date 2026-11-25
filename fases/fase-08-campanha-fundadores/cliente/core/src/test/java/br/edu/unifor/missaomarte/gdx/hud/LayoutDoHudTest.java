@@ -82,6 +82,71 @@ class LayoutDoHudTest {
     }
 
     @Test
+    void toqueHorizontalUsaColunasSemAlterarOMapaEmTablets() {
+        CenarioHorizontal[] cenarios = {
+            new CenarioHorizontal(960f, 600f, new RetanguloDeTela(183f, 3f, 594f, 594f), 36f),
+            new CenarioHorizontal(960f, 600f, new RetanguloDeTela(282f, 102f, 396f, 396f), 24f)
+        };
+        for (CenarioHorizontal cenario : cenarios) {
+            for (float fator : new float[] {1f, 1.3f, 1.6f}) {
+                LayoutDoHud layout = calcular(cenario.largura(), cenario.altura(), cenario.mapa(), true,
+                        medidasDoToqueHorizontal(fator, cenario.alvoMinimo()));
+
+                assertFalse(layout.emRetrato());
+                assertFalse(layout.usaReserva(), "reserva no fator " + fator);
+                assertFalse(layout.exibeAtalhos());
+                assertRetangulo(layout.mapa(), cenario.mapa().x(), cenario.mapa().y(),
+                        cenario.mapa().largura(), cenario.mapa().altura());
+                assertTrue(layout.controles().direita() <= layout.mapa().x());
+                assertTrue(layout.acoes().x() >= layout.mapa().direita());
+                assertSemSobreposicaoComMapa(layout);
+                assertAreasDoHudNaoSeSobrepoem(layout);
+            }
+        }
+    }
+
+    @Test
+    void jogadorNoToqueHorizontalQuebraOTituloEReduzAsBarrasDentroDaMargem() {
+        CenarioHorizontal[] cenarios = {
+            new CenarioHorizontal(960f, 600f, new RetanguloDeTela(183f, 3f, 594f, 594f), 36f),
+            new CenarioHorizontal(960f, 600f, new RetanguloDeTela(282f, 102f, 396f, 396f), 24f)
+        };
+        for (CenarioHorizontal cenario : cenarios) {
+            for (float fator : new float[] {1f, 1.3f, 1.6f}) {
+                float linha = 13.5f * fator;
+                MedidasDoJogador jogador = new MedidasDoJogador(
+                        2f * linha, linha, 44f * fator);
+                MedidasDoHud medidas = medidasDoToqueHorizontal(
+                        fator, cenario.alvoMinimo()).comJogador(jogador);
+                LayoutDoHud layout = calcular(cenario.largura(), cenario.altura(),
+                        cenario.mapa(), true, medidas);
+
+                assertFalse(layout.usaReserva(), "reserva no fator " + fator
+                        + " para mapa " + cenario.mapa());
+                assertTrue(layout.tituloDoJogador().estaDentroDe(layout.jogador()));
+                assertTrue(layout.tituloDoJogador().altura() >= jogador.alturaDoTitulo());
+                assertTrue(layout.linhaDoCasco().estaDentroDe(layout.jogador()));
+                assertTrue(layout.linhaDosPontos().estaDentroDe(layout.jogador()));
+                assertFalse(layout.tituloDoJogador().sobrepoe(layout.linhaDoCasco()));
+                assertFalse(layout.linhaDoCasco().sobrepoe(layout.linhaDosPontos()));
+                assertEquals(4f * layout.escala(),
+                        layout.jogador().y() - layout.rodapeEsquerdo().topo(), 0.001f);
+                RetanguloDeTela anterior = null;
+                for (int i = 0; i < 3; i++) {
+                    RetanguloDeTela barra = layout.segmentoDoCasco(i, 3);
+                    assertTrue(barra.estaDentroDe(layout.areaDasBarrasDoCasco()));
+                    assertTrue(barra.direita() <= layout.jogador().direita()
+                            - 16f * layout.escala() + 0.001f);
+                    if (anterior != null) {
+                        assertFalse(anterior.sobrepoe(barra));
+                    }
+                    anterior = barra;
+                }
+            }
+        }
+    }
+
+    @Test
     void textosComFatorUmPontoSeisNaoSobrepoemOMapaVertical() {
         RetanguloDeTela mapa = new RetanguloDeTela(0f, 204f, 540f, 792f);
         MedidasDoHud medidas = new MedidasDoHud(
@@ -259,10 +324,27 @@ class LayoutDoHudTest {
                 22.7f, 17.8f, alvoMinimo);
     }
 
+    private static MedidasDoHud medidasDoToqueHorizontal(float fator, float alvoMinimo) {
+        float rotulo = 13.5f * fator;
+        float texto = 14.2f * fator;
+        return new MedidasDoHud(rotulo, 2f * texto, 6f * rotulo,
+                0, texto, true, true, texto, 11.1f * fator, alvoMinimo);
+    }
+
     private static void assertSemSobreposicaoComMapa(LayoutDoHud layout) {
         List<RetanguloDeTela> areas = layout.areasDoHud(true, true);
         for (RetanguloDeTela painel : areas) {
             assertFalse(painel.sobrepoe(layout.mapa()), painel + " cobre o mapa");
+        }
+    }
+
+    private static void assertAreasDoHudNaoSeSobrepoem(LayoutDoHud layout) {
+        List<RetanguloDeTela> areas = layout.areasDoHud(true, true);
+        for (int i = 0; i < areas.size(); i++) {
+            for (int j = i + 1; j < areas.size(); j++) {
+                assertFalse(areas.get(i).sobrepoe(areas.get(j)),
+                        areas.get(i) + " sobrepoe " + areas.get(j));
+            }
         }
     }
 
@@ -271,5 +353,8 @@ class LayoutDoHudTest {
         assertEquals(y, atual.y(), 0.001f);
         assertEquals(largura, atual.largura(), 0.001f);
         assertEquals(altura, atual.altura(), 0.001f);
+    }
+
+    private record CenarioHorizontal(float largura, float altura, RetanguloDeTela mapa, float alvoMinimo) {
     }
 }
