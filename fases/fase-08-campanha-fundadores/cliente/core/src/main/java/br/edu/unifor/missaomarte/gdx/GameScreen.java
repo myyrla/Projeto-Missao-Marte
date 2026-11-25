@@ -21,6 +21,9 @@ import br.edu.unifor.missaomarte.domain.Posicao;
 import br.edu.unifor.missaomarte.domain.ResultadoDoTiro;
 import br.edu.unifor.missaomarte.gdx.entrada.BotaoVirtual;
 import br.edu.unifor.missaomarte.gdx.entrada.ControleDeToque;
+import br.edu.unifor.missaomarte.gdx.entrada.ControleDeToqueRenderer;
+import br.edu.unifor.missaomarte.gdx.entrada.JoystickVirtual;
+import br.edu.unifor.missaomarte.gdx.entrada.RepeticaoDoMovimento;
 import br.edu.unifor.missaomarte.gdx.camera.CameraDaPartida;
 import br.edu.unifor.missaomarte.gdx.camera.EscalaDaCelula;
 import br.edu.unifor.missaomarte.gdx.hud.HudRenderer;
@@ -94,7 +97,7 @@ public class GameScreen extends TelaBase {
     private final MensagensFlutuantes flutuantes = new MensagensFlutuantes();
     private final DicaDaNami dicaDaNami = new DicaDaNami();
     private final Tremor tremor = new Tremor();
-    private final RepetidorDeTecla repetidor = new RepetidorDeTecla(0.28f, 0.14f);
+    private final RepeticaoDoMovimento repeticaoDoMovimento = new RepeticaoDoMovimento();
     private final ControleDoFimDaPartida controleDoFim = new ControleDoFimDaPartida();
     private final RegistroAlternativoNoRankingLocal registroAlternativo = new RegistroAlternativoNoRankingLocal();
     private final CameraDaPartida acompanhamentoDaCamera = new CameraDaPartida();
@@ -102,6 +105,7 @@ public class GameScreen extends TelaBase {
     private final MundoRenderer mundo;
     private final HudRenderer hud;
     private final ResultadoDaPartidaRenderer resultadoRenderer;
+    private final ControleDeToqueRenderer controleDeToqueRenderer;
     private final Map<Integer, Acao> setasPorDedo = new HashMap<>();
     private final GlyphLayout medidorDeEtiqueta = new GlyphLayout();
 
@@ -111,6 +115,7 @@ public class GameScreen extends TelaBase {
     private RetanguloDeTela areaVisivelDoMundo;
     private RetanguloDeTela janelaDoRadar;
     private ControleDeToque controles;
+    private ControleDeToque.MedidasDosRotulos medidasDosControles;
     private RetanguloDeTela areaDosControles;
     private float alvoDosControles = -1f;
     private boolean controlesEmRetrato;
@@ -123,7 +128,6 @@ public class GameScreen extends TelaBase {
     private float tempoPiscando;
     private float tempoDoRaio;
     private ResultadoDoTiro raio;
-    private Acao acaoSegurada;
     private int teclaSegurada = -1;
     private int ponteiroSegurado = -1;
     private int contagemMostrada = -1;
@@ -148,6 +152,8 @@ public class GameScreen extends TelaBase {
                 campanha, etapaDaCampanha);
         this.resultadoRenderer = new ResultadoDaPartidaRenderer(
                 jogo.batch(), jogo.shapes(), jogo.fontes(), jogo.estilo());
+        this.controleDeToqueRenderer = new ControleDeToqueRenderer(
+                jogo.batch(), jogo.shapes(), jogo.fontes());
     }
 
     private LayoutDoHud layoutAtual(Viewport viewport) {
@@ -188,6 +194,7 @@ public class GameScreen extends TelaBase {
     @Override
     public void pause() {
         super.pause();
+        liberarJoystick();
         if (dinamico) {
             session.pausar();
             setasPorDedo.clear();
@@ -195,14 +202,22 @@ public class GameScreen extends TelaBase {
     }
 
     @Override
+    public void hide() {
+        liberarJoystick();
+        super.hide();
+    }
+
+    @Override
     protected boolean usaMundoInteiro() {
         return true;
     }
 
-    /** O fim usa os botoes do estilo Switch; durante a partida os controles virtuais antigos continuam iguais. */
+    /** O fim usa os botoes do estilo Switch; a partida desenha o controle adequado a orientacao. */
     @Override
     protected boolean desenhaBotoesVirtuais() {
-        return session.getEstado() == EstadoPartida.EM_ANDAMENTO;
+        return session.getEstado() == EstadoPartida.EM_ANDAMENTO
+                && (!jogo.modoToque() || layout == null || !layout.emRetrato()
+                        || dinamico && session.isPausada());
     }
 
     // ---------------------------------------------------------------- entrada: modo classico
@@ -219,9 +234,8 @@ public class GameScreen extends TelaBase {
 
         executar(acao);
         if (ehMovimento(acao) && session.getEstado() == EstadoPartida.EM_ANDAMENTO) {
-            acaoSegurada = acao;
+            repeticaoDoMovimento.iniciar(acao);
             teclaSegurada = keycode;
-            repetidor.iniciar();
         }
         return true;
     }
@@ -293,6 +307,7 @@ public class GameScreen extends TelaBase {
     }
 
     private void alternarPausa() {
+        liberarJoystick();
         session.alternarPausa();
         setasPorDedo.clear();
         log(session.isPausada() ? "pausa" : "continua");
@@ -304,6 +319,27 @@ public class GameScreen extends TelaBase {
     }
 
     // ---------------------------------------------------------------- entrada: toque
+
+    @Override
+    protected boolean aoPressionar(float x, float y, int ponteiro) {
+        if (!usaJoystickVertical()) {
+            return false;
+        }
+        ControleDeToque.ResultadoDaPressao resultado = controles.pressionar(ponteiro, x, y);
+        aplicarComandosDoJoystick(resultado.comandos());
+        resultado.botao().ifPresent(id -> aoTocar(id, ponteiro));
+        return resultado.tratado();
+    }
+
+    @Override
+    protected boolean aoArrastar(float x, float y, int ponteiro) {
+        if (!usaJoystickVertical()) {
+            return false;
+        }
+        JoystickVirtual.Resultado resultado = controles.arrastar(ponteiro, x, y);
+        aplicarComandosDoJoystick(resultado.comandos());
+        return resultado.tratado();
+    }
 
     @Override
     protected boolean aoTocar(String id, int ponteiro) {
@@ -348,9 +384,8 @@ public class GameScreen extends TelaBase {
         }
         executar(acao);
         if (ControleDeToque.repete(id) && session.getEstado() == EstadoPartida.EM_ANDAMENTO) {
-            acaoSegurada = acao;
+            repeticaoDoMovimento.iniciar(acao);
             ponteiroSegurado = ponteiro;
-            repetidor.iniciar();
         }
         return true;
     }
@@ -369,6 +404,13 @@ public class GameScreen extends TelaBase {
 
     @Override
     protected void aoSoltar(int ponteiro) {
+        if (controles != null && controles.joystick().isPresent()) {
+            JoystickVirtual.Resultado resultado = controles.soltar(ponteiro);
+            aplicarComandosDoJoystick(resultado.comandos());
+            if (resultado.tratado()) {
+                return;
+            }
+        }
         if (dinamico) {
             Acao solta = setasPorDedo.remove(ponteiro);
             if (solta != null && !setasPorDedo.containsValue(solta)) {
@@ -391,12 +433,17 @@ public class GameScreen extends TelaBase {
         if (session.getEstado() == EstadoPartida.EM_ANDAMENTO && !(dinamico && session.isPausada())) {
             RetanguloDeTela area = layout.controles();
             float alvo = jogo.alvoMinimo();
+            ControleDeToque.MedidasDosRotulos medidas = layout.emRetrato()
+                    ? controleDeToqueRenderer.medirRotulos(dinamico)
+                    : ControleDeToque.MedidasDosRotulos.vazias();
             if (controles == null || alvo != alvoDosControles || controlesEmRetrato != layout.emRetrato()
-                    || !mesmoRetangulo(area, areaDosControles)) {
-                controles = new ControleDeToque(area, layout.emRetrato(), dinamico, alvo);
+                    || !mesmoRetangulo(area, areaDosControles) || !medidas.equals(medidasDosControles)) {
+                liberarJoystick();
+                controles = new ControleDeToque(area, layout.emRetrato(), dinamico, alvo, medidas);
                 areaDosControles = area;
                 alvoDosControles = alvo;
                 controlesEmRetrato = layout.emRetrato();
+                medidasDosControles = medidas;
             }
             botoes.addAll(controles.getBotoes());
             return;
@@ -422,13 +469,50 @@ public class GameScreen extends TelaBase {
         return b != null && a.x() == b.x() && a.y() == b.y() && a.largura() == b.largura() && a.altura() == b.altura();
     }
 
+    private boolean usaJoystickVertical() {
+        return jogo.modoToque() && layout != null && layout.emRetrato()
+                && controles != null && session.getEstado() == EstadoPartida.EM_ANDAMENTO
+                && !(dinamico && session.isPausada());
+    }
+
+    private void aplicarComandosDoJoystick(List<JoystickVirtual.Comando> comandos) {
+        for (JoystickVirtual.Comando comando : comandos) {
+            switch (comando.tipo()) {
+                case EXECUTAR -> {
+                    executar(comando.acao());
+                    if (session.getEstado() == EstadoPartida.EM_ANDAMENTO) {
+                        repeticaoDoMovimento.iniciar(comando.acao());
+                    }
+                }
+                case PRESSIONAR -> session.pressionar(comando.acao());
+                case SOLTAR -> {
+                    if (dinamico) {
+                        session.soltar(comando.acao());
+                    } else {
+                        pararRepeticao();
+                    }
+                }
+            }
+        }
+    }
+
+    private void liberarJoystick() {
+        if (controles == null) {
+            return;
+        }
+        controles.joystick().ifPresent(joystick -> {
+            if (joystick.ponteiroAtivo() >= 0) {
+                aplicarComandosDoJoystick(controles.soltar(joystick.ponteiroAtivo()).comandos());
+            }
+        });
+    }
+
     // ---------------------------------------------------------------- regras e reacoes
 
     private void pararRepeticao() {
-        acaoSegurada = null;
         teclaSegurada = -1;
         ponteiroSegurado = -1;
-        repetidor.parar();
+        repeticaoDoMovimento.parar();
     }
 
     private static boolean ehMovimento(Acao acao) {
@@ -650,8 +734,8 @@ public class GameScreen extends TelaBase {
     protected void desenhar(float delta) {
         if (dinamico) {
             avancarTempoReal(delta);
-        } else if (acaoSegurada != null && session.getEstado() == EstadoPartida.EM_ANDAMENTO && repetidor.atualizar(delta)) {
-            executar(acaoSegurada);
+        } else if (session.getEstado() == EstadoPartida.EM_ANDAMENTO) {
+            repeticaoDoMovimento.atualizar(delta).ifPresent(this::executar);
         }
         if (jogo.getScreen() != this) {
             return;
@@ -695,6 +779,10 @@ public class GameScreen extends TelaBase {
 
         boolean fim = session.getEstado() != EstadoPartida.EM_ANDAMENTO;
         hud.desenhar(session, mensagens, mudo, segundos, janelaDoRadar, tempestadeAtiva, destaques);
+
+        if (!fim && usaJoystickVertical()) {
+            controleDeToqueRenderer.desenhar(controles);
+        }
 
         if (fim) {
             desenharFimDePartida();

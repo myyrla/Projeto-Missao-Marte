@@ -5,12 +5,14 @@ import br.edu.unifor.missaomarte.gdx.layout.RetanguloDeTela;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
- * Botoes virtuais da partida: setas, acao principal (atirar ou embarcar), pausa, som e abortar, dentro da area de controles.
- * <p>O layout se adapta a area recebida: em paisagem os botoes ficam empilhados numa coluna; em retrato as setas ficam a esquerda e
- * as acoes a direita, perto do polegar. O tamanho dos botoes respeita o alvo minimo de toque informado (em unidades do mundo).
- * <p>Aqui so se calcula o layout e se traduz o botao em {@link Acao}; quem desenha e a tela.
+ * Controles virtuais da partida: joystick ou setas, acao principal, pausa, som e abortar.
+ * <p>Nesta etapa, o retrato usa joystick a esquerda e botoes circulares a direita. A paisagem preserva temporariamente a cruz
+ * anterior ate receber seu layout proprio. O tamanho tocavel respeita o alvo minimo informado em unidades do mundo.
+ * <p>A classe calcula o layout e roteia ponteiros sem depender do libGDX; o desenho fica em outro objeto.
  */
 public final class ControleDeToque {
     public static final String CIMA = "cima";
@@ -27,18 +29,59 @@ public final class ControleDeToque {
     private static final float FOLGA = 4f;
     private static final float MARGEM = 12f;
     private static final float ESPACO_ENTRE_BOTOES = 8f;
+    private static final float ESPACO_ENTRE_CIRCULOS = 16f;
+    private static final float MARGEM_INTERNA_DO_ROTULO = 10f;
 
     private final List<BotaoVirtual> botoes;
+    private final JoystickVirtual joystick;
+    private final boolean emRetrato;
+
+    public record ResultadoDaPressao(boolean tratado, Optional<String> botao,
+                                     List<JoystickVirtual.Comando> comandos) {
+        private static ResultadoDaPressao ignorado() {
+            return new ResultadoDaPressao(false, Optional.empty(), List.of());
+        }
+    }
+
+    public record MedidaDoRotulo(float largura, float altura) {
+        public MedidaDoRotulo {
+            largura = Math.max(0f, largura);
+            altura = Math.max(0f, altura);
+        }
+    }
+
+    public record MedidasDosRotulos(Map<String, MedidaDoRotulo> porId) {
+        private static final MedidaDoRotulo VAZIA = new MedidaDoRotulo(0f, 0f);
+
+        public MedidasDosRotulos {
+            porId = Map.copyOf(porId);
+        }
+
+        public MedidaDoRotulo de(String id) {
+            return porId.getOrDefault(id, VAZIA);
+        }
+
+        public static MedidasDosRotulos vazias() {
+            return new MedidasDosRotulos(Map.of());
+        }
+    }
 
     /**
      * @param dinamico true no modo dinamico (tem tiro e pausa); false no classico (tem embarcar, como na Fase 6)
      * @param alvoMinimo menor lado aceitavel de um botao, em unidades do mundo
      */
     public ControleDeToque(RetanguloDeTela area, boolean emRetrato, boolean dinamico, float alvoMinimo) {
+        this(area, emRetrato, dinamico, alvoMinimo, MedidasDosRotulos.vazias());
+    }
+
+    public ControleDeToque(RetanguloDeTela area, boolean emRetrato, boolean dinamico,
+            float alvoMinimo, MedidasDosRotulos medidas) {
         List<BotaoVirtual> lista = new ArrayList<>();
+        this.emRetrato = emRetrato;
         if (emRetrato) {
-            montarEmRetrato(lista, area, dinamico, alvoMinimo);
+            joystick = montarEmRetrato(lista, area, dinamico, alvoMinimo, medidas);
         } else {
+            joystick = null;
             montarEmPaisagem(lista, area, dinamico, alvoMinimo);
         }
         botoes = Collections.unmodifiableList(lista);
@@ -73,37 +116,63 @@ public final class ControleDeToque {
         adicionarPequenos(lista, area.x() + MARGEM, yPequenos, larguraDaAcao, alturaPequena, dinamico);
     }
 
-    private static void montarEmRetrato(List<BotaoVirtual> lista, RetanguloDeTela area, boolean dinamico, float alvoMinimo) {
-        float folga = Math.max(FOLGA, alvoMinimo / 6f);
-        float lado = ladoDasSetas(alvoMinimo, (area.altura() - 32f - 2 * folga) / 3f);
-        float xSetas = area.x() + MARGEM;
-        float yBaixo = area.y() + 16f;
-        float yMeio = yBaixo + lado + folga;
-        float yCima = yMeio + lado + folga;
-        lista.add(new BotaoVirtual(CIMA, "^", xSetas + lado + folga, yCima, lado, lado));
-        lista.add(new BotaoVirtual(ESQUERDA, "<", xSetas, yMeio, lado, lado));
-        lista.add(new BotaoVirtual(DIREITA, ">", xSetas + 2 * (lado + folga), yMeio, lado, lado));
-        lista.add(new BotaoVirtual(BAIXO, "v", xSetas + lado + folga, yBaixo, lado, lado));
+    private static JoystickVirtual montarEmRetrato(List<BotaoVirtual> lista, RetanguloDeTela area,
+            boolean dinamico, float alvoMinimo, MedidasDosRotulos medidas) {
+        float margem = Math.max(MARGEM, alvoMinimo / 5f);
+        float larguraDaMetade = area.largura() / 2f;
+        float raioMaximo = Math.min((larguraDaMetade - 2f * margem) / 2f,
+                (area.altura() - 2f * margem) / 2f);
+        float raio = Math.max(alvoMinimo / 2f, Math.min(112f, raioMaximo));
+        float centroX = area.x() + margem + raio;
+        float centroY = area.centroY();
+        JoystickVirtual joystick = new JoystickVirtual(
+                centroX, centroY, raio, Math.max(22f, raio * 0.38f), dinamico);
 
-        float fimDasSetas = xSetas + 3 * lado + 2 * folga;
-        float larguraMinimaDaColuna = dinamico
-                ? 2f * alvoMinimo + ESPACO_ENTRE_BOTOES : alvoMinimo;
-        float larguraDisponivel = area.direita() - MARGEM - fimDasSetas - 24f;
-        float larguraDaColuna = Math.max(120f,
-                Math.min(Math.max(300f, larguraMinimaDaColuna), larguraDisponivel));
-        float xColuna = area.direita() - MARGEM - larguraDaColuna;
-        lista.add(dinamico
-                ? new BotaoVirtual(ATIRAR, "Atirar", xColuna, yCima, larguraDaColuna, lado)
-                : new BotaoVirtual(EMBARCAR, "Embarcar", xColuna, yCima, larguraDaColuna, lado));
-        if (dinamico) {
-            float larguraPequena = (larguraDaColuna - ESPACO_ENTRE_BOTOES) / 2f;
-            lista.add(new BotaoVirtual(PAUSA, "Pausa", xColuna, yMeio, larguraPequena, lado));
-            lista.add(new BotaoVirtual(SOM, "Som", xColuna + larguraPequena + ESPACO_ENTRE_BOTOES,
-                    yMeio, larguraPequena, lado));
-        } else {
-            lista.add(new BotaoVirtual(SOM, "Som", xColuna, yMeio, larguraDaColuna, lado));
+        List<String> idsSecundarios = dinamico ? List.of(PAUSA, SOM, ABORTAR) : List.of(SOM, ABORTAR);
+        List<String> rotulosSecundarios = dinamico ? List.of("Pausa", "Som", "Abortar") : List.of("Som", "Abortar");
+        float[] diametros = new float[idsSecundarios.size()];
+        float larguraDaLinha = 0f;
+        float maiorSecundario = 0f;
+        for (int i = 0; i < idsSecundarios.size(); i++) {
+            diametros[i] = diametroDoBotao(medidas.de(idsSecundarios.get(i)), alvoMinimo);
+            larguraDaLinha += diametros[i];
+            maiorSecundario = Math.max(maiorSecundario, diametros[i]);
         }
-        lista.add(new BotaoVirtual(ABORTAR, "Abortar", xColuna, yBaixo, larguraDaColuna, lado));
+        larguraDaLinha += (idsSecundarios.size() - 1) * ESPACO_ENTRE_CIRCULOS;
+
+        String idPrincipal = dinamico ? ATIRAR : EMBARCAR;
+        String rotuloPrincipal = dinamico ? "Atirar" : "Embarcar";
+        float diametroPrincipal = Math.max(
+                diametroDoBotao(medidas.de(idPrincipal), alvoMinimo), maiorSecundario + 12f);
+        float larguraDoGrupo = Math.max(larguraDaLinha, diametroPrincipal);
+        float alturaDoGrupo = maiorSecundario + ESPACO_ENTRE_CIRCULOS + diametroPrincipal;
+        float xDoGrupo = area.direita() - margem - larguraDoGrupo;
+        float yDoGrupo = limitar(area.centroY() - alturaDoGrupo / 2f,
+                area.y() + margem, area.topo() - margem - alturaDoGrupo);
+
+        float xPrincipal = xDoGrupo + (larguraDoGrupo - diametroPrincipal) / 2f;
+        float yPrincipal = yDoGrupo + maiorSecundario + ESPACO_ENTRE_CIRCULOS;
+        lista.add(new BotaoVirtual(idPrincipal, rotuloPrincipal,
+                xPrincipal, yPrincipal, diametroPrincipal, diametroPrincipal));
+
+        float x = xDoGrupo + (larguraDoGrupo - larguraDaLinha) / 2f;
+        for (int i = 0; i < idsSecundarios.size(); i++) {
+            float diametro = diametros[i];
+            float y = yDoGrupo + (maiorSecundario - diametro) / 2f;
+            lista.add(new BotaoVirtual(idsSecundarios.get(i), rotulosSecundarios.get(i),
+                    x, y, diametro, diametro));
+            x += diametro + ESPACO_ENTRE_CIRCULOS;
+        }
+        return joystick;
+    }
+
+    private static float diametroDoBotao(MedidaDoRotulo medida, float alvoMinimo) {
+        float diagonal = (float) Math.hypot(medida.largura(), medida.altura());
+        return Math.max(alvoMinimo, diagonal + 2f * MARGEM_INTERNA_DO_ROTULO);
+    }
+
+    private static float limitar(float valor, float minimo, float maximo) {
+        return Math.max(minimo, Math.min(valor, maximo));
     }
 
     private static void adicionarPequenos(List<BotaoVirtual> lista, float x, float y, float largura, float altura, boolean dinamico) {
@@ -123,14 +192,49 @@ public final class ControleDeToque {
         return botoes;
     }
 
+    public Optional<JoystickVirtual> joystick() {
+        return Optional.ofNullable(joystick);
+    }
+
+    /** Roteia um novo ponteiro para o joystick ou para um botao circular do modo retrato. */
+    public ResultadoDaPressao pressionar(int ponteiro, float x, float y) {
+        if (joystick == null) {
+            return ResultadoDaPressao.ignorado();
+        }
+        JoystickVirtual.Resultado resultado = joystick.pressionar(ponteiro, x, y);
+        if (resultado.tratado()) {
+            return new ResultadoDaPressao(true, Optional.empty(), resultado.comandos());
+        }
+        BotaoVirtual botao = em(x, y);
+        return botao == null ? ResultadoDaPressao.ignorado()
+                : new ResultadoDaPressao(true, Optional.of(botao.getId()), List.of());
+    }
+
+    public JoystickVirtual.Resultado arrastar(int ponteiro, float x, float y) {
+        return joystick == null ? new JoystickVirtual.Resultado(false, List.of())
+                : joystick.arrastar(ponteiro, x, y);
+    }
+
+    public JoystickVirtual.Resultado soltar(int ponteiro) {
+        return joystick == null ? new JoystickVirtual.Resultado(false, List.of())
+                : joystick.soltar(ponteiro);
+    }
+
     /** Devolve o botao sob o ponto ou null. */
     public BotaoVirtual em(float x, float y) {
         for (BotaoVirtual botao : botoes) {
-            if (botao.contem(x, y)) {
+            if (emRetrato ? contemNoCirculo(botao, x, y) : botao.contem(x, y)) {
                 return botao;
             }
         }
         return null;
+    }
+
+    private static boolean contemNoCirculo(BotaoVirtual botao, float x, float y) {
+        float raio = Math.min(botao.getLargura(), botao.getAltura()) / 2f;
+        float dx = x - (botao.getX() + botao.getLargura() / 2f);
+        float dy = y - (botao.getY() + botao.getAltura() / 2f);
+        return dx * dx + dy * dy <= raio * raio;
     }
 
     /** Acao do jogo para o botao; {@link Acao#INVALIDA} para botoes que nao sao acao (som e pausa). */

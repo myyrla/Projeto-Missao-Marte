@@ -74,6 +74,16 @@ abstract class TelaBase implements Screen {
         return false;
     }
 
+    /** Pressao em coordenadas do mundo, antes da procura pelos botoes retangulares. */
+    protected boolean aoPressionar(float x, float y, int ponteiro) {
+        return false;
+    }
+
+    /** Arrasto em coordenadas do mundo para controles que acompanham o dedo. */
+    protected boolean aoArrastar(float x, float y, int ponteiro) {
+        return false;
+    }
+
     protected void aoSoltar(int ponteiro) {
     }
 
@@ -185,9 +195,8 @@ abstract class TelaBase implements Screen {
     }
 
     // Se o toque cai em mais de um botao (alvos ampliados que se encontram), vale o de centro mais proximo do dedo.
-    private BotaoVirtual botaoEm(int telaX, int telaY) {
-        ponto.set(telaX, telaY);
-        jogo.viewport().unproject(ponto);
+    private BotaoVirtual botaoEm(float x, float y) {
+        ponto.set(x, y);
         BotaoVirtual melhor = null;
         float menorDistancia = Float.MAX_VALUE;
         for (BotaoVirtual b : botoes) {
@@ -204,6 +213,12 @@ abstract class TelaBase implements Screen {
             }
         }
         return melhor;
+    }
+
+    private Vector2 noMundo(int telaX, int telaY) {
+        ponto.set(telaX, telaY);
+        jogo.viewport().unproject(ponto);
+        return ponto;
     }
 
     /** Chamado depois que o viewport foi atualizado (tela girou ou mudou de tamanho). */
@@ -269,12 +284,28 @@ abstract class TelaBase implements Screen {
                 if (!aceitaPonteiro(jogo.modoToque(), aceitaCliqueEsquerdo(), botao)) {
                     return false;
                 }
-                BotaoVirtual b = botaoEm(telaX, telaY);
+                Vector2 posicao = noMundo(telaX, telaY);
+                if (aoPressionar(posicao.x, posicao.y, ponteiro)) {
+                    return true;
+                }
+                BotaoVirtual b = botaoEm(posicao.x, posicao.y);
                 return b != null && aoTocar(b.getId(), ponteiro);
             }
 
             @Override
+            public boolean touchDragged(int telaX, int telaY, int ponteiro) {
+                Vector2 posicao = noMundo(telaX, telaY);
+                return aoArrastar(posicao.x, posicao.y, ponteiro);
+            }
+
+            @Override
             public boolean touchUp(int telaX, int telaY, int ponteiro, int botao) {
+                aoSoltar(ponteiro);
+                return false;
+            }
+
+            @Override
+            public boolean touchCancelled(int telaX, int telaY, int ponteiro, int botao) {
                 aoSoltar(ponteiro);
                 return false;
             }
