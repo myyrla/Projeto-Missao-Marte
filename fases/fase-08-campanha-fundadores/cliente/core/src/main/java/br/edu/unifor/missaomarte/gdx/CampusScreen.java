@@ -1,13 +1,10 @@
 package br.edu.unifor.missaomarte.gdx;
 
 import br.edu.unifor.missaomarte.application.GameSession;
-import br.edu.unifor.missaomarte.application.MissaoFactory;
 import br.edu.unifor.missaomarte.application.campanha.Campanha;
 import br.edu.unifor.missaomarte.application.campanha.Campus;
 import br.edu.unifor.missaomarte.application.campanha.EtapaDaCampanha;
-import br.edu.unifor.missaomarte.application.campanha.PreparacaoDaEtapa;
-import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoDaCampanha;
-import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoPadrao;
+import br.edu.unifor.missaomarte.application.campanha.PreparadorDaPartidaDaCampanha;
 import br.edu.unifor.missaomarte.gdx.campanha.CampusLayout;
 import br.edu.unifor.missaomarte.gdx.campanha.ConteudoDoCartaoDaCampanha;
 import br.edu.unifor.missaomarte.gdx.campanha.ControleDoCampus;
@@ -243,15 +240,9 @@ public class CampusScreen extends TelaBase {
 
     private void iniciarMissao() {
         EtapaDaCampanha etapa = campanha.etapaAtual().orElseThrow();
-        MissaoFactory fabrica = jogo.missaoFactory();
-        PreparacaoDaEtapa preparacao = fabrica.criarEtapaDaCampanha(
-                etapa, MissaoMarteGame.MIN, MissaoMarteGame.MAX, jogo.random());
         String piloto = jogo.sessao() == null ? "Piloto" : jogo.sessao().getNome();
-        RegraDePontuacaoDaCampanha pontuacao = new RegraDePontuacaoDaCampanha(
-                new RegraDePontuacaoPadrao(fabrica.pontuacaoInicial(etapa.dificuldade())));
-        GameSession session = new GameSession(piloto, etapa.dificuldade(), preparacao.missao(),
-                pontuacao, MissaoMarteGame.MIN, MissaoMarteGame.MAX,
-                jogo.random(), etapa.modo(), preparacao.mecanicas());
+        GameSession session = new PreparadorDaPartidaDaCampanha(jogo.missaoFactory()).preparar(
+                etapa, piloto, MissaoMarteGame.MIN, MissaoMarteGame.MAX, jogo.random());
         jogo.setScreen(new GameScreen(jogo, session, campanha, etapa));
     }
 

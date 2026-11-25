@@ -12,13 +12,15 @@ A classificação de origem usa a Fase 7 importada como referência. O README da
 
 - O servidor não apresenta classes grandes. Sua maior classe tem 94 linhas e a separação Controller, Service, Repository e DTO está clara.
 - O cliente concentra complexidade na camada `gdx`. Sete classes ultrapassam 400 linhas.
-- `GameScreen` é o ponto de maior risco, com 1.213 linhas e responsabilidades de entrada, coordenação, câmera, efeitos, ranking, campanha e telas de pausa e resultado.
+- No diagnóstico inicial, `GameScreen` era o ponto de maior risco, com 1.213 linhas e responsabilidades de entrada, coordenação, câmera, efeitos, ranking, campanha e telas de pausa e resultado. Após as duas refatorações aprovadas, ficou com 1.032 linhas.
 - `GameSession` também é grande, mas a maior parte de sua complexidade representa o caso de uso da partida e está protegida por Strategy, eventos e uma suíte ampla de testes.
 - `LayoutDoHud` é grande, porém puro e coeso em torno da geometria responsiva. Seu tamanho isolado não justifica uma divisão imediata.
 - A equipe já criou boas fronteiras para regras que mudam: pontuação, destaques, ranking, geometria, tipografia, câmera e efeitos da tempestade.
 - A melhor sequência de refatoração começa pelas responsabilidades visuais e de composição que ainda ficaram dentro das telas. Não há refatoração prioritária no servidor.
 
 ## 3. Dez maiores classes
+
+A tabela registra o estado encontrado no diagnóstico, antes das refatorações da Etapa 2.
 
 | Posição | Classe | Camada | Linhas | Métodos públicos | Métodos privados |
 |---:|---|---|---:|---:|---:|
@@ -297,18 +299,18 @@ O comentário de `SimboloParaImagem` afirma OCP, mas a inclusão da NAMI exigiu 
 
 Também há dívida reduzida pela própria equipe: `PoliticaDeDestaque`, layouts puros, classes de tempestade e políticas de ranking impediram que toda a lógica nova permanecesse dentro das telas.
 
-## 8. Refatorações propostas
+## 8. Refatorações propostas e situação
 
 As propostas estão ordenadas pelo equilíbrio entre benefício e risco. Nenhuma altera regra, texto, protocolo ou visual.
 
-| Prioridade | Refatoração | Benefício | Risco |
-|---:|---|---|---|
-| 1 | Extrair o desenho do resultado de `GameScreen` | alto | baixo a médio |
-| 2 | Extrair a preparação da partida de `CampusScreen` | alto | médio |
-| 3 | Extrair o radar de `HudRenderer` | médio | baixo |
-| 4 | Extrair a tempestade de `MundoRenderer` | médio | médio |
+| Prioridade | Refatoração | Benefício | Risco | Situação |
+|---:|---|---|---|---|
+| 1 | Extrair o desenho do resultado de `GameScreen` | alto | baixo a médio | concluída |
+| 2 | Extrair a preparação da partida de `CampusScreen` | alto | médio | concluída |
+| 3 | Extrair o radar de `HudRenderer` | médio | baixo | melhoria futura |
+| 4 | Extrair a tempestade de `MundoRenderer` | médio | médio | melhoria futura |
 
-### 8.1 Extrair `ResultadoDaPartidaRenderer`
+### 8.1 Extrair `ResultadoDaPartidaRenderer` (concluída)
 
 Extrair de `GameScreen` os métodos `atualizarLayoutDoResultado`, `medirLargura`, `medirAlturaQuebrada`, `desenharFimDePartida`, `desenharFimDePartidaNoToque`, `desenharTextoQuebradoCentralizado`, `desenharRotuloDoBotao`, `motivoDoFim` e `desenharSituacaoDoEnvio`.
 
@@ -328,9 +330,9 @@ Testes de segurança:
 - Novo teste puro do modelo visual do resultado, cobrindo vitória, derrota, campanha, erro e sucesso de envio.
 - `./gradlew clean build` do cliente e conferência das duas orientações com fator 1,6.
 
-### 8.2 Extrair `PreparadorDaPartidaDaCampanha`
+### 8.2 Extrair `PreparadorDaPartidaDaCampanha` (concluída)
 
-Extrair de `CampusScreen.iniciarMissao` a criação de `PreparacaoDaEtapa`, `RegraDePontuacaoPadrao`, `RegraDePontuacaoDaCampanha` e `GameSession`.
+Extrair de `CampusScreen.iniciarMissao` e do reinício da campanha em `GameScreen` a criação de `PreparacaoDaEtapa`, `RegraDePontuacaoPadrao`, `RegraDePontuacaoDaCampanha` e `GameSession`.
 
 Destino: `application/campanha/PreparadorDaPartidaDaCampanha`. A classe receberá `MissaoFactory`, etapa, piloto, limites e `Random`, e devolverá a `GameSession` pronta. A tela apenas solicitará a sessão e abrirá `GameScreen`.
 
@@ -348,7 +350,7 @@ Testes de segurança:
 - `CampusTest` e `CampusLayoutTest` para provar que progresso e visual não mudaram.
 - `./gradlew clean build` do cliente.
 
-### 8.3 Extrair `RadarRenderer`
+### 8.3 Extrair `RadarRenderer` (melhoria futura)
 
 Extrair de `HudRenderer` os métodos `desenharRadar`, `ponto`, `quadrado`, `desenharJanelaVisivel`, `linhaTracejadaHorizontal` e `linhaTracejadaVertical`.
 
@@ -368,7 +370,7 @@ Testes de segurança:
 - Novo teste do modelo de marcadores, cobrindo nave, base, passageiros, inimigos, NAMI e tempestade.
 - `LayoutDoHudTest`, `HudRendererTextoTest` e `./gradlew clean build`.
 
-### 8.4 Extrair `TempestadeRenderer`
+### 8.4 Extrair `TempestadeRenderer` (melhoria futura)
 
 Extrair de `MundoRenderer` os métodos `desenharEscuridao`, `desenharPoeira` e `desenharParticulas`, além das cores e constantes exclusivas da tempestade.
 
@@ -389,8 +391,20 @@ Testes de segurança:
 - Novo teste do plano de camadas da tempestade, fixando a ordem de composição e a restauração da cor.
 - `./gradlew clean build` e comparação visual nas etapas 2 e 3.
 
+### 8.5 Resultado das refatorações aprovadas
+
+| Momento | Linhas de `GameScreen` |
+|---|---:|
+| Antes das refatorações | 1.213 |
+| Após `ResultadoDaPartidaRenderer` | 1.037 |
+| Após `PreparadorDaPartidaDaCampanha` | 1.032 |
+
+As duas extrações reduziram `GameScreen` em 181 linhas, aproximadamente 14,9%, sem transferir regras de negócio para a camada `gdx`. A primeira concentrou a apresentação do resultado em `gdx/hud`. A segunda concentrou a montagem da sessão de campanha em `application/campanha` e passou a ser usada tanto no início da missão quanto na tentativa de novo.
+
+As propostas 3 e 4 permanecem registradas somente como melhorias futuras. Elas não fazem parte do escopo aprovado da Etapa 2.
+
 ## 9. Conclusão
 
 A Fase 8 preserva uma base arquitetural sólida: regras fora do libGDX, servidor independente, DTOs, portas, Strategies, eventos e políticas puras. A principal dívida está na quantidade de responsabilidades reunidas em algumas classes de apresentação.
 
-Não é recomendável dividir `GameSession` ou `LayoutDoHud` somente pelo número de linhas. As primeiras refatorações devem retirar blocos com fronteiras já visíveis e boa cobertura, começando pelo resultado da partida. Cada proposta pode ser aplicada e validada em commit independente, conforme previsto para a Etapa 2.
+Não é recomendável dividir `GameSession` ou `LayoutDoHud` somente pelo número de linhas. As duas refatorações aprovadas retiraram blocos com fronteiras visíveis e boa cobertura. Radar e tempestade continuam como possibilidades futuras, sem autorização de implementação nesta etapa.

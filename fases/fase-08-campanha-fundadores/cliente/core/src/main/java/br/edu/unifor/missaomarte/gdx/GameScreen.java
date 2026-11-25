@@ -11,8 +11,7 @@ import br.edu.unifor.missaomarte.application.ResultadoTurno;
 import br.edu.unifor.missaomarte.application.campanha.Campanha;
 import br.edu.unifor.missaomarte.application.campanha.EtapaDaCampanha;
 import br.edu.unifor.missaomarte.application.campanha.Fundador;
-import br.edu.unifor.missaomarte.application.campanha.PreparacaoDaEtapa;
-import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoDaCampanha;
+import br.edu.unifor.missaomarte.application.campanha.PreparadorDaPartidaDaCampanha;
 import br.edu.unifor.missaomarte.application.pontuacao.RegraDePontuacaoPadrao;
 import br.edu.unifor.missaomarte.application.servidor.PartidaConcluida;
 import br.edu.unifor.missaomarte.application.servidor.Resposta;
@@ -618,13 +617,9 @@ public class GameScreen extends TelaBase {
         MissaoFactory fabrica = jogo.missaoFactory();
         GameSession nova;
         if (emCampanha()) {
-            PreparacaoDaEtapa preparacao = fabrica.criarEtapaDaCampanha(
-                    etapaDaCampanha, MissaoMarteGame.MIN, MissaoMarteGame.MAX, jogo.random());
-            RegraDePontuacaoDaCampanha pontuacao = new RegraDePontuacaoDaCampanha(
-                    new RegraDePontuacaoPadrao(fabrica.pontuacaoInicial(etapaDaCampanha.dificuldade())));
-            nova = new GameSession(session.getPiloto(), etapaDaCampanha.dificuldade(), preparacao.missao(),
-                    pontuacao, MissaoMarteGame.MIN, MissaoMarteGame.MAX,
-                    jogo.random(), etapaDaCampanha.modo(), preparacao.mecanicas());
+            nova = new PreparadorDaPartidaDaCampanha(fabrica).preparar(
+                    etapaDaCampanha, session.getPiloto(), MissaoMarteGame.MIN,
+                    MissaoMarteGame.MAX, jogo.random());
         } else {
             Missao missao = fabrica.criarMissao(session.getDificuldade(), MissaoMarteGame.MIN, MissaoMarteGame.MAX,
                     jogo.random(), session.getModo());
